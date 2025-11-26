@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "scilint"
+version = "0.1.0"
+description = "Scientific Linter & Refactor Engine - Detects Computational Mirages"
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "MIT"}
+authors = [
+    {name = "Scilint Team"}
+]
+dependencies = [
+    "numpy",
+]
+
+[project.scripts]
+scilint = "scilint.engine.transpiler:main"

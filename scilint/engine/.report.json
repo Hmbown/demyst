@@ -1,0 +1,1 @@
+{"created": 1762481594.2621949, "duration": 0.006517887115478516, "exitcode": 5, "root": "/Volumes/VIXinSSD/pipre/pipre/engine", "environment": {}, "summary": {"total": 0, "collected": 0}, "collectors": [{"nodeid": "", "outcome": "passed", "result": [{"nodeid": "__init__.py", "type": "Package"}]}, {"nodeid": "__init__.py", "outcome": "passed", "result": []}], "tests": []}

@@ -1,0 +1,17 @@
+name: "Scilint: Scientific Safety Net"
+description: "Automatically detects computational mirages and scientific errors in your code."
+inputs:
+  target:
+    description: "File or directory to scan"
+    required: true
+    default: "."
+runs:
+  using: "composite"
+  steps:
+    - run: pip install scilint
+      shell: bash
+    - run: python -m scilint --target ${{ inputs.target }}
+      shell: bash
+branding:
+  icon: "activity"
+  color: "purple"

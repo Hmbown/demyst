@@ -1,0 +1,6 @@
+- id: scilint
+  name: Scilint (Scientific Safety Net)
+  description: Detects computational mirages and scientific errors.
+  entry: scilint
+  language: python
+  types: [python]

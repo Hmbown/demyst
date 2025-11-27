@@ -28,13 +28,14 @@ CLI:
     demyst ci . --strict       # CI/CD mode
 """
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 __author__ = "Demyst Team"
 __description__ = "The Scientific Integrity Platform for AI Research"
 
 # Lazy imports to avoid circular dependencies
-def __getattr__(name):
+def __getattr__(name: str):
     """Lazy loading of components to avoid import errors when dependencies aren't installed."""
+    # Core Engine
     if name in ['MirageDetector']:
         from demyst.engine.mirage_detector import MirageDetector
         return MirageDetector
@@ -44,6 +45,14 @@ def __getattr__(name):
     elif name in ['Transpiler']:
         from demyst.engine.transpiler import Transpiler
         return Transpiler
+    elif name in ['CSTTranspiler']:
+        from demyst.engine.cst_transformer import CSTTranspiler
+        return CSTTranspiler
+    elif name in ['ParallelAnalyzer']:
+        from demyst.engine.parallel import ParallelAnalyzer
+        return ParallelAnalyzer
+
+    # Guards
     elif name in ['TensorGuard', 'GradientDeathDetector', 'NormalizationAnalyzer', 'RewardHackingDetector']:
         from demyst.guards import tensor_guard
         return getattr(tensor_guard, name)
@@ -56,6 +65,13 @@ def __getattr__(name):
     elif name in ['UnitGuard', 'DimensionalAnalyzer', 'UnitInferenceEngine', 'Dimension']:
         from demyst.guards import unit_guard
         return getattr(unit_guard, name)
+
+    # Fixer
+    elif name in ['DemystFixer', 'fix_source']:
+        from demyst import fixer
+        return getattr(fixer, name)
+
+    # Integrations
     elif name in ['CIEnforcer', 'ScientificIntegrityReport']:
         from demyst.integrations import ci_enforcer
         return getattr(ci_enforcer, name)
@@ -68,12 +84,45 @@ def __getattr__(name):
     elif name in ['WandBIntegration', 'MLflowIntegration']:
         from demyst.integrations import experiment_trackers
         return getattr(experiment_trackers, name)
+
+    # Generators
     elif name in ['PaperGenerator', 'MethodologyExtractor']:
         from demyst.generators import paper_generator
         return getattr(paper_generator, name)
     elif name in ['IntegrityReportGenerator']:
         from demyst.generators import report_generator
         return getattr(report_generator, name)
+
+    # Configuration
+    elif name in ['DemystConfig', 'ConfigManager']:
+        if name == 'ConfigManager':
+            from demyst.config.manager import ConfigManager
+            return ConfigManager
+        else:
+            from demyst.config.models import DemystConfig
+            return DemystConfig
+
+    # Exceptions
+    elif name in ['DemystError', 'AnalysisError', 'ConfigurationError', 'TransformationError',
+                  'ParseError', 'TranspilerError', 'FixerError', 'PluginError']:
+        from demyst import exceptions
+        return getattr(exceptions, name)
+
+    # Plugins
+    elif name in ['PluginRegistry', 'GuardPlugin', 'FixerPlugin', 'get_registry']:
+        from demyst import plugins
+        return getattr(plugins, name)
+
+    # Console
+    elif name in ['DemystConsole', 'get_console']:
+        from demyst import console
+        return getattr(console, name)
+
+    # Lazy imports
+    elif name in ['lazy_import', 'require']:
+        from demyst import lazy
+        return getattr(lazy, name)
+
     raise AttributeError(f"module 'demyst' has no attribute '{name}'")
 
 
@@ -81,10 +130,12 @@ __all__ = [
     # Version
     '__version__',
 
-    # Core
+    # Core Engine
     'MirageDetector',
     'VariationTensor',
     'Transpiler',
+    'CSTTranspiler',
+    'ParallelAnalyzer',
 
     # Guards
     'TensorGuard',
@@ -102,6 +153,10 @@ __all__ = [
     'UnitInferenceEngine',
     'Dimension',
 
+    # Fixer
+    'DemystFixer',
+    'fix_source',
+
     # Integrations
     'CIEnforcer',
     'ScientificIntegrityReport',
@@ -116,4 +171,32 @@ __all__ = [
     'PaperGenerator',
     'MethodologyExtractor',
     'IntegrityReportGenerator',
+
+    # Configuration
+    'DemystConfig',
+    'ConfigManager',
+
+    # Exceptions
+    'DemystError',
+    'AnalysisError',
+    'ConfigurationError',
+    'TransformationError',
+    'ParseError',
+    'TranspilerError',
+    'FixerError',
+    'PluginError',
+
+    # Plugins
+    'PluginRegistry',
+    'GuardPlugin',
+    'FixerPlugin',
+    'get_registry',
+
+    # Console
+    'DemystConsole',
+    'get_console',
+
+    # Lazy imports
+    'lazy_import',
+    'require',
 ]

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "demyst"
-version = "1.0.0"
+version = "1.1.0"
 description = "The Academic Integrity Platform for Scientific Code"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -40,6 +40,9 @@ classifiers = [
 dependencies = [
     "numpy>=1.20.0",
     "PyYAML>=6.0",
+    "pydantic>=2.0.0",
+    "libcst>=1.0.0",
+    "rich>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -60,6 +63,8 @@ dev = [
     "black>=23.0.0",
     "isort>=5.0.0",
     "pre-commit>=3.0.0",
+    "hypothesis>=6.0.0",
+    "mutmut>=2.0.0",
 ]
 
 [project.scripts]

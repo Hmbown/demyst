@@ -1,6 +1,6 @@
-name: "Scilint: Scientific Integrity Platform"
+name: "Demyst: Scientific Integrity Platform"
 description: "The automated peer reviewer for AI research. Detects computational mirages, data leakage, p-hacking, and more."
-author: "Scilint Team"
+author: "Demyst Team"
 
 inputs:
   path:
@@ -43,13 +43,13 @@ runs:
       with:
         python-version: ${{ inputs.python-version }}
 
-    - name: Install Scilint
+    - name: Install Demyst
       shell: bash
       run: |
         pip install --upgrade pip
-        pip install scilint
+        pip install demyst
 
-    - name: Run Scilint Analysis
+    - name: Run Demyst Analysis
       id: analyze
       shell: bash
       run: |
@@ -57,9 +57,9 @@ runs:
 
         # Build command based on mode
         if [ "${{ inputs.mode }}" == "full" ]; then
-          CMD="scilint ci ${{ inputs.path }}"
+          CMD="demyst ci ${{ inputs.path }}"
         else
-          CMD="scilint ${{ inputs.mode }} ${{ inputs.path }}"
+          CMD="demyst ${{ inputs.mode }} ${{ inputs.path }}"
         fi
 
         # Add strict flag if enabled
@@ -72,7 +72,7 @@ runs:
         EXIT_CODE=$?
 
         # Save report
-        echo "$OUTPUT" > .scilint_report.md
+        echo "$OUTPUT" > .demyst_report.md
 
         # Set outputs
         if [ $EXIT_CODE -eq 0 ]; then
@@ -83,7 +83,7 @@ runs:
           echo "status=warning" >> $GITHUB_OUTPUT
         fi
 
-        echo "report=.scilint_report.md" >> $GITHUB_OUTPUT
+        echo "report=.demyst_report.md" >> $GITHUB_OUTPUT
 
         # Count issues (rough estimate from report)
         ISSUES=$(echo "$OUTPUT" | grep -c "Line [0-9]*:" || echo "0")
@@ -107,8 +107,8 @@ runs:
       uses: actions/upload-artifact@v3
       if: always()
       with:
-        name: scilint-report
-        path: .scilint_report.md
+        name: demyst-report
+        path: .demyst_report.md
 
     - name: Post PR Comment
       if: github.event_name == 'pull_request' && always()
@@ -116,7 +116,7 @@ runs:
       with:
         script: |
           const fs = require('fs');
-          const report = fs.readFileSync('.scilint_report.md', 'utf8');
+          const report = fs.readFileSync('.demyst_report.md', 'utf8');
 
           // Truncate if too long
           const maxLength = 65000;

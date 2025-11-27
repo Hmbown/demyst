@@ -1,7 +1,7 @@
 def calculate_trajectory(time_seconds, initial_velocity_mps):
     """
     Calculate particle trajectory.
-    Contains dimensional analysis errors that Scilint detects.
+    Contains dimensional analysis errors that Demyst detects.
     """
     g = 9.81  # Acceleration [L T^-2]
     

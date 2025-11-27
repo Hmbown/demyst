@@ -8,13 +8,13 @@ if os.path.exists("README.md"):
         long_description = fh.read()
 
 setup(
-    name="scilint",
+    name="demyst",
     version="1.0.0",
-    author="Scilint Team",
-    description="The Scientific Integrity Platform for AI Research",
+    author="Demyst Team",
+    description="The Academic Integrity Platform for Scientific Code",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/scilint/scilint",
+    url="https://github.com/Hmbown/demyst",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 4 - Beta",
@@ -54,7 +54,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'scilint=scilint.cli:main',
+            'demyst=demyst.cli:main',
         ],
     },
 )

@@ -1,7 +1,7 @@
 def calculate_molarity(mass_g, molar_mass_g_mol, volume_l):
     """
     Calculate solution molarity.
-    Contains stoichiometry errors that Scilint detects.
+    Contains stoichiometry errors that Demyst detects.
     """
     # Correct: Moles = Mass / Molar Mass
     moles = mass_g / molar_mass_g_mol

@@ -1,13 +1,13 @@
-# Scilint Handoff: Domain-Specific Examples Needed
+# Demyst Handoff: Domain-Specific Examples Needed
 
 ## Status
 
-Scilint v1.0 is feature-complete and passes core tests. The following tasks remain for final polish:
+Demyst v1.0 is feature-complete and passes core tests. The following tasks remain for final polish:
 
 ### Ready for Launch
 - [x] CLI with all commands working
 - [x] All guards functional (TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard)
-- [x] Auto-fix via transpiler (`scilint mirage --fix`)
+- [x] Auto-fix via transpiler (`demyst mirage --fix`)
 - [x] Pre-commit hooks configured
 - [x] CI/CD integration
 - [x] Documentation (README, docs/usage.md)
@@ -31,7 +31,7 @@ Create realistic, runnable examples in `examples/` folder for each domain:
 # Include:
 # - RNA-seq data simulation
 # - Differential expression analysis
-# - Scilint detection of issues
+# - Demyst detection of issues
 ```
 
 ### Drug Response Prediction (`drug_response.py`)
@@ -145,7 +145,7 @@ For each example:
 
 1. **Create realistic synthetic data** (or use public datasets)
 2. **Show the problematic code** with clear comments
-3. **Run scilint to detect issues**
+3. **Run demyst to detect issues**
 4. **Show the corrected code**
 5. **Include a README explaining the scientific context**
 
@@ -182,11 +182,11 @@ After adding examples, verify:
 # Each example should run without errors
 python examples/biology/gene_expression.py
 
-# Each example should trigger scilint warnings
-scilint analyze examples/biology/gene_expression.py
+# Each example should trigger demyst warnings
+demyst analyze examples/biology/gene_expression.py
 
 # The fix should work
-scilint mirage examples/biology/gene_expression.py --fix --dry-run
+demyst mirage examples/biology/gene_expression.py --fix --dry-run
 ```
 
 ---
@@ -202,7 +202,7 @@ In scientific code:
 - A significant p-value doesn't mean rigorous statistics
 - A converged model doesn't mean proper training
 
-Scilint verifies the **process**, not just the **outcome**.
+Demyst verifies the **process**, not just the **outcome**.
 
 ---
 

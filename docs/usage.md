@@ -1,16 +1,16 @@
-# Scilint Usage Guide
+# Demyst Usage Guide
 
-Scilint is a Scientific Integrity Platform that helps detect and prevent common errors in machine learning and data science code.
+Demyst is a Scientific Integrity Platform that helps detect and prevent common errors in machine learning and data science code.
 
 ## Installation
 
 ```bash
 # From PyPI (when released)
-pip install scilint
+pip install demyst
 
 # From source
-git clone https://github.com/scilint/scilint.git
-cd scilint
+git clone https://github.com/demyst/demyst.git
+cd demyst
 pip install -e .
 
 # With development dependencies
@@ -22,49 +22,49 @@ pip install -e ".[dev]"
 ### Run All Checks
 
 ```bash
-scilint analyze your_code.py
-scilint analyze ./src/
+demyst analyze your_code.py
+demyst analyze ./src/
 ```
 
 ### Individual Checks
 
 ```bash
 # Detect computational mirages (variance-destroying operations)
-scilint mirage model.py
+demyst mirage model.py
 
 # Detect train/test data leakage
-scilint leakage train.py
+demyst leakage train.py
 
 # Check statistical validity (anti-p-hacking)
-scilint hypothesis stats.py
+demyst hypothesis stats.py
 
 # Check dimensional consistency
-scilint units physics.py
+demyst units physics.py
 
 # Check deep learning integrity
-scilint tensor network.py
+demyst tensor network.py
 ```
 
 ## Commands Reference
 
-### `scilint analyze`
+### `demyst analyze`
 
 Run all integrity checks on a file or directory.
 
 ```bash
-scilint analyze <path> [--format markdown|json|text] [--config CONFIG]
+demyst analyze <path> [--format markdown|json|text] [--config CONFIG]
 ```
 
 **Options:**
 - `--format, -f`: Output format (markdown, json, text)
 - `--config, -c`: Path to configuration file
 
-### `scilint mirage`
+### `demyst mirage`
 
 Detect computational mirages - operations that destroy variance/distribution information.
 
 ```bash
-scilint mirage <file> [--fix] [--output FILE] [--diff] [--dry-run]
+demyst mirage <file> [--fix] [--output FILE] [--diff] [--dry-run]
 ```
 
 **Options:**
@@ -76,21 +76,21 @@ scilint mirage <file> [--fix] [--output FILE] [--diff] [--dry-run]
 **Example:**
 ```bash
 # Detect mirages
-scilint mirage model.py
+demyst mirage model.py
 
 # Auto-fix mirages
-scilint mirage model.py --fix
+demyst mirage model.py --fix
 
 # Preview changes
-scilint mirage model.py --fix --dry-run
+demyst mirage model.py --fix --dry-run
 ```
 
-### `scilint leakage`
+### `demyst leakage`
 
 Detect train/test data leakage - the #1 error in machine learning.
 
 ```bash
-scilint leakage <file>
+demyst leakage <file>
 ```
 
 **Detects:**
@@ -99,12 +99,12 @@ scilint leakage <file>
 - Target leakage in cross-validation
 - Hyperparameter tuning on test data
 
-### `scilint hypothesis`
+### `demyst hypothesis`
 
 Check statistical validity and detect p-hacking patterns.
 
 ```bash
-scilint hypothesis <file>
+demyst hypothesis <file>
 ```
 
 **Detects:**
@@ -117,12 +117,12 @@ scilint hypothesis <file>
 - Holm-Bonferroni step-down
 - Benjamini-Hochberg FDR control
 
-### `scilint units`
+### `demyst units`
 
 Check dimensional consistency and unit mismatches.
 
 ```bash
-scilint units <file>
+demyst units <file>
 ```
 
 **Detects:**
@@ -130,12 +130,12 @@ scilint units <file>
 - Unit conversion errors
 - Dimensionless assumptions that hide physical meaning
 
-### `scilint tensor`
+### `demyst tensor`
 
 Check deep learning integrity for PyTorch and JAX code.
 
 ```bash
-scilint tensor <file>
+demyst tensor <file>
 ```
 
 **Detects:**
@@ -143,12 +143,12 @@ scilint tensor <file>
 - Normalization blindness (BatchNorm hiding distribution shifts)
 - Reward hacking vulnerabilities in RL
 
-### `scilint paper`
+### `demyst paper`
 
 Generate LaTeX methodology section from code.
 
 ```bash
-scilint paper <file> [--output FILE] [--title TITLE] [--style STYLE] [--full]
+demyst paper <file> [--output FILE] [--title TITLE] [--style STYLE] [--full]
 ```
 
 **Options:**
@@ -157,12 +157,12 @@ scilint paper <file> [--output FILE] [--title TITLE] [--style STYLE] [--full]
 - `--style, -s`: Paper style (neurips, icml, iclr, arxiv)
 - `--full`: Generate full paper template
 
-### `scilint ci`
+### `demyst ci`
 
 Run in CI/CD enforcement mode.
 
 ```bash
-scilint ci [path] [--strict] [--config CONFIG]
+demyst ci [path] [--strict] [--config CONFIG]
 ```
 
 **Options:**
@@ -171,7 +171,7 @@ scilint ci [path] [--strict] [--config CONFIG]
 
 ## Configuration
 
-Create a `.scilintrc.yaml` file in your project root:
+Create a `.demystrc.yaml` file in your project root:
 
 ```yaml
 # Domain profile (default, biology, physics, neuroscience, climate, economics)
@@ -215,39 +215,39 @@ Add to your `.pre-commit-config.yaml`:
 
 ```yaml
 repos:
-  - repo: https://github.com/scilint/scilint
+  - repo: https://github.com/demyst/demyst
     rev: v1.0.0
     hooks:
-      - id: scilint
+      - id: demyst
         # Or use individual hooks:
-        # - id: scilint-mirage
-        # - id: scilint-leakage
+        # - id: demyst-mirage
+        # - id: demyst-leakage
 ```
 
 ## GitHub Actions Integration
 
-Add to `.github/workflows/scilint.yml`:
+Add to `.github/workflows/demyst.yml`:
 
 ```yaml
-name: Scilint
+name: Demyst
 on: [push, pull_request]
 
 jobs:
-  scilint:
+  demyst:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install scilint
-      - run: scilint ci . --strict
+      - run: pip install demyst
+      - run: demyst ci . --strict
 ```
 
 ## Programmatic Usage
 
 ```python
-from scilint import TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard
+from demyst import TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard
 
 # Read your code
 with open('model.py', 'r') as f:
@@ -273,10 +273,10 @@ Enable debug output for troubleshooting:
 
 ```bash
 # Using CLI flag
-scilint analyze model.py --debug
+demyst analyze model.py --debug
 
 # Using environment variable
-SCILINT_DEBUG=1 scilint analyze model.py
+DEMYST_DEBUG=1 demyst analyze model.py
 ```
 
 ## Verbose Mode
@@ -284,5 +284,5 @@ SCILINT_DEBUG=1 scilint analyze model.py
 Enable verbose output for more information:
 
 ```bash
-scilint analyze model.py --verbose
+demyst analyze model.py --verbose
 ```

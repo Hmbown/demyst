@@ -3,14 +3,14 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "scilint"
+name = "demyst"
 version = "1.0.0"
-description = "The Scientific Integrity Platform for AI Research"
+description = "The Academic Integrity Platform for Scientific Code"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Scilint Team"}
+    {name = "Demyst Team"}
 ]
 keywords = [
     "linting",
@@ -63,13 +63,13 @@ dev = [
 ]
 
 [project.scripts]
-scilint = "scilint.cli:main"
+demyst = "demyst.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/scilint/scilint"
-Documentation = "https://github.com/scilint/scilint#readme"
-Repository = "https://github.com/scilint/scilint"
-Issues = "https://github.com/scilint/scilint/issues"
+Homepage = "https://github.com/Hmbown/demyst"
+Documentation = "https://github.com/Hmbown/demyst#readme"
+Repository = "https://github.com/Hmbown/demyst"
+Issues = "https://github.com/Hmbown/demyst/issues"
 
 # Tool configurations
 
@@ -95,7 +95,7 @@ profile = "black"
 line_length = 100
 skip_gitignore = true
 skip = [".git", "__pycache__", "venv", ".venv", "build", "dist"]
-known_first_party = ["scilint"]
+known_first_party = ["demyst"]
 
 [tool.mypy]
 python_version = "3.8"
@@ -125,7 +125,7 @@ ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-testpaths = ["scilint/tests"]
+testpaths = ["demyst/tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -140,11 +140,11 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["scilint"]
+source = ["demyst"]
 branch = true
 omit = [
-    "scilint/tests/*",
-    "scilint/__main__.py",
+    "demyst/tests/*",
+    "demyst/__main__.py",
 ]
 
 [tool.coverage.report]

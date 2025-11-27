@@ -1,6 +1,6 @@
-# Scilint: The Scientific Integrity Platform
+# Demyst: The Scientific Integrity Platform
 
-[![Scilint: Verified](https://img.shields.io/badge/Scilint-Verified-purple)](https://github.com/scilint/scilint)
+[![Demyst: Verified](https://img.shields.io/badge/Demyst-Verified-purple)](https://github.com/demyst/demyst)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
@@ -8,7 +8,7 @@
 >
 > "Correct answers don't guarantee correct reasoning." - DeepSeek-Math-V2
 
-**Scilint** is a **Scientific Integrity Platform** that helps researchers, AI agents, and data scientists ensure their code lives up to the rigor of their ideas.
+**Demyst** is a **Scientific Integrity Platform** that helps researchers, AI agents, and data scientists ensure their code lives up to the rigor of their ideas.
 
 ## The Core Problem: Self-Verifiable Scientific Reasoning
 
@@ -18,7 +18,7 @@ In the age of AI and rapid prototyping, we face a fundamental epistemological ch
 
 This mirrors the insight from recent work on [self-verifiable mathematical reasoning](https://github.com/deepseek-ai/DeepSeek-Math-V2) (DeepSeek-Math-V2, 2025): correct answers don't guarantee correct reasoning. A model can produce the right numerical result through flawed logic, and a scientific computation can produce plausible metrics through statistically invalid processes.
 
-Scilint attacks this problem from the code verification angle:
+Demyst attacks this problem from the code verification angle:
 
 | Problem | Mathematical Proofs | Scientific Code |
 |---------|---------------------|-----------------|
@@ -26,10 +26,10 @@ Scilint attacks this problem from the code verification angle:
 | **Solution** | Verify proof steps | Verify computation integrity |
 | **Approach** | Self-verifiable reasoning | Information-preserving transforms |
 
-See the [Full Demonstration](docs/demonstration.md) for detailed examples of Scilint in action.
+See the [Full Demonstration](docs/demonstration.md) for detailed examples of Demyst in action.
 
 
-## What Scilint Detects
+## What Demyst Detects
 
 ### 1. Computational Mirages
 Operations that destroy variance/distribution information:
@@ -66,7 +66,7 @@ for condition in conditions:
     if p < 0.05:  # No correction applied
         print(f"{condition} is significant!")
 
-# Scilint recommends: Bonferroni, Holm-Bonferroni, or Benjamini-Hochberg correction
+# Demyst recommends: Bonferroni, Holm-Bonferroni, or Benjamini-Hochberg correction
 ```
 
 ### 4. Deep Learning Integrity
@@ -89,12 +89,12 @@ Unit mismatches that violate physical laws:
 # WRONG: Adding meters to seconds is physically meaningless
 result = distance_meters + time_seconds
 
-# Scilint detects: "Cannot add quantities with dimensions [L] and [T]"
+# Demyst detects: "Cannot add quantities with dimensions [L] and [T]"
 ```
 
-## What Scilint Catches
+## What Demyst Catches
 
-Scilint is designed to catch **scientific logic errors** that standard linters miss.
+Demyst is designed to catch **scientific logic errors** that standard linters miss.
 
 | Domain | Error Type | Example |
 |--------|------------|---------|
@@ -110,8 +110,8 @@ Scilint is designed to catch **scientific logic errors** that standard linters m
 
 ```bash
 # From source
-git clone https://github.com/scilint/scilint.git
-cd scilint
+git clone https://github.com/demyst/demyst.git
+cd demyst
 pip install -e .
 
 # With development dependencies
@@ -122,25 +122,25 @@ pip install -e ".[dev]"
 
 ```bash
 # Run all integrity checks
-scilint analyze your_code.py
-scilint analyze ./src/
+demyst analyze your_code.py
+demyst analyze ./src/
 
 # Individual checks
-scilint mirage model.py           # Detect variance-destroying operations
-scilint leakage train.py          # Detect train/test data leakage
-scilint hypothesis stats.py       # Check statistical validity
-scilint units physics.py          # Check dimensional consistency
-scilint tensor network.py         # Check deep learning integrity
+demyst mirage model.py           # Detect variance-destroying operations
+demyst leakage train.py          # Detect train/test data leakage
+demyst hypothesis stats.py       # Check statistical validity
+demyst units physics.py          # Check dimensional consistency
+demyst tensor network.py         # Check deep learning integrity
 
 # Auto-fix mirages
-scilint mirage model.py --fix
-scilint mirage model.py --fix --dry-run  # Preview changes
+demyst mirage model.py --fix
+demyst mirage model.py --fix --dry-run  # Preview changes
 
 # CI/CD mode
-scilint ci . --strict
+demyst ci . --strict
 
 # Generate LaTeX methodology
-scilint paper model.py -o methodology.tex
+demyst paper model.py -o methodology.tex
 ```
 
 ## The Swarm Collapse Problem (Nov 2025)
@@ -151,12 +151,12 @@ Imagine a swarm of 1,000 AI agents:
 
 Standard analysis using `np.mean()` gives a score of **0.999**. You deploy, and the rogue agent destroys the system.
 
-**Scilint** detects this "computational mirage"—the loss of critical variance information—and prevents the catastrophe.
+**Demyst** detects this "computational mirage"—the loss of critical variance information—and prevents the catastrophe.
 
 ## Architecture
 
 ```
-scilint/
+demyst/
 ├── engine/
 │   ├── mirage_detector.py        # AST visitor that flags destructive ops
 │   ├── variation_tensor.py       # Information-preserving data structure
@@ -181,7 +181,7 @@ scilint/
 
 ## Configuration
 
-Create `.scilintrc.yaml` in your project root:
+Create `.demystrc.yaml` in your project root:
 
 ```yaml
 profile: default  # Or: biology, physics, chemistry, neuroscience, climate, economics
@@ -213,38 +213,38 @@ ignore_patterns:
 ### GitHub Actions
 
 ```yaml
-name: Scilint
+name: Demyst
 on: [push, pull_request]
 
 jobs:
-  scilint:
+  demyst:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - run: pip install scilint
-      - run: scilint ci . --strict
+      - run: pip install demyst
+      - run: demyst ci . --strict
 ```
 
 ### Pre-commit
 
 ```yaml
 repos:
-  - repo: https://github.com/scilint/scilint
+  - repo: https://github.com/demyst/demyst
     rev: v1.0.0
     hooks:
-      - id: scilint
+      - id: demyst
       # Or individual hooks:
-      # - id: scilint-mirage
-      # - id: scilint-leakage
+      # - id: demyst-mirage
+      # - id: demyst-leakage
 ```
 
 ## Programmatic Usage
 
 ```python
-from scilint import TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard
+from demyst import TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard
 
 with open('model.py', 'r') as f:
     source = f.read()
@@ -264,9 +264,9 @@ if leakage_result['summary']['critical_count'] > 0:
 
 **Is a 10x slower but 1000x more correct computation acceptable?**
 
-Scilint bets yes. We are moving from "fast but wrong" to "principled and preserved."
+Demyst bets yes. We are moving from "fast but wrong" to "principled and preserved."
 
-This aligns with the broader movement toward **self-verifiable AI reasoning**—systems that can prove their outputs are trustworthy, not just plausible. Whether in mathematical proofs (DeepSeek-Math-V2) or scientific code (Scilint), the goal is the same: **process integrity over outcome accuracy**.
+This aligns with the broader movement toward **self-verifiable AI reasoning**—systems that can prove their outputs are trustworthy, not just plausible. Whether in mathematical proofs (DeepSeek-Math-V2) or scientific code (Demyst), the goal is the same: **process integrity over outcome accuracy**.
 
 ## Related Work
 

@@ -1,52 +1,52 @@
-# Scilint Pre-commit Hooks
+# Demyst Pre-commit Hooks
 # Install: Add to your .pre-commit-config.yaml:
 #
 #   repos:
-#     - repo: https://github.com/scilint/scilint
+#     - repo: https://github.com/demyst/demyst
 #       rev: v1.0.0
 #       hooks:
-#         - id: scilint
+#         - id: demyst
 #
 
-- id: scilint
-  name: Scilint (Scientific Integrity)
+- id: demyst
+  name: Demyst (Scientific Integrity)
   description: Detects computational mirages, data leakage, and scientific integrity issues.
-  entry: scilint analyze
+  entry: demyst analyze
   language: python
   types: [python]
   args: ['--format', 'text']
 
-- id: scilint-mirage
-  name: Scilint Mirage Detection
+- id: demyst-mirage
+  name: Demyst Mirage Detection
   description: Detects computational mirages (variance-destroying operations).
-  entry: scilint mirage
+  entry: demyst mirage
   language: python
   types: [python]
 
-- id: scilint-leakage
-  name: Scilint Leakage Detection
+- id: demyst-leakage
+  name: Demyst Leakage Detection
   description: Detects train/test data leakage.
-  entry: scilint leakage
+  entry: demyst leakage
   language: python
   types: [python]
 
-- id: scilint-hypothesis
-  name: Scilint Hypothesis Guard
+- id: demyst-hypothesis
+  name: Demyst Hypothesis Guard
   description: Detects p-hacking and statistical validity issues.
-  entry: scilint hypothesis
+  entry: demyst hypothesis
   language: python
   types: [python]
 
-- id: scilint-units
-  name: Scilint Unit Guard
+- id: demyst-units
+  name: Demyst Unit Guard
   description: Checks dimensional consistency and unit mismatches.
-  entry: scilint units
+  entry: demyst units
   language: python
   types: [python]
 
-- id: scilint-tensor
-  name: Scilint Tensor Guard
+- id: demyst-tensor
+  name: Demyst Tensor Guard
   description: Checks deep learning integrity (gradient death, normalization blindness).
-  entry: scilint tensor
+  entry: demyst tensor
   language: python
   types: [python]

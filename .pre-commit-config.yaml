@@ -1,0 +1,40 @@
+# Demyst Development Pre-commit Configuration
+# Install: pip install pre-commit && pre-commit install
+
+repos:
+  # Standard formatting and linting
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict
+      - id: debug-statements
+
+  # Black formatter
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+        language_version: python3.11
+
+  # isort import sorter
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  # Demyst self-check (local hook)
+  - repo: local
+    hooks:
+      - id: demyst-mirage
+        name: Demyst Mirage Detection
+        entry: demyst mirage
+        language: system
+        types: [python]
+        pass_filenames: true
+        stages: [commit]

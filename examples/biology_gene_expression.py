@@ -4,7 +4,7 @@ from scipy.stats import ttest_ind
 def analyze_gene_expression(num_genes=1000):
     """
     Analyze differential gene expression.
-    Contains p-hacking patterns that Scilint detects.
+    Contains p-hacking patterns that Demyst detects.
     """
     print(f"Analyzing {num_genes} genes...")
     

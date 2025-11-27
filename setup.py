@@ -1,5 +1,6 @@
-from setuptools import setup, find_packages
 import os
+
+from setuptools import find_packages, setup
 
 # Read README if it exists
 long_description = ""
@@ -56,8 +57,8 @@ setup(
         ],
     },
     entry_points={
-        'console_scripts': [
-            'demyst=demyst.cli:main',
+        "console_scripts": [
+            "demyst=demyst.cli:main",
         ],
     },
 )

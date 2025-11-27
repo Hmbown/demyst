@@ -9,11 +9,11 @@ Generators:
     - ReportGenerator: Scientific integrity report generator
 """
 
-from .paper_generator import PaperGenerator, MethodologyExtractor
+from .paper_generator import MethodologyExtractor, PaperGenerator
 from .report_generator import IntegrityReportGenerator
 
 __all__ = [
-    'PaperGenerator',
-    'MethodologyExtractor',
-    'IntegrityReportGenerator',
+    "PaperGenerator",
+    "MethodologyExtractor",
+    "IntegrityReportGenerator",
 ]

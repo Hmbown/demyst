@@ -8,14 +8,15 @@ Provides:
     4. Distribution shift detection
 """
 
-from typing import Dict, Any, Optional, List, Callable, Tuple
-from dataclasses import dataclass, field
 import warnings
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 
 @dataclass
 class GradientStats:
     """Statistics about gradient flow."""
+
     layer_name: str
     mean: float
     std: float
@@ -30,6 +31,7 @@ class GradientStats:
 @dataclass
 class ActivationStats:
     """Statistics about layer activations."""
+
     layer_name: str
     mean: float
     std: float
@@ -79,8 +81,9 @@ class TorchVariation:
         """Get history of variation-destroying operations."""
         return self._variation_history
 
-    def collapse(self, operation: str = 'mean', dim: Optional[int] = None,
-                keepdim: bool = False) -> Any:
+    def collapse(
+        self, operation: str = "mean", dim: Optional[int] = None, keepdim: bool = False
+    ) -> Any:
         """
         Perform collapse operation while preserving variation history.
 
@@ -97,36 +100,56 @@ class TorchVariation:
 
             # Record pre-collapse statistics
             pre_stats = {
-                'operation': operation,
-                'input_shape': tuple(self._tensor.shape),
-                'dim': dim,
-                'mean_before': float(self._tensor.mean()),
-                'std_before': float(self._tensor.std()),
-                'min_before': float(self._tensor.min()),
-                'max_before': float(self._tensor.max()),
+                "operation": operation,
+                "input_shape": tuple(self._tensor.shape),
+                "dim": dim,
+                "mean_before": float(self._tensor.mean()),
+                "std_before": float(self._tensor.std()),
+                "min_before": float(self._tensor.min()),
+                "max_before": float(self._tensor.max()),
             }
 
             # Perform operation
-            if operation == 'mean':
-                result = self._tensor.mean(dim=dim, keepdim=keepdim) if dim is not None else self._tensor.mean()
-            elif operation == 'sum':
-                result = self._tensor.sum(dim=dim, keepdim=keepdim) if dim is not None else self._tensor.sum()
-            elif operation == 'max':
-                result = self._tensor.max(dim=dim, keepdim=keepdim)[0] if dim is not None else self._tensor.max()
-            elif operation == 'min':
-                result = self._tensor.min(dim=dim, keepdim=keepdim)[0] if dim is not None else self._tensor.min()
+            if operation == "mean":
+                result = (
+                    self._tensor.mean(dim=dim, keepdim=keepdim)
+                    if dim is not None
+                    else self._tensor.mean()
+                )
+            elif operation == "sum":
+                result = (
+                    self._tensor.sum(dim=dim, keepdim=keepdim)
+                    if dim is not None
+                    else self._tensor.sum()
+                )
+            elif operation == "max":
+                result = (
+                    self._tensor.max(dim=dim, keepdim=keepdim)[0]
+                    if dim is not None
+                    else self._tensor.max()
+                )
+            elif operation == "min":
+                result = (
+                    self._tensor.min(dim=dim, keepdim=keepdim)[0]
+                    if dim is not None
+                    else self._tensor.min()
+                )
             else:
                 raise ValueError(f"Unknown operation: {operation}")
 
             # Record post-collapse statistics
-            pre_stats['output_shape'] = tuple(result.shape) if hasattr(result, 'shape') else ()
-            pre_stats['std_after'] = float(result.std()) if hasattr(result, 'std') and result.numel() > 1 else 0.0
+            pre_stats["output_shape"] = tuple(result.shape) if hasattr(result, "shape") else ()
+            pre_stats["std_after"] = (
+                float(result.std()) if hasattr(result, "std") and result.numel() > 1 else 0.0
+            )
 
             # Calculate information loss metrics
-            std_before = float(pre_stats['std_before'])  # type: ignore
-            std_after = float(pre_stats['std_after'])    # type: ignore
-            pre_stats['variance_destroyed'] = std_before**2 - std_after**2
-            pre_stats['elements_collapsed'] = self._tensor.numel() - (result.numel() if hasattr(result, 'numel') else 1)
+            std_before = float(pre_stats["std_before"])  # type: ignore
+            std_after = float(pre_stats["std_after"])  # type: ignore
+            pre_stats["variance_destroyed"] = std_before**2 - std_after**2
+            pre_stats["elements_collapsed"] = self._tensor.numel() - (
+                result.numel() if hasattr(result, "numel") else 1
+            )
 
             self._variation_history.append(pre_stats)
 
@@ -148,14 +171,16 @@ class TorchVariation:
 
             result = self._tensor.sum(dim=dim)
 
-            self._variation_history.append({
-                'operation': 'ensemble_sum',
-                'dim': dim,
-                'input_shape': tuple(self._tensor.shape),
-                'output_shape': tuple(result.shape),
-                'preserved_variance': float(self._tensor.var(dim=dim).mean()),
-                'element_wise_std': float(self._tensor.std(dim=dim).mean()),
-            })
+            self._variation_history.append(
+                {
+                    "operation": "ensemble_sum",
+                    "dim": dim,
+                    "input_shape": tuple(self._tensor.shape),
+                    "output_shape": tuple(result.shape),
+                    "preserved_variance": float(self._tensor.var(dim=dim).mean()),
+                    "element_wise_std": float(self._tensor.std(dim=dim).mean()),
+                }
+            )
 
             return result
 
@@ -181,16 +206,21 @@ class TorchVariation:
                 margin = float((max_vals - second_max).mean())
             else:
                 sorted_flat = self._tensor.flatten().sort(descending=True)[0]
-                margin = float(sorted_flat[0] - sorted_flat[1]) if len(sorted_flat) > 1 else float('inf')
+                margin = (
+                    float(sorted_flat[0] - sorted_flat[1]) if len(sorted_flat) > 1 else float("inf")
+                )
 
-            self._variation_history.append({
-                'operation': 'argmax',
-                'dim': dim,
-                'input_shape': tuple(self._tensor.shape),
-                'max_margin': margin,
-                'warning': 'argmax destroys all magnitude information',
-                'values_discarded': self._tensor.numel() - (result.numel() if hasattr(result, 'numel') else 1)
-            })
+            self._variation_history.append(
+                {
+                    "operation": "argmax",
+                    "dim": dim,
+                    "input_shape": tuple(self._tensor.shape),
+                    "max_margin": margin,
+                    "warning": "argmax destroys all magnitude information",
+                    "values_discarded": self._tensor.numel()
+                    - (result.numel() if hasattr(result, "numel") else 1),
+                }
+            )
 
             return result
 
@@ -247,15 +277,11 @@ class TorchModuleWrapper:
             for name, layer in self.module.named_modules():
                 if len(list(layer.children())) == 0:  # Leaf module
                     # Gradient hook
-                    hook = layer.register_full_backward_hook(
-                        self._make_gradient_hook(name)
-                    )
+                    hook = layer.register_full_backward_hook(self._make_gradient_hook(name))
                     self._hooks.append(hook)
 
                     # Activation hook
-                    fwd_hook = layer.register_forward_hook(
-                        self._make_activation_hook(name)
-                    )
+                    fwd_hook = layer.register_forward_hook(self._make_activation_hook(name))
                     self._forward_hooks.append(fwd_hook)
 
         except ImportError:
@@ -270,6 +296,7 @@ class TorchModuleWrapper:
 
     def _make_gradient_hook(self, layer_name: str) -> Callable:
         """Create a gradient monitoring hook for a layer."""
+
         def hook(module: Any, grad_input: Any, grad_output: Any) -> None:
             try:
                 import torch
@@ -313,6 +340,7 @@ class TorchModuleWrapper:
 
     def _make_activation_hook(self, layer_name: str) -> Callable:
         """Create an activation monitoring hook for a layer."""
+
         def hook(module: Any, input: Any, output: Any) -> None:
             try:
                 import torch
@@ -367,10 +395,10 @@ class TorchModuleWrapper:
             Dictionary with gradient and activation analysis
         """
         report: Dict[str, Any] = {
-            'gradient_health': {},
-            'activation_health': {},
-            'issues': [],
-            'recommendations': [],
+            "gradient_health": {},
+            "activation_health": {},
+            "issues": [],
+            "recommendations": [],
         }
 
         # Analyze gradient flow
@@ -382,21 +410,25 @@ class TorchModuleWrapper:
             vanishing_rate = sum(1 for s in recent if s.is_vanishing) / len(recent)
             exploding_rate = sum(1 for s in recent if s.is_exploding) / len(recent)
 
-            report['gradient_health'][layer_name] = {
-                'vanishing_rate': vanishing_rate,
-                'exploding_rate': exploding_rate,
-                'avg_magnitude': sum(abs(s.mean) for s in recent) / len(recent),
+            report["gradient_health"][layer_name] = {
+                "vanishing_rate": vanishing_rate,
+                "exploding_rate": exploding_rate,
+                "avg_magnitude": sum(abs(s.mean) for s in recent) / len(recent),
             }
 
             if vanishing_rate > 0.5:
-                report['issues'].append(f"Layer {layer_name}: Frequent vanishing gradients ({vanishing_rate:.0%})")
-                report['recommendations'].append(
+                report["issues"].append(
+                    f"Layer {layer_name}: Frequent vanishing gradients ({vanishing_rate:.0%})"
+                )
+                report["recommendations"].append(
                     f"Add residual connections around {layer_name} or use gradient-preserving activations"
                 )
 
             if exploding_rate > 0.1:
-                report['issues'].append(f"Layer {layer_name}: Exploding gradients detected ({exploding_rate:.0%})")
-                report['recommendations'].append(
+                report["issues"].append(
+                    f"Layer {layer_name}: Exploding gradients detected ({exploding_rate:.0%})"
+                )
+                report["recommendations"].append(
                     f"Add gradient clipping or reduce learning rate for {layer_name}"
                 )
 
@@ -409,22 +441,24 @@ class TorchModuleWrapper:
             avg_saturation = sum(s.saturation_ratio for s in act_recent) / len(act_recent)
             avg_dead = sum(s.dead_ratio for s in act_recent) / len(act_recent)
 
-            report['activation_health'][layer_name] = {
-                'avg_saturation': avg_saturation,
-                'avg_dead_ratio': avg_dead,
+            report["activation_health"][layer_name] = {
+                "avg_saturation": avg_saturation,
+                "avg_dead_ratio": avg_dead,
             }
 
             if avg_saturation > 0.3:
-                report['issues'].append(f"Layer {layer_name}: High neuron saturation ({avg_saturation:.0%})")
+                report["issues"].append(
+                    f"Layer {layer_name}: High neuron saturation ({avg_saturation:.0%})"
+                )
 
             if avg_dead > 0.3:
-                report['issues'].append(f"Layer {layer_name}: Many dead neurons ({avg_dead:.0%})")
+                report["issues"].append(f"Layer {layer_name}: Many dead neurons ({avg_dead:.0%})")
 
         # Overall verdict
-        if report['issues']:
-            report['verdict'] = "WARNING: Model has integrity issues that may affect training"
+        if report["issues"]:
+            report["verdict"] = "WARNING: Model has integrity issues that may affect training"
         else:
-            report['verdict'] = "PASS: No significant integrity issues detected"
+            report["verdict"] = "PASS: No significant integrity issues detected"
 
         return report
 

@@ -26,13 +26,14 @@ from demyst.exceptions import (
     UnsafeTransformationError,
 )
 
-
 # =============================================================================
 # Data Classes for Transformations
 # =============================================================================
 
+
 class TransformationType(Enum):
     """Types of transformations that can be applied."""
+
     MEAN_TO_VARIATION = auto()
     SUM_TO_ENSEMBLE = auto()
     ARGMAX_TO_VARIATION = auto()
@@ -43,6 +44,7 @@ class TransformationType(Enum):
 @dataclass
 class TransformationRecord:
     """Record of a single transformation applied to the code."""
+
     type: TransformationType
     line: int
     column: int
@@ -67,6 +69,7 @@ class TransformationRecord:
 @dataclass
 class MirageInfo:
     """Information about a detected mirage."""
+
     type: str
     line: int
     column: int
@@ -78,6 +81,7 @@ class MirageInfo:
 # =============================================================================
 # CST Visitor for Mirage Detection
 # =============================================================================
+
 
 class MirageDetectorVisitor(cst.CSTVisitor):
     """
@@ -143,19 +147,22 @@ class MirageDetectorVisitor(cst.CSTVisitor):
             line = 0
             column = 0
 
-        self.mirages.append(MirageInfo(
-            type=mirage_type,
-            line=line,
-            column=column,
-            node=node,
-            function_context=self._current_function,
-            original_code="",  # Will be filled in later
-        ))
+        self.mirages.append(
+            MirageInfo(
+                type=mirage_type,
+                line=line,
+                column=column,
+                node=node,
+                function_context=self._current_function,
+                original_code="",  # Will be filled in later
+            )
+        )
 
 
 # =============================================================================
 # CST Transformer for Mirage Fixes
 # =============================================================================
+
 
 class VariationTensorTransformer(cst.CSTTransformer):
     """
@@ -200,11 +207,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
 
         return mirage
 
-    def leave_Call(
-        self,
-        original_node: cst.Call,
-        updated_node: cst.Call
-    ) -> cst.BaseExpression:
+    def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
         """Transform destructive calls to VariationTensor equivalents."""
         mirage = self._should_transform(original_node)
         if mirage is None:
@@ -222,11 +225,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
 
         return updated_node
 
-    def _transform_call(
-        self,
-        node: cst.Call,
-        mirage: MirageInfo
-    ) -> Optional[cst.BaseExpression]:
+    def _transform_call(self, node: cst.Call, mirage: MirageInfo) -> Optional[cst.BaseExpression]:
         """Transform a single call based on mirage type."""
         if mirage.type in ("mean", "argmax", "argmin"):
             return self._create_collapse_call(node, mirage.type)
@@ -237,11 +236,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
             return self._create_discretization_wrapper(node)
         return None
 
-    def _create_collapse_call(
-        self,
-        node: cst.Call,
-        operation: str
-    ) -> cst.Call:
+    def _create_collapse_call(self, node: cst.Call, operation: str) -> cst.Call:
         """
         Create VariationTensor(x).collapse('mean') from np.mean(x).
 
@@ -252,7 +247,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
         # Determine if this is a library call (np.mean) or method call (x.mean)
         is_library_call = False
         if isinstance(node.func, cst.Attribute) and isinstance(node.func.value, cst.Name):
-            if node.func.value.value in ('np', 'numpy', 'torch', 'jax', 'tf', 'tensorflow'):
+            if node.func.value.value in ("np", "numpy", "torch", "jax", "tf", "tensorflow"):
                 is_library_call = True
 
         # Extract the data argument
@@ -266,7 +261,9 @@ class VariationTensorTransformer(cst.CSTTransformer):
             # array.mean() - the array is the value
             data_arg = node.func.value
             # Filter out axis keyword for method calls
-            keywords = [kw for kw in node.args if isinstance(kw, cst.Arg) and kw.keyword is not None]
+            keywords = [
+                kw for kw in node.args if isinstance(kw, cst.Arg) and kw.keyword is not None
+            ]
         else:
             # mean(array) - first positional arg
             if not node.args:
@@ -298,15 +295,15 @@ class VariationTensorTransformer(cst.CSTTransformer):
         # Determine if this is a library call (np.sum) or method call (x.sum)
         is_library_call = False
         if isinstance(node.func, cst.Attribute) and isinstance(node.func.value, cst.Name):
-            if node.func.value.value in ('np', 'numpy', 'torch', 'jax', 'tf', 'tensorflow'):
+            if node.func.value.value in ("np", "numpy", "torch", "jax", "tf", "tensorflow"):
                 is_library_call = True
 
         # Extract data and axis arguments
         if is_library_call:
-             if not node.args:
+            if not node.args:
                 raise CSTTransformError("No arguments to transform", node_type="Call")
-             data_arg = node.args[0].value
-             axis_arg = self._extract_axis_arg(node.args[1:])
+            data_arg = node.args[0].value
+            axis_arg = self._extract_axis_arg(node.args[1:])
         elif isinstance(node.func, cst.Attribute):
             data_arg = node.func.value
             axis_arg = self._extract_axis_arg(node.args)
@@ -334,10 +331,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
 
         return ensemble_call
 
-    def _extract_axis_arg(
-        self,
-        args: Sequence[cst.Arg]
-    ) -> Optional[cst.BaseExpression]:
+    def _extract_axis_arg(self, args: Sequence[cst.Arg]) -> Optional[cst.BaseExpression]:
         """Extract axis argument from function arguments."""
         for arg in args:
             # Check keyword argument
@@ -361,10 +355,7 @@ class VariationTensorTransformer(cst.CSTTransformer):
         return node
 
     def _record_transformation(
-        self,
-        original: cst.Call,
-        transformed: cst.BaseExpression,
-        mirage: MirageInfo
+        self, original: cst.Call, transformed: cst.BaseExpression, mirage: MirageInfo
     ) -> None:
         """Record a transformation for reporting."""
         try:
@@ -372,23 +363,23 @@ class VariationTensorTransformer(cst.CSTTransformer):
         except Exception:
             original_code = "<unknown>"
 
-        self.transformations.append(TransformationRecord(
-            type=TransformationType[mirage.type.upper() + "_TO_VARIATION"]
-            if mirage.type in ("mean", "sum", "argmax", "argmin")
-            else TransformationType.DISCRETIZATION_WRAPPER,
-            line=mirage.line,
-            column=mirage.column,
-            original_code=mirage.original_code,
-            transformed_code="",  # Will be filled in after unparsing
-            function_context=mirage.function_context,
-            description=f"Transformed {mirage.type} to VariationTensor",
-        ))
+        self.transformations.append(
+            TransformationRecord(
+                type=(
+                    TransformationType[mirage.type.upper() + "_TO_VARIATION"]
+                    if mirage.type in ("mean", "sum", "argmax", "argmin")
+                    else TransformationType.DISCRETIZATION_WRAPPER
+                ),
+                line=mirage.line,
+                column=mirage.column,
+                original_code=mirage.original_code,
+                transformed_code="",  # Will be filled in after unparsing
+                function_context=mirage.function_context,
+                description=f"Transformed {mirage.type} to VariationTensor",
+            )
+        )
 
-    def leave_Module(
-        self,
-        original_node: cst.Module,
-        updated_node: cst.Module
-    ) -> cst.Module:
+    def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
         """Add VariationTensor import if needed."""
         if not self._needs_import:
             return updated_node
@@ -417,7 +408,9 @@ class VariationTensorTransformer(cst.CSTTransformer):
                     if isinstance(item, cst.ImportFrom):
                         if isinstance(item.module, cst.Attribute):
                             continue
-                        elif isinstance(item.module, cst.Name) and item.module.value == "__future__":
+                        elif (
+                            isinstance(item.module, cst.Name) and item.module.value == "__future__"
+                        ):
                             insert_index = i + 1
                             continue
             # Stop at first non-import
@@ -434,16 +427,14 @@ class VariationTensorTransformer(cst.CSTTransformer):
     def _is_import_statement(self, stmt: cst.BaseStatement) -> bool:
         """Check if a statement is an import."""
         if isinstance(stmt, cst.SimpleStatementLine):
-            return any(
-                isinstance(item, (cst.Import, cst.ImportFrom))
-                for item in stmt.body
-            )
+            return any(isinstance(item, (cst.Import, cst.ImportFrom)) for item in stmt.body)
         return False
 
 
 # =============================================================================
 # Main Transpiler Class
 # =============================================================================
+
 
 class CSTTranspiler:
     """
@@ -461,11 +452,7 @@ class CSTTranspiler:
         self._last_source: str = ""
         self._last_transformed: str = ""
 
-    def transpile_source(
-        self,
-        source: str,
-        target_line: Optional[int] = None
-    ) -> str:
+    def transpile_source(self, source: str, target_line: Optional[int] = None) -> str:
         """
         Transpile Python source code to preserve physical information.
 
@@ -489,8 +476,8 @@ class CSTTranspiler:
         except cst.ParserSyntaxError as e:
             raise ParseError(
                 f"Failed to parse source: {e}",
-                line_number=getattr(e, 'lines', None),
-                original_error=e
+                line_number=getattr(e, "lines", None),
+                original_error=e,
             )
 
         # Create metadata wrapper for position tracking
@@ -498,8 +485,7 @@ class CSTTranspiler:
             wrapper = MetadataWrapper(tree)
         except Exception as e:
             raise TransformationError(
-                f"Failed to create metadata wrapper: {e}",
-                details={"error": str(e)}
+                f"Failed to create metadata wrapper: {e}", details={"error": str(e)}
             )
 
         # First pass: detect mirages
@@ -507,10 +493,7 @@ class CSTTranspiler:
         try:
             wrapper.visit(detector)
         except Exception as e:
-            raise TransformationError(
-                f"Failed to detect mirages: {e}",
-                details={"error": str(e)}
-            )
+            raise TransformationError(f"Failed to detect mirages: {e}", details={"error": str(e)})
 
         mirages = detector.mirages
 
@@ -535,10 +518,7 @@ class CSTTranspiler:
             # Use wrapper.module to ensure we transform the same nodes that were visited
             new_tree = wrapper.module.visit(transformer)
         except Exception as e:
-            raise TransformationError(
-                f"Failed to transform code: {e}",
-                details={"error": str(e)}
-            )
+            raise TransformationError(f"Failed to transform code: {e}", details={"error": str(e)})
 
         # Get the transformed source
         new_source = new_tree.code
@@ -551,11 +531,7 @@ class CSTTranspiler:
 
         return str(new_source)
 
-    def transpile_file(
-        self,
-        file_path: str,
-        target_line: Optional[int] = None
-    ) -> str:
+    def transpile_file(self, file_path: str, target_line: Optional[int] = None) -> str:
         """
         Transpile a Python file to preserve physical information.
 
@@ -569,11 +545,11 @@ class CSTTranspiler:
         from demyst.exceptions import FileReadError
 
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 source = f.read()
         except UnicodeDecodeError:
             try:
-                with open(file_path, 'r', encoding='latin-1') as f:
+                with open(file_path, "r", encoding="latin-1") as f:
                     source = f.read()
             except Exception as e:
                 raise FileReadError(file_path, "Encoding error", e)
@@ -614,12 +590,12 @@ class CSTTranspiler:
         diff = difflib.unified_diff(
             original_lines,
             transformed_lines,
-            fromfile='original',
-            tofile='transformed',
-            lineterm=''
+            fromfile="original",
+            tofile="transformed",
+            lineterm="",
         )
 
-        return ''.join(diff)
+        return "".join(diff)
 
     def get_summary(self) -> str:
         """Get a summary of transformations."""
@@ -640,6 +616,7 @@ class CSTTranspiler:
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
 
 def detect_mirages(source: str) -> List[Dict[str, Any]]:
     """
@@ -670,7 +647,9 @@ def detect_mirages(source: str) -> List[Dict[str, Any]]:
         return []
 
 
-def transform_source(source: str, target_line: Optional[int] = None) -> Tuple[str, List[Dict[str, Any]]]:
+def transform_source(
+    source: str, target_line: Optional[int] = None
+) -> Tuple[str, List[Dict[str, Any]]]:
     """
     Transform source code and return result with transformation info.
 

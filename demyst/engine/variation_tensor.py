@@ -1,53 +1,69 @@
+from typing import Any, Dict, List, Optional, Union
+
 import numpy as np
-from typing import Any, Optional, Dict, Union, List
+
 
 class VariationTensor:
     """
     Replacement data structure that preserves variation metadata
     instead of collapsing it with operations like mean(), sum(), etc.
     """
-    
-    def __init__(self, data: Any, axis: Optional[int] = None, keepdims: bool = False, metadata: Optional[Dict[str, Any]] = None) -> None:
+
+    def __init__(
+        self,
+        data: Any,
+        axis: Optional[int] = None,
+        keepdims: bool = False,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> None:
         self.data = data
         self.axis = axis
         self.keepdims = keepdims
         self.metadata = metadata or {}
         self._variation_history: List[Dict[str, Any]] = []
-        
-    def collapse(self, operation: str = 'mean') -> Any:
+
+    def collapse(self, operation: str = "mean") -> Any:
         """
         Perform the collapse operation while preserving variation history
         """
-        
-        if operation == 'mean':
+
+        if operation == "mean":
             result = np.mean(self.data, axis=self.axis, keepdims=self.keepdims)
-            self._variation_history.append({
-                'operation': 'mean',
-                'input_shape': self.data.shape,
-                'axis': self.axis,
-                'std_before': np.std(self.data),
-                'std_after': np.std(result) if hasattr(result, 'shape') else 0
-            })
-        elif operation == 'sum':
+            self._variation_history.append(
+                {
+                    "operation": "mean",
+                    "input_shape": self.data.shape,
+                    "axis": self.axis,
+                    "std_before": np.std(self.data),
+                    "std_after": np.std(result) if hasattr(result, "shape") else 0,
+                }
+            )
+        elif operation == "sum":
             result = np.sum(self.data, axis=self.axis, keepdims=self.keepdims)
-            self._variation_history.append({
-                'operation': 'sum',
-                'input_shape': self.data.shape,
-                'axis': self.axis,
-                'total_variation': np.sum(np.abs(np.diff(self.data)))
-            })
+            self._variation_history.append(
+                {
+                    "operation": "sum",
+                    "input_shape": self.data.shape,
+                    "axis": self.axis,
+                    "total_variation": np.sum(np.abs(np.diff(self.data))),
+                }
+            )
         else:
             raise ValueError(f"Unknown operation: {operation}")
-            
+
         return result
-    
+
     def ensemble_sum(self, axis: Optional[int] = None) -> Any:
         """
         Sum operation that preserves ensemble information
         """
         result = np.sum(self.data, axis=axis)
-        self._variation_history.append({
-            'operation': 'ensemble_sum',
-            'preserved_variance': np.var(self.data, axis=axis) if axis is not None else np.var(self.data)
-        })
+        self._variation_history.append(
+            {
+                "operation": "ensemble_sum",
+                "preserved_variance": (
+                    np.var(self.data, axis=axis) if axis is not None else np.var(self.data)
+                ),
+            }
+        )
         return result

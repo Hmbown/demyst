@@ -15,28 +15,32 @@ import pytest
 
 # Try to import hypothesis, skip tests if not available
 try:
-    from hypothesis import given, settings, assume, example, HealthCheck
+    from hypothesis import HealthCheck, assume, example, given, settings
     from hypothesis import strategies as st
+
     HYPOTHESIS_AVAILABLE = True
 except ImportError:
     HYPOTHESIS_AVAILABLE = False
     # Create dummy decorators
     from typing import Any, Callable
-    
+
     # Create dummy decorators
     def given(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
         def decorator(f: Callable) -> Callable:
             return pytest.mark.skip(reason="hypothesis not installed")(f)
+
         return decorator
 
     def settings(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
         def decorator(f: Callable) -> Callable:
             return f
+
         return decorator
 
     def example(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
         def decorator(f: Callable) -> Callable:
             return f
+
         return decorator
 
     def assume(x: Any) -> None:
@@ -46,24 +50,31 @@ except ImportError:
         @staticmethod
         def text(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def integers(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def lists(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def one_of(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def sampled_from(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def just(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def booleans(*args: Any, **kwargs: Any) -> Any:
             return None
+
         @staticmethod
         def binary(*args: Any, **kwargs: Any) -> Any:
             return None
@@ -79,36 +90,64 @@ except ImportError:
 if HYPOTHESIS_AVAILABLE:
     # Valid Python identifiers
     VALID_IDENTIFIERS = st.text(
-        alphabet="abcdefghijklmnopqrstuvwxyz_",
-        min_size=1,
-        max_size=20
-    ).filter(lambda x: x.isidentifier() and not x.startswith('_'))
+        alphabet="abcdefghijklmnopqrstuvwxyz_", min_size=1, max_size=20
+    ).filter(lambda x: x.isidentifier() and not x.startswith("_"))
 
     # Array-like variable names
-    ARRAY_NAMES = st.sampled_from([
-        "data", "values", "array", "arr", "x", "y", "z",
-        "scores", "results", "measurements", "samples",
-        "agent_scores", "weights", "features", "labels",
-    ])
+    ARRAY_NAMES = st.sampled_from(
+        [
+            "data",
+            "values",
+            "array",
+            "arr",
+            "x",
+            "y",
+            "z",
+            "scores",
+            "results",
+            "measurements",
+            "samples",
+            "agent_scores",
+            "weights",
+            "features",
+            "labels",
+        ]
+    )
 
     # Numpy aggregation functions that destroy variance
-    DESTRUCTIVE_FUNCS = st.sampled_from([
-        "np.mean", "np.sum", "np.argmax", "np.argmin",
-        "numpy.mean", "numpy.sum",
-    ])
+    DESTRUCTIVE_FUNCS = st.sampled_from(
+        [
+            "np.mean",
+            "np.sum",
+            "np.argmax",
+            "np.argmin",
+            "numpy.mean",
+            "numpy.sum",
+        ]
+    )
 
     # Numpy module prefixes
     NP_PREFIXES = st.sampled_from(["np", "numpy"])
 
     # Discretization functions
-    DISCRETIZATION_FUNCS = st.sampled_from([
-        "round", "int", "floor", "ceil",
-    ])
+    DISCRETIZATION_FUNCS = st.sampled_from(
+        [
+            "round",
+            "int",
+            "floor",
+            "ceil",
+        ]
+    )
 else:
     # Dummy strategies to prevent NameError
-    def mirage_code_snippet(): return None
-    def safe_code_snippet(): return None
-    def valid_python_code(): return None
+    def mirage_code_snippet():
+        return None
+
+    def safe_code_snippet():
+        return None
+
+    def valid_python_code():
+        return None
 
 
 # =============================================================================
@@ -116,6 +155,7 @@ else:
 # =============================================================================
 
 if HYPOTHESIS_AVAILABLE:
+
     @st.composite
     def mirage_code_snippet(draw) -> str:
         """Generate code that contains a computational mirage."""
@@ -123,18 +163,22 @@ if HYPOTHESIS_AVAILABLE:
         func = draw(DESTRUCTIVE_FUNCS)
 
         # Generate different forms of mirage code
-        pattern = draw(st.sampled_from([
-            # Simple function call
-            f"result = {func}({var_name})",
-            # In a function
-            f"def compute():\n    return {func}({var_name})",
-            # With axis parameter
-            f"result = {func}({var_name}, axis=0)",
-            # Chained
-            f"result = {func}({func}({var_name}))",
-            # In expression
-            f"output = {func}({var_name}) + 1",
-        ]))
+        pattern = draw(
+            st.sampled_from(
+                [
+                    # Simple function call
+                    f"result = {func}({var_name})",
+                    # In a function
+                    f"def compute():\n    return {func}({var_name})",
+                    # With axis parameter
+                    f"result = {func}({var_name}, axis=0)",
+                    # Chained
+                    f"result = {func}({func}({var_name}))",
+                    # In expression
+                    f"output = {func}({var_name}) + 1",
+                ]
+            )
+        )
 
         # Add import statement
         prefix = func.split(".")[0]
@@ -154,45 +198,54 @@ if HYPOTHESIS_AVAILABLE:
         var_name = draw(ARRAY_NAMES)
 
         # Safe operations that preserve variance
-        pattern = draw(st.sampled_from([
-            # Assignment
-            f"{var_name} = [1, 2, 3]",
-            # List operations
-            f"result = [{var_name}[i] for i in range(len({var_name}))]",
-            # Safe numpy operations
-            f"import numpy as np\nresult = np.array({var_name})",
-            f"import numpy as np\nresult = np.std({var_name})",
-            f"import numpy as np\nresult = np.var({var_name})",
-            # Non-aggregating operations
-            f"import numpy as np\nresult = np.sqrt({var_name})",
-            f"import numpy as np\nresult = np.abs({var_name})",
-        ]))
+        pattern = draw(
+            st.sampled_from(
+                [
+                    # Assignment
+                    f"{var_name} = [1, 2, 3]",
+                    # List operations
+                    f"result = [{var_name}[i] for i in range(len({var_name}))]",
+                    # Safe numpy operations
+                    f"import numpy as np\nresult = np.array({var_name})",
+                    f"import numpy as np\nresult = np.std({var_name})",
+                    f"import numpy as np\nresult = np.var({var_name})",
+                    # Non-aggregating operations
+                    f"import numpy as np\nresult = np.sqrt({var_name})",
+                    f"import numpy as np\nresult = np.abs({var_name})",
+                ]
+            )
+        )
 
         return pattern
 
     @st.composite
     def valid_python_code(draw) -> str:
         """Generate random valid Python code."""
-        statements = draw(st.lists(
-            st.sampled_from([
-                "x = 1",
-                "y = 2",
-                "z = x + y",
-                "result = [i for i in range(10)]",
-                "def foo(): pass",
-                "class Bar: pass",
-                "import os",
-                "from typing import List",
-            ]),
-            min_size=1,
-            max_size=5
-        ))
+        statements = draw(
+            st.lists(
+                st.sampled_from(
+                    [
+                        "x = 1",
+                        "y = 2",
+                        "z = x + y",
+                        "result = [i for i in range(10)]",
+                        "def foo(): pass",
+                        "class Bar: pass",
+                        "import os",
+                        "from typing import List",
+                    ]
+                ),
+                min_size=1,
+                max_size=5,
+            )
+        )
         return "\n".join(statements)
 
 
 # =============================================================================
 # Property-Based Tests for MirageDetector
 # =============================================================================
+
 
 class TestMirageDetectorProperties:
     """Property-based tests for MirageDetector."""
@@ -262,6 +315,7 @@ class TestMirageDetectorProperties:
 # Property-Based Tests for Transpiler
 # =============================================================================
 
+
 class TestTranspilerProperties:
     """Property-based tests for the Transpiler."""
 
@@ -292,7 +346,9 @@ class TestTranspilerProperties:
         try:
             ast.parse(result)
         except SyntaxError as e:
-            pytest.fail(f"Transpiler produced invalid Python: {e}\nInput:\n{code}\nOutput:\n{result}")
+            pytest.fail(
+                f"Transpiler produced invalid Python: {e}\nInput:\n{code}\nOutput:\n{result}"
+            )
 
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=safe_code_snippet())
@@ -316,13 +372,15 @@ class TestTranspilerProperties:
             return
 
         # Should have no transformations
-        assert len(transpiler.transformations) == 0, \
-            f"Unexpected transformation in safe code:\n{code}"
+        assert (
+            len(transpiler.transformations) == 0
+        ), f"Unexpected transformation in safe code:\n{code}"
 
 
 # =============================================================================
 # Property-Based Tests for Exception Handling
 # =============================================================================
+
 
 class TestExceptionProperties:
     """Property-based tests for exception classes."""
@@ -356,6 +414,7 @@ class TestExceptionProperties:
 # Property-Based Tests for Configuration
 # =============================================================================
 
+
 class TestConfigProperties:
     """Property-based tests for configuration validation."""
 
@@ -368,7 +427,8 @@ class TestConfigProperties:
     def test_rule_config_accepts_valid_values(self, enabled: bool, severity: str) -> None:
         """RuleConfig should accept valid configuration values."""
         try:
-            from demyst.config.models import RuleConfig, Severity, PYDANTIC_AVAILABLE
+            from demyst.config.models import PYDANTIC_AVAILABLE, RuleConfig, Severity
+
             if not PYDANTIC_AVAILABLE:
                 pytest.skip("Pydantic not available")
 
@@ -383,22 +443,26 @@ class TestConfigProperties:
 # Regression Tests with Specific Examples
 # =============================================================================
 
+
 class TestRegressions:
     """Regression tests for specific edge cases."""
 
-    @pytest.mark.parametrize("code,expected_count", [
-        # Basic mirages
-        ("import numpy as np\nresult = np.mean([1,2,3])", 1),
-        ("import numpy as np\nresult = np.sum([1,2,3])", 1),
-        ("import numpy as np\nresult = np.argmax([1,2,3])", 1),
-        # Multiple mirages
-        ("import numpy as np\na = np.mean(x); b = np.sum(y)", 2),
-        # Nested
-        ("import numpy as np\nresult = np.mean(np.mean(x))", 2),
-        # No mirages
-        ("x = 1 + 2", 0),
-        ("import numpy as np\nresult = np.array([1,2,3])", 0),
-    ])
+    @pytest.mark.parametrize(
+        "code,expected_count",
+        [
+            # Basic mirages
+            ("import numpy as np\nresult = np.mean([1,2,3])", 1),
+            ("import numpy as np\nresult = np.sum([1,2,3])", 1),
+            ("import numpy as np\nresult = np.argmax([1,2,3])", 1),
+            # Multiple mirages
+            ("import numpy as np\na = np.mean(x); b = np.sum(y)", 2),
+            # Nested
+            ("import numpy as np\nresult = np.mean(np.mean(x))", 2),
+            # No mirages
+            ("x = 1 + 2", 0),
+            ("import numpy as np\nresult = np.array([1,2,3])", 0),
+        ],
+    )
     def test_specific_mirage_counts(self, code: str, expected_count: int) -> None:
         """Test specific code patterns with known mirage counts."""
         from demyst.engine.mirage_detector import MirageDetector
@@ -411,13 +475,15 @@ class TestRegressions:
         detector = MirageDetector()
         detector.visit(tree)
 
-        assert len(detector.mirages) == expected_count, \
-            f"Expected {expected_count} mirages, found {len(detector.mirages)} in:\n{code}"
+        assert (
+            len(detector.mirages) == expected_count
+        ), f"Expected {expected_count} mirages, found {len(detector.mirages)} in:\n{code}"
 
 
 # =============================================================================
 # Fuzzing Tests
 # =============================================================================
+
 
 class TestFuzzing:
     """Fuzzing tests for robustness."""
@@ -430,7 +496,7 @@ class TestFuzzing:
         from demyst.engine.mirage_detector import MirageDetector
 
         try:
-            code = garbage.decode('utf-8', errors='ignore')
+            code = garbage.decode("utf-8", errors="ignore")
         except Exception:
             return
 

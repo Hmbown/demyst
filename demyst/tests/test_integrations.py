@@ -8,9 +8,10 @@ Tests:
     - CI Enforcer: Report generation
 """
 
-import pytest
-from unittest.mock import MagicMock, patch
 import json
+from unittest.mock import MagicMock, patch
+
+import pytest
 
 
 class TestTorchVariation:
@@ -31,7 +32,7 @@ class TestTorchVariation:
 
             def std(self):
                 mean = self.mean()
-                return (sum((x - mean)**2 for x in self.data) / len(self.data)) ** 0.5
+                return (sum((x - mean) ** 2 for x in self.data) / len(self.data)) ** 0.5
 
             def min(self):
                 return min(self.data)
@@ -46,7 +47,7 @@ class TestTorchVariation:
         var_tensor = TorchVariation(tensor)
 
         # Collapse should work with mock
-        result = var_tensor.collapse('mean')
+        result = var_tensor.collapse("mean")
 
         # History should be recorded
         assert len(var_tensor.variation_history) >= 0  # May not work without real torch
@@ -104,14 +105,13 @@ class TestExperimentTrackers:
             tracker.finish()
 
         report = tracker.get_integrity_report(
-            metric_name="accuracy",
-            reported_value=0.82  # Best result
+            metric_name="accuracy", reported_value=0.82  # Best result
         )
 
-        assert report['num_experiments'] == 5
-        assert report['bonferroni_factor'] == 5
-        assert 'mean' in report
-        assert 'std' in report
+        assert report["num_experiments"] == 5
+        assert report["bonferroni_factor"] == 5
+        assert "mean" in report
+        assert "std" in report
 
     def test_mlflow_integration_local_mode(self):
         """Test MLflow integration in local-only mode."""
@@ -140,16 +140,15 @@ class TestExperimentTrackers:
 
         # Report best result
         report = tracker.get_integrity_report(
-            metric_name="accuracy",
-            reported_value=0.7990000000000001  # The best one (approx)
+            metric_name="accuracy", reported_value=0.7990000000000001  # The best one (approx)
         )
-        
-        # Allow for float precision issues
-        if not report['is_best'] and abs(report['reported_value'] - 0.799) < 1e-10:
-             report['is_best'] = True
 
-        assert report['is_best'] == True
-        assert 'cherry_picking_warning' in report
+        # Allow for float precision issues
+        if not report["is_best"] and abs(report["reported_value"] - 0.799) < 1e-10:
+            report["is_best"] = True
+
+        assert report["is_best"] == True
+        assert "cherry_picking_warning" in report
 
 
 class TestCIEnforcer:
@@ -157,18 +156,19 @@ class TestCIEnforcer:
 
     def test_analyze_file(self):
         """Test single file analysis."""
-        from demyst.integrations.ci_enforcer import CIEnforcer
-        import tempfile
         import os
+        import tempfile
 
-        code = '''
+        from demyst.integrations.ci_enforcer import CIEnforcer
+
+        code = """
 import numpy as np
 
 def calculate_mean(data):
     return np.mean(data)  # Computational mirage
-'''
+"""
 
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False) as f:
             f.write(code)
             f.flush()
 
@@ -177,21 +177,17 @@ def calculate_mean(data):
 
             os.unlink(f.name)
 
-        assert 'mirage' in result
-        assert 'tensor' in result
-        assert 'leakage' in result
+        assert "mirage" in result
+        assert "tensor" in result
+        assert "leakage" in result
 
     def test_report_generation(self):
         """Test report generation."""
-        from demyst.integrations.ci_enforcer import ScientificIntegrityReport, IntegrityCheck
+        from demyst.integrations.ci_enforcer import IntegrityCheck, ScientificIntegrityReport
 
         checks = [
             IntegrityCheck(
-                name="Test Check",
-                passed=True,
-                severity="info",
-                issues=[],
-                recommendations=[]
+                name="Test Check", passed=True, severity="info", issues=[], recommendations=[]
             )
         ]
 
@@ -206,7 +202,7 @@ def calculate_mean(data):
             warning_issues=0,
             checks=checks,
             verdict="PASS",
-            badge_status="passing"
+            badge_status="passing",
         )
 
         # Test markdown generation
@@ -216,8 +212,8 @@ def calculate_mean(data):
 
         # Test dict conversion
         d = report.to_dict()
-        assert d['verdict'] == "PASS"
-        assert d['files_analyzed'] == 10
+        assert d["verdict"] == "PASS"
+        assert d["files_analyzed"] == 10
 
 
 class TestPaperGenerator:
@@ -225,10 +221,11 @@ class TestPaperGenerator:
 
     def test_methodology_extraction(self):
         """Test methodology extraction from code."""
-        from demyst.generators.paper_generator import MethodologyExtractor
         import ast
 
-        code = '''
+        from demyst.generators.paper_generator import MethodologyExtractor
+
+        code = """
 import torch.nn as nn
 
 class MyModel(nn.Module):
@@ -245,7 +242,7 @@ class MyModel(nn.Module):
 optimizer = Adam(model.parameters(), lr=0.001)
 epochs = 100
 batch_size = 32
-'''
+"""
 
         tree = ast.parse(code)
         extractor = MethodologyExtractor()
@@ -263,7 +260,7 @@ batch_size = 32
         """Test LaTeX generation."""
         from demyst.generators.paper_generator import PaperGenerator
 
-        code = '''
+        code = """
 import torch.nn as nn
 
 class SimpleNet(nn.Module):
@@ -273,7 +270,7 @@ class SimpleNet(nn.Module):
 
 epochs = 50
 lr = 0.01
-'''
+"""
 
         generator = PaperGenerator()
         latex = generator.generate(code)
@@ -291,11 +288,7 @@ class TestReportGenerator:
 
         generator = IntegrityReportGenerator("Test Report")
         generator.add_section(
-            "Test Section",
-            "pass",
-            "All tests passed",
-            [],
-            ["Keep up the good work"]
+            "Test Section", "pass", "All tests passed", [], ["Keep up the good work"]
         )
 
         markdown = generator.to_markdown()
@@ -312,7 +305,7 @@ class TestReportGenerator:
             "warning",
             "Some issues found",
             [{"line": 10, "description": "Test issue"}],
-            ["Fix the issue"]
+            ["Fix the issue"],
         )
 
         html = generator.to_html()
@@ -330,9 +323,9 @@ class TestReportGenerator:
         json_str = generator.to_json()
         data = json.loads(json_str)
 
-        assert data['title'] == "Test Report"
-        assert len(data['sections']) == 1
+        assert data["title"] == "Test Report"
+        assert len(data["sections"]) == 1
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

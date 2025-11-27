@@ -20,14 +20,15 @@ import time
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, TypeVar, Union
 
-
 # =============================================================================
 # Lazy Module Implementation
 # =============================================================================
 
+
 @dataclass
 class ImportStats:
     """Statistics about lazy imports."""
+
     module_name: str
     import_time_ms: float
     success: bool
@@ -116,6 +117,7 @@ class LazyModule:
         try:
             # Use find_spec to check availability without importing
             import importlib.util
+
             spec = importlib.util.find_spec(self._module_name)
             self._available = spec is not None
         except (ImportError, ModuleNotFoundError, ValueError):
@@ -165,6 +167,7 @@ class LazyModule:
 # Module Group for Related Imports
 # =============================================================================
 
+
 class LazyModuleGroup:
     """
     A group of related lazy modules that can be loaded together.
@@ -196,7 +199,7 @@ class LazyModuleGroup:
 
     def __getattr__(self, name: str) -> Any:
         """Access submodules as attributes."""
-        if name.startswith('_'):
+        if name.startswith("_"):
             raise AttributeError(name)
         return self.submodule(name).module
 
@@ -237,6 +240,7 @@ spacy = LazyModule("spacy")
 # =============================================================================
 # Import Manager
 # =============================================================================
+
 
 class ImportManager:
     """
@@ -306,9 +310,24 @@ def get_import_manager() -> ImportManager:
     if _manager is None:
         _manager = ImportManager()
         # Register pre-configured modules
-        for mod in [torch, jax, tensorflow, numpy, pandas, scipy,
-                   sklearn, xgboost, lightgbm, matplotlib, seaborn,
-                   plotly, wandb, mlflow, transformers, spacy]:
+        for mod in [
+            torch,
+            jax,
+            tensorflow,
+            numpy,
+            pandas,
+            scipy,
+            sklearn,
+            xgboost,
+            lightgbm,
+            matplotlib,
+            seaborn,
+            plotly,
+            wandb,
+            mlflow,
+            transformers,
+            spacy,
+        ]:
             _manager.register(mod)
     return _manager
 
@@ -316,6 +335,7 @@ def get_import_manager() -> ImportManager:
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
 
 def lazy_import(module_name: str) -> LazyModule:
     """
@@ -404,8 +424,8 @@ def import_time_report() -> str:
 
 # For type checking, provide module type hints without importing
 if False:  # TYPE_CHECKING
-    import torch as _torch
     import jax as _jax
-    import pandas as _pandas
     import numpy as _numpy
+    import pandas as _pandas
     import scipy as _scipy
+    import torch as _torch

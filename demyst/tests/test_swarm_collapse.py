@@ -14,11 +14,12 @@ The Swarm Collapse problem embodies Demyst's entire mission:
 "Correct answers don't guarantee correct reasoning."
 """
 
-import pytest
 import ast
 import subprocess
 import sys
+
 import numpy as np
+import pytest
 
 
 class TestSwarmCollapseDetection:
@@ -32,11 +33,11 @@ class TestSwarmCollapseDetection:
         assert len(mirage_detector.mirages) >= 1, "Should detect at least one mirage"
 
         # Find the specific mean mirage
-        mean_mirages = [m for m in mirage_detector.mirages if m['type'] == 'mean']
+        mean_mirages = [m for m in mirage_detector.mirages if m["type"] == "mean"]
         assert len(mean_mirages) >= 1, "Should detect np.mean() as a mirage"
 
         # Should be in the analyze_swarm_safety function
-        swarm_mirage = [m for m in mean_mirages if m['function'] == 'analyze_swarm_safety']
+        swarm_mirage = [m for m in mean_mirages if m["function"] == "analyze_swarm_safety"]
         assert len(swarm_mirage) == 1, "Should find mean in analyze_swarm_safety function"
 
     def test_mirage_detected_at_correct_line(self, swarm_collapse_source, mirage_detector):
@@ -44,10 +45,10 @@ class TestSwarmCollapseDetection:
         tree = ast.parse(swarm_collapse_source)
         mirage_detector.visit(tree)
 
-        mean_mirage = next(m for m in mirage_detector.mirages if m['type'] == 'mean')
+        mean_mirage = next(m for m in mirage_detector.mirages if m["type"] == "mean")
 
         # Line 24 in swarm_collapse.py: mean_alignment = np.mean(swarm_alignment)
-        assert mean_mirage['line'] == 24, f"Expected line 24, got {mean_mirage['line']}"
+        assert mean_mirage["line"] == 24, f"Expected line 24, got {mean_mirage['line']}"
 
     def test_mirage_has_required_fields(self, swarm_collapse_source, mirage_detector):
         """Each detected mirage should have all required metadata."""
@@ -57,7 +58,7 @@ class TestSwarmCollapseDetection:
         assert len(mirage_detector.mirages) > 0
         mirage = mirage_detector.mirages[0]
 
-        required_fields = ['type', 'line', 'col', 'function']
+        required_fields = ["type", "line", "col", "function"]
         for field in required_fields:
             assert field in mirage, f"Mirage should have '{field}' field"
 
@@ -151,9 +152,9 @@ class TestSwarmCollapseCLI:
     def test_cli_mirage_command_returns_nonzero(self, swarm_collapse_path):
         """CLI mirage command should return exit code 1 for swarm_collapse.py."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "mirage", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 1, "Should return non-zero exit code"
@@ -161,40 +162,48 @@ class TestSwarmCollapseCLI:
     def test_cli_output_mentions_mirage(self, swarm_collapse_path):
         """CLI output should mention computational mirages."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "mirage", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
-        assert 'COMPUTATIONAL MIRAGES DETECTED' in result.stdout
+        assert "Computational Mirages Detected" in result.stdout
 
     def test_cli_output_identifies_mean(self, swarm_collapse_path):
         """CLI output should identify np.mean() specifically."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "mirage", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
-        assert 'mean' in result.stdout.lower()
-        assert 'Line 24' in result.stdout or 'line 24' in result.stdout.lower()
+        assert "mean" in result.stdout.lower()
+        assert "Line 24" in result.stdout or "line 24" in result.stdout.lower()
 
     def test_cli_output_mentions_variance(self, swarm_collapse_path):
         """CLI output should explain variance destruction."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "mirage", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
-        assert 'variance' in result.stdout.lower() or 'distribution' in result.stdout.lower()
+        assert "variance" in result.stdout.lower() or "distribution" in result.stdout.lower()
 
     def test_cli_fix_dryrun_shows_changes(self, swarm_collapse_path):
         """CLI --fix --dry-run should show proposed changes."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path), '--fix', '--dry-run'],
+            [
+                sys.executable,
+                "-m",
+                "demyst",
+                "mirage",
+                str(swarm_collapse_path),
+                "--fix",
+                "--dry-run",
+            ],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # Should complete (may show diff or "would transform")
@@ -207,9 +216,9 @@ class TestSwarmCollapseEndToEnd:
     def test_analyze_command_includes_mirage(self, swarm_collapse_path):
         """Full analyze command should include mirage detection."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "analyze", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # Should complete and produce output
@@ -219,9 +228,9 @@ class TestSwarmCollapseEndToEnd:
     def test_ci_command_flags_issues(self, swarm_collapse_path):
         """CI command should flag the file as having issues."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'ci', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "ci", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # Should complete (may pass or fail based on severity thresholds)
@@ -247,21 +256,23 @@ def safe_analysis(data):
     def test_clean_cli_returns_zero(self, tmp_path):
         """CLI should return 0 for clean file."""
         clean_file = tmp_path / "clean.py"
-        clean_file.write_text('''
+        clean_file.write_text(
+            """
 def clean_function():
     x = [1, 2, 3]
     return x
-''')
+"""
+        )
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(clean_file)],
+            [sys.executable, "-m", "demyst", "mirage", str(clean_file)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
-        assert 'No computational mirages detected' in result.stdout
+        assert "No computational mirages detected" in result.stdout
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

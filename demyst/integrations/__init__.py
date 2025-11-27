@@ -8,18 +8,18 @@ This module provides integrations with:
     - GitHub Actions: CI/CD enforcement and reporting
 """
 
-from .torch_hooks import TorchModuleWrapper, TorchVariation
-from .jax_hooks import JaxVariation, jax_safe_transform
-from .experiment_trackers import WandBIntegration, MLflowIntegration
 from .ci_enforcer import CIEnforcer, ScientificIntegrityReport
+from .experiment_trackers import MLflowIntegration, WandBIntegration
+from .jax_hooks import JaxVariation, jax_safe_transform
+from .torch_hooks import TorchModuleWrapper, TorchVariation
 
 __all__ = [
-    'TorchModuleWrapper',
-    'TorchVariation',
-    'JaxVariation',
-    'jax_safe_transform',
-    'WandBIntegration',
-    'MLflowIntegration',
-    'CIEnforcer',
-    'ScientificIntegrityReport',
+    "TorchModuleWrapper",
+    "TorchVariation",
+    "JaxVariation",
+    "jax_safe_transform",
+    "WandBIntegration",
+    "MLflowIntegration",
+    "CIEnforcer",
+    "ScientificIntegrityReport",
 ]

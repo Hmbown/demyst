@@ -8,19 +8,13 @@ PROFILE = {
     "rules": {
         "unit": {
             "enabled": True,
-            "severity": "critical"  # Dimensional errors are critical in physics
+            "severity": "critical",  # Dimensional errors are critical in physics
         },
         "mirage": {
             "enabled": True,
-            "severity": "critical"  # Variance destruction is bad for error propagation
+            "severity": "critical",  # Variance destruction is bad for error propagation
         },
-        "hypothesis": {
-            "enabled": True,
-            "severity": "warning"
-        },
-        "leakage": {
-            "enabled": True,
-            "severity": "warning"
-        }
+        "hypothesis": {"enabled": True, "severity": "warning"},
+        "leakage": {"enabled": True, "severity": "warning"},
     }
 }

@@ -7,15 +7,16 @@ Provides:
     3. Gradient flow analysis for JAX functions
 """
 
-from typing import Dict, Any, Optional, List, Callable, Tuple, cast
+import warnings
 from dataclasses import dataclass
 from functools import wraps
-import warnings
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 
 @dataclass
 class JaxOperationRecord:
     """Record of a JAX operation with preserved metadata."""
+
     operation: str
     input_shape: Tuple[int, ...]
     output_shape: Tuple[int, ...]
@@ -66,18 +67,19 @@ class JaxVariation:
         """Get history of variation-destroying operations as dicts."""
         return [
             {
-                'operation': r.operation,
-                'input_shape': r.input_shape,
-                'output_shape': r.output_shape,
-                'variance_before': r.variance_before,
-                'variance_after': r.variance_after,
-                'information_lost': r.information_lost,
+                "operation": r.operation,
+                "input_shape": r.input_shape,
+                "output_shape": r.output_shape,
+                "variance_before": r.variance_before,
+                "variance_after": r.variance_after,
+                "information_lost": r.information_lost,
             }
             for r in self._variation_history
         ]
 
-    def collapse(self, operation: str = 'mean', axis: Optional[int] = None,
-                keepdims: bool = False) -> Any:
+    def collapse(
+        self, operation: str = "mean", axis: Optional[int] = None, keepdims: bool = False
+    ) -> Any:
         """
         Perform collapse operation while preserving variation history.
 
@@ -97,20 +99,22 @@ class JaxVariation:
             variance_before = float(jnp.var(self._array))
 
             # Perform operation
-            if operation == 'mean':
+            if operation == "mean":
                 result = jnp.mean(self._array, axis=axis, keepdims=keepdims)
-            elif operation == 'sum':
+            elif operation == "sum":
                 result = jnp.sum(self._array, axis=axis, keepdims=keepdims)
-            elif operation == 'max':
+            elif operation == "max":
                 result = jnp.max(self._array, axis=axis, keepdims=keepdims)
-            elif operation == 'min':
+            elif operation == "min":
                 result = jnp.min(self._array, axis=axis, keepdims=keepdims)
             else:
                 raise ValueError(f"Unknown operation: {operation}")
 
             # Record post-collapse statistics
-            output_shape = tuple(result.shape) if hasattr(result, 'shape') else ()
-            variance_after = float(jnp.var(result)) if hasattr(result, 'shape') and result.size > 1 else 0.0
+            output_shape = tuple(result.shape) if hasattr(result, "shape") else ()
+            variance_after = (
+                float(jnp.var(result)) if hasattr(result, "shape") and result.size > 1 else 0.0
+            )
 
             record = JaxOperationRecord(
                 operation=operation,
@@ -128,8 +132,9 @@ class JaxVariation:
             warnings.warn("JAX not available. Returning original array.")
             return self._array
 
-    def safe_reduce(self, reduce_fn: Callable, axis: Optional[int] = None,
-                   operation_name: str = 'custom_reduce') -> Any:
+    def safe_reduce(
+        self, reduce_fn: Callable, axis: Optional[int] = None, operation_name: str = "custom_reduce"
+    ) -> Any:
         """
         Apply a custom reduction function while tracking variance loss.
 
@@ -146,12 +151,14 @@ class JaxVariation:
 
             variance_before = float(jnp.var(self._array))
             result = reduce_fn(self._array, axis=axis)
-            variance_after = float(jnp.var(result)) if hasattr(result, 'shape') and result.size > 1 else 0.0
+            variance_after = (
+                float(jnp.var(result)) if hasattr(result, "shape") and result.size > 1 else 0.0
+            )
 
             record = JaxOperationRecord(
                 operation=operation_name,
                 input_shape=tuple(self._array.shape),
-                output_shape=tuple(result.shape) if hasattr(result, 'shape') else (),
+                output_shape=tuple(result.shape) if hasattr(result, "shape") else (),
                 variance_before=variance_before,
                 variance_after=variance_after,
                 information_lost=variance_before - variance_after,
@@ -164,9 +171,9 @@ class JaxVariation:
             return self._array
 
 
-def jax_safe_transform(track_gradients: bool = True,
-                       warn_on_vanishing: bool = True,
-                       vanishing_threshold: float = 1e-7) -> Callable:
+def jax_safe_transform(
+    track_gradients: bool = True, warn_on_vanishing: bool = True, vanishing_threshold: float = 1e-7
+) -> Callable:
     """
     Decorator for JAX functions that adds scientific integrity checks.
 
@@ -181,6 +188,7 @@ def jax_safe_transform(track_gradients: bool = True,
         warn_on_vanishing: Whether to warn on vanishing gradients
         vanishing_threshold: Threshold for vanishing gradient detection
     """
+
     def decorator(fn: Callable) -> Callable:
         @wraps(fn)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
@@ -193,25 +201,27 @@ def jax_safe_transform(track_gradients: bool = True,
                     import jax.numpy as jnp
 
                     # Get gradients if this is a scalar loss
-                    if hasattr(result, 'shape') and result.shape == ():
+                    if hasattr(result, "shape") and result.shape == ():
                         grad_fn = jax.grad(fn)
                         try:
                             grads = grad_fn(*args, **kwargs)
 
                             # Analyze gradients
-                            def analyze_grad_tree(tree: Any, prefix: str = '') -> List[str]:
+                            def analyze_grad_tree(tree: Any, prefix: str = "") -> List[str]:
                                 issues = []
                                 if isinstance(tree, dict):
                                     for k, v in tree.items():
                                         issues.extend(analyze_grad_tree(v, f"{prefix}.{k}"))
-                                elif hasattr(tree, 'shape'):
+                                elif hasattr(tree, "shape"):
                                     grad_magnitude = float(jnp.abs(tree).mean())
                                     if grad_magnitude < vanishing_threshold:
-                                        issues.append(f"Vanishing gradient at {prefix}: {grad_magnitude:.2e}")
+                                        issues.append(
+                                            f"Vanishing gradient at {prefix}: {grad_magnitude:.2e}"
+                                        )
                                 return issues
 
                             # Only analyze if grads is a pytree structure we can handle
-                            if isinstance(grads, (dict, tuple, list)) or hasattr(grads, 'shape'):
+                            if isinstance(grads, (dict, tuple, list)) or hasattr(grads, "shape"):
                                 issues = analyze_grad_tree(grads, fn.__name__)
                                 if issues and warn_on_vanishing:
                                     for issue in issues[:5]:  # Limit warnings
@@ -229,9 +239,9 @@ def jax_safe_transform(track_gradients: bool = True,
         wrapper_with_attrs = cast(Any, wrapper)
         wrapper_with_attrs._demyst_tracked = True
         wrapper_with_attrs._demyst_config = {
-            'track_gradients': track_gradients,
-            'warn_on_vanishing': warn_on_vanishing,
-            'vanishing_threshold': vanishing_threshold,
+            "track_gradients": track_gradients,
+            "warn_on_vanishing": warn_on_vanishing,
+            "vanishing_threshold": vanishing_threshold,
         }
 
         return wrapper
@@ -265,10 +275,10 @@ class JaxIntegrityAnalyzer:
             Analysis report
         """
         report: Dict[str, Any] = {
-            'function_name': fn.__name__ if hasattr(fn, '__name__') else str(fn),
-            'collapse_operations': [],
-            'numerical_risks': [],
-            'recommendations': [],
+            "function_name": fn.__name__ if hasattr(fn, "__name__") else str(fn),
+            "collapse_operations": [],
+            "numerical_risks": [],
+            "recommendations": [],
         }
 
         try:
@@ -284,33 +294,37 @@ class JaxIntegrityAnalyzer:
                 prim_name = eqn.primitive.name
 
                 # Check for collapsing operations
-                if prim_name in ['reduce_sum', 'reduce_mean', 'reduce_max', 'reduce_min']:
-                    report['collapse_operations'].append({
-                        'operation': prim_name,
-                        'warning': f'{prim_name} destroys variance information',
-                    })
+                if prim_name in ["reduce_sum", "reduce_mean", "reduce_max", "reduce_min"]:
+                    report["collapse_operations"].append(
+                        {
+                            "operation": prim_name,
+                            "warning": f"{prim_name} destroys variance information",
+                        }
+                    )
 
                 # Check for numerical stability risks
-                if prim_name in ['exp', 'log', 'div']:
-                    report['numerical_risks'].append({
-                        'operation': prim_name,
-                        'risk': f'{prim_name} can cause numerical overflow/underflow',
-                    })
+                if prim_name in ["exp", "log", "div"]:
+                    report["numerical_risks"].append(
+                        {
+                            "operation": prim_name,
+                            "risk": f"{prim_name} can cause numerical overflow/underflow",
+                        }
+                    )
 
             # Generate recommendations
-            if report['collapse_operations']:
-                report['recommendations'].append(
+            if report["collapse_operations"]:
+                report["recommendations"].append(
                     "Consider using JaxVariation wrapper to track variance loss"
                 )
 
-            if report['numerical_risks']:
-                report['recommendations'].append(
+            if report["numerical_risks"]:
+                report["recommendations"].append(
                     "Consider using jax.nn.log_softmax instead of log(softmax) for stability"
                 )
 
         except ImportError:
-            report['error'] = "JAX not available for analysis"
+            report["error"] = "JAX not available for analysis"
         except Exception as e:
-            report['error'] = str(e)
+            report["error"] = str(e)
 
         return report

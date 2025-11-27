@@ -25,7 +25,7 @@ class DemystError(Exception):
         self,
         message: str,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         self.message = message
         self.details = details or {}
@@ -56,6 +56,7 @@ class DemystError(Exception):
 # Configuration Errors
 # =============================================================================
 
+
 class ConfigurationError(DemystError):
     """
     Raised when there's an issue with Demyst configuration.
@@ -70,7 +71,7 @@ class ConfigurationError(DemystError):
         config_path: Optional[str] = None,
         invalid_key: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         details = details or {}
         if config_path:
@@ -89,9 +90,7 @@ class ProfileNotFoundError(ConfigurationError):
             details["available_profiles"] = available_profiles
         suggestion = f"Use one of the available profiles: {', '.join(available_profiles or [])}"
         super().__init__(
-            f"Profile '{profile_name}' not found",
-            details=details,
-            suggestion=suggestion
+            f"Profile '{profile_name}' not found", details=details, suggestion=suggestion
         )
 
 
@@ -103,7 +102,7 @@ class InvalidConfigValueError(ConfigurationError):
         key: str,
         value: Any,
         expected_type: Optional[str] = None,
-        allowed_values: Optional[List[Any]] = None
+        allowed_values: Optional[List[Any]] = None,
     ) -> None:
         details = {"key": key, "value": value}
         if expected_type:
@@ -121,13 +120,14 @@ class InvalidConfigValueError(ConfigurationError):
             f"Invalid configuration value for '{key}'",
             invalid_key=key,
             details=details,
-            suggestion=suggestion
+            suggestion=suggestion,
         )
 
 
 # =============================================================================
 # Analysis Errors
 # =============================================================================
+
 
 class AnalysisError(DemystError):
     """
@@ -144,7 +144,7 @@ class AnalysisError(DemystError):
         line_number: Optional[int] = None,
         column: Optional[int] = None,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         details = details or {}
         if file_path:
@@ -168,7 +168,7 @@ class ParseError(AnalysisError):
         file_path: Optional[str] = None,
         line_number: Optional[int] = None,
         column: Optional[int] = None,
-        original_error: Optional[Exception] = None
+        original_error: Optional[Exception] = None,
     ) -> None:
         details = {}
         if original_error:
@@ -179,7 +179,7 @@ class ParseError(AnalysisError):
             line_number=line_number,
             column=column,
             details=details,
-            suggestion="Check the file for syntax errors"
+            suggestion="Check the file for syntax errors",
         )
         self.original_error = original_error
 
@@ -192,56 +192,78 @@ class GuardError(AnalysisError):
         guard_name: str,
         message: str,
         file_path: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         details["guard_name"] = guard_name
-        super().__init__(
-            f"[{guard_name}] {message}",
-            file_path=file_path,
-            details=details
-        )
+        super().__init__(f"[{guard_name}] {message}", file_path=file_path, details=details)
         self.guard_name = guard_name
 
 
 class MirageDetectionError(GuardError):
     """Raised when mirage detection fails."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__("MirageDetector", message, file_path, details)
 
 
 class LeakageDetectionError(GuardError):
     """Raised when leakage detection fails."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__("LeakageHunter", message, file_path, details)
 
 
 class DimensionalAnalysisError(GuardError):
     """Raised when dimensional analysis fails."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__("UnitGuard", message, file_path, details)
 
 
 class StatisticalValidityError(GuardError):
     """Raised when statistical validity analysis fails."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__("HypothesisGuard", message, file_path, details)
 
 
 class TensorIntegrityError(GuardError):
     """Raised when tensor integrity analysis fails."""
 
-    def __init__(self, message: str, file_path: Optional[str] = None, details: Optional[Dict[str, Any]] = None) -> None:
+    def __init__(
+        self,
+        message: str,
+        file_path: Optional[str] = None,
+        details: Optional[Dict[str, Any]] = None,
+    ) -> None:
         super().__init__("TensorGuard", message, file_path, details)
 
 
 # =============================================================================
 # Transformation Errors
 # =============================================================================
+
 
 class TransformationError(DemystError):
     """
@@ -257,7 +279,7 @@ class TransformationError(DemystError):
         file_path: Optional[str] = None,
         transformation_type: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         details = details or {}
         if file_path:
@@ -277,7 +299,7 @@ class TranspilerError(TransformationError):
         message: str,
         file_path: Optional[str] = None,
         target_line: Optional[int] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if target_line is not None:
@@ -287,7 +309,7 @@ class TranspilerError(TransformationError):
             file_path=file_path,
             transformation_type="transpile",
             details=details,
-            suggestion="Try running with --dry-run to preview changes first"
+            suggestion="Try running with --dry-run to preview changes first",
         )
 
 
@@ -299,7 +321,7 @@ class FixerError(TransformationError):
         message: str,
         file_path: Optional[str] = None,
         violation_type: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if violation_type:
@@ -309,7 +331,7 @@ class FixerError(TransformationError):
             file_path=file_path,
             transformation_type="fix",
             details=details,
-            suggestion="Manual intervention may be required"
+            suggestion="Manual intervention may be required",
         )
 
 
@@ -321,7 +343,7 @@ class CSTTransformError(TransformationError):
         message: str,
         node_type: Optional[str] = None,
         file_path: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if node_type:
@@ -331,7 +353,7 @@ class CSTTransformError(TransformationError):
             file_path=file_path,
             transformation_type="cst",
             details=details,
-            suggestion="Report this issue if it persists"
+            suggestion="Report this issue if it persists",
         )
 
 
@@ -343,25 +365,32 @@ class UnsafeTransformationError(TransformationError):
         message: str,
         original_code: Optional[str] = None,
         attempted_result: Optional[str] = None,
-        file_path: Optional[str] = None
+        file_path: Optional[str] = None,
     ) -> None:
         details = {}
         if original_code:
-            details["original_code"] = original_code[:100] + "..." if len(original_code or "") > 100 else original_code
+            details["original_code"] = (
+                original_code[:100] + "..." if len(original_code or "") > 100 else original_code
+            )
         if attempted_result:
-            details["attempted_result"] = attempted_result[:100] + "..." if len(attempted_result or "") > 100 else attempted_result
+            details["attempted_result"] = (
+                attempted_result[:100] + "..."
+                if len(attempted_result or "") > 100
+                else attempted_result
+            )
         super().__init__(
             message,
             file_path=file_path,
             transformation_type="unsafe",
             details=details,
-            suggestion="The transformation was aborted to prevent code corruption"
+            suggestion="The transformation was aborted to prevent code corruption",
         )
 
 
 # =============================================================================
 # File Operation Errors
 # =============================================================================
+
 
 class FileOperationError(DemystError):
     """Base exception for file operation failures."""
@@ -372,7 +401,7 @@ class FileOperationError(DemystError):
         file_path: str,
         operation: str,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         details = details or {}
         details["file_path"] = file_path
@@ -389,7 +418,7 @@ class FileReadError(FileOperationError):
         self,
         file_path: str,
         reason: Optional[str] = None,
-        original_error: Optional[Exception] = None
+        original_error: Optional[Exception] = None,
     ) -> None:
         details = {}
         if reason:
@@ -401,7 +430,7 @@ class FileReadError(FileOperationError):
             file_path=file_path,
             operation="read",
             details=details,
-            suggestion="Check file permissions and encoding"
+            suggestion="Check file permissions and encoding",
         )
         self.original_error = original_error
 
@@ -413,7 +442,7 @@ class FileWriteError(FileOperationError):
         self,
         file_path: str,
         reason: Optional[str] = None,
-        original_error: Optional[Exception] = None
+        original_error: Optional[Exception] = None,
     ) -> None:
         details = {}
         if reason:
@@ -425,7 +454,7 @@ class FileWriteError(FileOperationError):
             file_path=file_path,
             operation="write",
             details=details,
-            suggestion="Check file permissions and disk space"
+            suggestion="Check file permissions and disk space",
         )
         self.original_error = original_error
 
@@ -433,6 +462,7 @@ class FileWriteError(FileOperationError):
 # =============================================================================
 # Plugin System Errors
 # =============================================================================
+
 
 class PluginError(DemystError):
     """Base exception for plugin-related errors."""
@@ -442,7 +472,7 @@ class PluginError(DemystError):
         message: str,
         plugin_name: Optional[str] = None,
         details: Optional[Dict[str, Any]] = None,
-        suggestion: Optional[str] = None
+        suggestion: Optional[str] = None,
     ) -> None:
         details = details or {}
         if plugin_name:
@@ -462,7 +492,7 @@ class PluginNotFoundError(PluginError):
             f"Plugin '{plugin_name}' not found",
             plugin_name=plugin_name,
             details=details,
-            suggestion="Install the plugin package or check the plugin name"
+            suggestion="Install the plugin package or check the plugin name",
         )
 
 
@@ -470,10 +500,7 @@ class PluginLoadError(PluginError):
     """Raised when a plugin fails to load."""
 
     def __init__(
-        self,
-        plugin_name: str,
-        reason: str,
-        original_error: Optional[Exception] = None
+        self, plugin_name: str, reason: str, original_error: Optional[Exception] = None
     ) -> None:
         details = {"reason": reason}
         if original_error:
@@ -482,7 +509,7 @@ class PluginLoadError(PluginError):
             f"Failed to load plugin '{plugin_name}': {reason}",
             plugin_name=plugin_name,
             details=details,
-            suggestion="Check plugin compatibility and dependencies"
+            suggestion="Check plugin compatibility and dependencies",
         )
         self.original_error = original_error
 
@@ -494,7 +521,7 @@ class PluginValidationError(PluginError):
         self,
         plugin_name: str,
         missing_interface: Optional[str] = None,
-        validation_errors: Optional[List[str]] = None
+        validation_errors: Optional[List[str]] = None,
     ) -> None:
         details: Dict[str, Any] = {}
         if missing_interface:
@@ -505,13 +532,14 @@ class PluginValidationError(PluginError):
             f"Plugin '{plugin_name}' failed validation",
             plugin_name=plugin_name,
             details=details,
-            suggestion="Ensure the plugin implements the required interface"
+            suggestion="Ensure the plugin implements the required interface",
         )
 
 
 # =============================================================================
 # CI/CD Errors
 # =============================================================================
+
 
 class CIEnforcementError(DemystError):
     """Raised when CI enforcement fails."""
@@ -521,7 +549,7 @@ class CIEnforcementError(DemystError):
         message: str,
         failed_checks: Optional[List[str]] = None,
         exit_code: Optional[int] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if failed_checks:
@@ -529,9 +557,7 @@ class CIEnforcementError(DemystError):
         if exit_code is not None:
             details["exit_code"] = exit_code
         super().__init__(
-            message,
-            details=details,
-            suggestion="Fix the reported issues before merging"
+            message, details=details, suggestion="Fix the reported issues before merging"
         )
         self.failed_checks = failed_checks
         self.exit_code = exit_code
@@ -541,6 +567,7 @@ class CIEnforcementError(DemystError):
 # Report Generation Errors
 # =============================================================================
 
+
 class ReportGenerationError(DemystError):
     """Raised when report generation fails."""
 
@@ -548,16 +575,12 @@ class ReportGenerationError(DemystError):
         self,
         message: str,
         report_format: Optional[str] = None,
-        details: Optional[Dict[str, Any]] = None
+        details: Optional[Dict[str, Any]] = None,
     ) -> None:
         details = details or {}
         if report_format:
             details["report_format"] = report_format
-        super().__init__(
-            message,
-            details=details,
-            suggestion="Try a different output format"
-        )
+        super().__init__(message, details=details, suggestion="Try a different output format")
         self.report_format = report_format
 
 
@@ -572,11 +595,8 @@ class LaTeXGenerationError(ReportGenerationError):
 # Utility Functions
 # =============================================================================
 
-def wrap_exception(
-    error: Exception,
-    context: str,
-    file_path: Optional[str] = None
-) -> DemystError:
+
+def wrap_exception(error: Exception, context: str, file_path: Optional[str] = None) -> DemystError:
     """
     Wrap a generic exception in a DemystError for consistent error handling.
 
@@ -594,35 +614,24 @@ def wrap_exception(
     if isinstance(error, SyntaxError):
         return ParseError(
             f"{context}: {error.msg}",
-            file_path=file_path or getattr(error, 'filename', None),
+            file_path=file_path or getattr(error, "filename", None),
             line_number=error.lineno,
             column=error.offset,
-            original_error=error
+            original_error=error,
         )
 
     if isinstance(error, FileNotFoundError):
-        return FileReadError(
-            file_path or str(error),
-            reason="File not found",
-            original_error=error
-        )
+        return FileReadError(file_path or str(error), reason="File not found", original_error=error)
 
     if isinstance(error, PermissionError):
         return FileReadError(
-            file_path or str(error),
-            reason="Permission denied",
-            original_error=error
+            file_path or str(error), reason="Permission denied", original_error=error
         )
 
     if isinstance(error, UnicodeDecodeError):
         return FileReadError(
-            file_path or "unknown",
-            reason=f"Encoding error: {error.encoding}",
-            original_error=error
+            file_path or "unknown", reason=f"Encoding error: {error.encoding}", original_error=error
         )
 
     # Default wrapper
-    return DemystError(
-        f"{context}: {error}",
-        details={"original_type": type(error).__name__}
-    )
+    return DemystError(f"{context}: {error}", details={"original_type": type(error).__name__})

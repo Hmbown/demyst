@@ -31,16 +31,17 @@ try:
     from demyst.engine.cst_transformer import (
         CSTTranspiler,
         TransformationRecord,
-        detect_mirages as cst_detect_mirages,
     )
+    from demyst.engine.cst_transformer import detect_mirages as cst_detect_mirages
+
     CST_AVAILABLE = True
 except ImportError:
     CST_AVAILABLE = False
 
 # Import AST-based components (fallback)
 from demyst.engine.mirage_detector import MirageDetector
-from demyst.engine.variation_transformer import VariationTransformer
 from demyst.engine.variation_tensor import VariationTensor
+from demyst.engine.variation_transformer import VariationTransformer
 
 
 class Transpiler:
@@ -76,11 +77,7 @@ class Transpiler:
         """Return the transformation backend being used."""
         return "libcst" if self.use_cst else "ast"
 
-    def transpile_file(
-        self,
-        file_path: str,
-        target_line: Optional[int] = None
-    ) -> str:
+    def transpile_file(self, file_path: str, target_line: Optional[int] = None) -> str:
         """
         Transpile a Python file to preserve physical information.
 
@@ -97,11 +94,11 @@ class Transpiler:
             TranspilerError: If transformation fails
         """
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 source = f.read()
         except UnicodeDecodeError:
             try:
-                with open(file_path, 'r', encoding='latin-1') as f:
+                with open(file_path, "r", encoding="latin-1") as f:
                     source = f.read()
             except Exception as e:
                 raise FileReadError(file_path, "Encoding error", e)
@@ -115,10 +112,7 @@ class Transpiler:
         return self.transpile_source(source, target_line, file_path=file_path)
 
     def transpile_source(
-        self,
-        source: str,
-        target_line: Optional[int] = None,
-        file_path: Optional[str] = None
+        self, source: str, target_line: Optional[int] = None, file_path: Optional[str] = None
     ) -> str:
         """
         Transpile Python source code to preserve physical information.
@@ -145,10 +139,7 @@ class Transpiler:
         return self._transpile_with_ast(source, target_line, file_path)
 
     def _transpile_with_cst(
-        self,
-        source: str,
-        target_line: Optional[int],
-        file_path: Optional[str]
+        self, source: str, target_line: Optional[int], file_path: Optional[str]
     ) -> str:
         """Perform CST-based transformation."""
         assert self._cst_transpiler is not None
@@ -158,10 +149,10 @@ class Transpiler:
             # Convert CST transformation records to legacy format
             self.transformations = [
                 {
-                    'type': t.type.name.lower().replace('_to_variation', ''),
-                    'line': t.line,
-                    'function': t.function_context,
-                    'transformation': t.description,
+                    "type": t.type.name.lower().replace("_to_variation", ""),
+                    "line": t.line,
+                    "function": t.function_context,
+                    "transformation": t.description,
                 }
                 for t in self._cst_transpiler.transformations
             ]
@@ -170,16 +161,11 @@ class Transpiler:
             raise
         except Exception as e:
             raise TranspilerError(
-                f"CST transformation failed: {e}",
-                file_path=file_path,
-                details={"error": str(e)}
+                f"CST transformation failed: {e}", file_path=file_path, details={"error": str(e)}
             )
 
     def _transpile_with_ast(
-        self,
-        source: str,
-        target_line: Optional[int],
-        file_path: Optional[str]
+        self, source: str, target_line: Optional[int], file_path: Optional[str]
     ) -> str:
         """Perform AST-based transformation (fallback)."""
         # Parse AST
@@ -191,7 +177,7 @@ class Transpiler:
                 file_path=file_path,
                 line_number=e.lineno,
                 column=e.offset,
-                original_error=e
+                original_error=e,
             )
 
         # Detect mirages
@@ -201,10 +187,12 @@ class Transpiler:
         # Filter by target line if specified
         mirages = self._detector.mirages
         if target_line is not None:
-            mirages = [m for m in mirages if m['line'] == target_line]
+            mirages = [m for m in mirages if m["line"] == target_line]
 
         if not mirages:
-            print(f"No destructive operations found{' at line ' + str(target_line) if target_line else ''}")
+            print(
+                f"No destructive operations found{' at line ' + str(target_line) if target_line else ''}"
+            )
             return source
 
         # Transform AST
@@ -219,18 +207,19 @@ class Transpiler:
             new_source = ast.unparse(new_tree)
         except Exception as e:
             raise TranspilerError(
-                f"AST transformation failed: {e}",
-                file_path=file_path,
-                details={"error": str(e)}
+                f"AST transformation failed: {e}", file_path=file_path, details={"error": str(e)}
             )
 
         # Store transformation info
-        self.transformations = [{
-            'type': m['type'],
-            'line': m['line'],
-            'function': m['function'],
-            'transformation': f"{m['type']} -> VariationTensor"
-        } for m in mirages]
+        self.transformations = [
+            {
+                "type": m["type"],
+                "line": m["line"],
+                "function": m["function"],
+                "transformation": f"{m['type']} -> VariationTensor",
+            }
+            for m in mirages
+        ]
 
         return new_source
 
@@ -254,12 +243,12 @@ class Transpiler:
         diff = difflib.unified_diff(
             original_lines,
             transformed_lines,
-            fromfile='original',
-            tofile='transformed',
-            lineterm=''
+            fromfile="original",
+            tofile="transformed",
+            lineterm="",
         )
 
-        return ''.join(diff)
+        return "".join(diff)
 
     def get_summary(self) -> str:
         """Get a summary of transformations performed."""
@@ -268,7 +257,7 @@ class Transpiler:
 
         lines = [f"\n=== Demyst Transpiler Summary ({self.backend}) ==="]
         for t in self.transformations:
-            func = t.get('function') or 'module level'
+            func = t.get("function") or "module level"
             lines.append(f"Line {t['line']} in {func}: {t['transformation']}")
         lines.append(f"Total transformations: {len(self.transformations)}")
         return "\n".join(lines)
@@ -281,20 +270,23 @@ class Transpiler:
 def main() -> int:
     """Command-line interface for the transpiler."""
     parser = argparse.ArgumentParser(
-        description='PIPRE Transpiler - Preserve physical information in scientific code'
+        description="PIPRE Transpiler - Preserve physical information in scientific code"
     )
-    parser.add_argument('--target', required=True,
-                       help='Target file or file:line specification')
-    parser.add_argument('--output', help='Output file (default: stdout)')
-    parser.add_argument('--diff', action='store_true', help='Show unified diff')
-    parser.add_argument('--backend', choices=['cst', 'ast', 'auto'], default='auto',
-                       help='Transformation backend to use')
+    parser.add_argument("--target", required=True, help="Target file or file:line specification")
+    parser.add_argument("--output", help="Output file (default: stdout)")
+    parser.add_argument("--diff", action="store_true", help="Show unified diff")
+    parser.add_argument(
+        "--backend",
+        choices=["cst", "ast", "auto"],
+        default="auto",
+        help="Transformation backend to use",
+    )
 
     args = parser.parse_args()
 
     # Parse target specification
-    if ':' in args.target:
-        file_path, line_str = args.target.rsplit(':', 1)
+    if ":" in args.target:
+        file_path, line_str = args.target.rsplit(":", 1)
         try:
             target_line: Optional[int] = int(line_str)
         except ValueError:
@@ -310,9 +302,9 @@ def main() -> int:
 
     # Configure backend
     use_cst = True
-    if args.backend == 'ast':
+    if args.backend == "ast":
         use_cst = False
-    elif args.backend == 'cst' and not CST_AVAILABLE:
+    elif args.backend == "cst" and not CST_AVAILABLE:
         print("Warning: LibCST not available, falling back to AST backend")
         use_cst = False
 
@@ -320,7 +312,7 @@ def main() -> int:
     transpiler = Transpiler(use_cst=use_cst)
 
     try:
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             original_source = f.read()
 
         transformed_source = transpiler.transpile_file(file_path, target_line)
@@ -330,7 +322,7 @@ def main() -> int:
             print(diff)
         else:
             if args.output:
-                with open(args.output, 'w') as f:
+                with open(args.output, "w") as f:
                     f.write(transformed_source)
                 print(f"Transformed source written to {args.output}")
             else:
@@ -347,5 +339,5 @@ def main() -> int:
         return 1
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

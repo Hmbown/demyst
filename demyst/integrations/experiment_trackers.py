@@ -8,16 +8,17 @@ Provides integration with popular experiment tracking platforms to:
     4. Generate reproducibility reports
 """
 
-from typing import Dict, Any, Optional, List, Callable
-from dataclasses import dataclass
-from datetime import datetime
 import json
 import warnings
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Any, Callable, Dict, List, Optional
 
 
 @dataclass
 class ExperimentMetadata:
     """Metadata about an experiment run."""
+
     run_id: str
     timestamp: str
     seed: int
@@ -60,8 +61,9 @@ class WandBIntegration:
         self._current_config: Dict[str, Any] = {}
         self._local_metrics: Dict[str, List[float]] = {}
 
-    def init(self, config: Optional[Dict[str, Any]] = None,
-            seed: Optional[int] = None, **kwargs: Any) -> None:
+    def init(
+        self, config: Optional[Dict[str, Any]] = None, seed: Optional[int] = None, **kwargs: Any
+    ) -> None:
         """
         Initialize a new run with integrity tracking.
 
@@ -71,7 +73,7 @@ class WandBIntegration:
             **kwargs: Additional wandb.init arguments
         """
         self._current_config = config or {}
-        self._current_seed = seed or self._current_config.get('seed', 0)
+        self._current_seed = seed or self._current_config.get("seed", 0)
         self._local_metrics = {}
 
         try:
@@ -80,16 +82,13 @@ class WandBIntegration:
             # Add demyst metadata to config
             full_config = {
                 **self._current_config,
-                'demyst_tracked': True,
-                'demyst_seed': self._current_seed,
-                'demyst_timestamp': datetime.now().isoformat(),
+                "demyst_tracked": True,
+                "demyst_seed": self._current_seed,
+                "demyst_timestamp": datetime.now().isoformat(),
             }
 
             self._run = wandb.init(
-                project=self.project,
-                entity=self.entity,
-                config=full_config,
-                **kwargs
+                project=self.project, entity=self.entity, config=full_config, **kwargs
             )
 
         except ImportError:
@@ -114,6 +113,7 @@ class WandBIntegration:
         if self._run is not None:
             try:
                 import wandb
+
                 wandb.log(metrics, step=step)
             except Exception as e:
                 warnings.warn(f"Failed to log to wandb: {e}")
@@ -123,11 +123,7 @@ class WandBIntegration:
         Finish the current run and record experiment metadata.
         """
         # Record experiment
-        final_metrics = {
-            k: v[-1]
-            for k, v in self._local_metrics.items()
-            if v
-        }
+        final_metrics = {k: v[-1] for k, v in self._local_metrics.items() if v}
 
         run_id = self._run.id if self._run else f"local_{datetime.now().timestamp()}"
 
@@ -137,7 +133,7 @@ class WandBIntegration:
             seed=self._current_seed or 0,
             config=self._current_config,
             metrics=final_metrics,
-            tags=['demyst_tracked']
+            tags=["demyst_tracked"],
         )
         self._experiments.append(experiment)
 
@@ -145,6 +141,7 @@ class WandBIntegration:
         if self._run is not None:
             try:
                 import wandb
+
                 wandb.finish()
             except Exception:
                 pass
@@ -155,8 +152,9 @@ class WandBIntegration:
         """Get all tracked experiments."""
         return self._experiments
 
-    def get_integrity_report(self, metric_name: str = 'accuracy',
-                            reported_value: Optional[float] = None) -> Dict[str, Any]:
+    def get_integrity_report(
+        self, metric_name: str = "accuracy", reported_value: Optional[float] = None
+    ) -> Dict[str, Any]:
         """
         Generate a scientific integrity report.
 
@@ -168,7 +166,7 @@ class WandBIntegration:
             Integrity report with statistical corrections
         """
         if not self._experiments:
-            return {'error': 'No experiments tracked'}
+            return {"error": "No experiments tracked"}
 
         # Collect metric values
         values = []
@@ -177,30 +175,30 @@ class WandBIntegration:
                 values.append(exp.metrics[metric_name])
 
         if not values:
-            return {'error': f'No values found for metric {metric_name}'}
+            return {"error": f"No values found for metric {metric_name}"}
 
         n_experiments = len(values)
         mean_val = sum(values) / n_experiments
         variance = sum((v - mean_val) ** 2 for v in values) / n_experiments
-        std_val = variance ** 0.5
+        std_val = variance**0.5
 
         # Seeds used
         seeds = [exp.seed for exp in self._experiments]
 
         report = {
-            'metric': metric_name,
-            'num_experiments': n_experiments,
-            'seeds_used': seeds,
-            'mean': mean_val,
-            'std': std_val,
-            'min': min(values),
-            'max': max(values),
-            'all_values': values,
+            "metric": metric_name,
+            "num_experiments": n_experiments,
+            "seeds_used": seeds,
+            "mean": mean_val,
+            "std": std_val,
+            "min": min(values),
+            "max": max(values),
+            "all_values": values,
         }
 
         # Bonferroni correction
-        report['bonferroni_factor'] = n_experiments
-        report['corrected_alpha'] = 0.05 / n_experiments
+        report["bonferroni_factor"] = n_experiments
+        report["corrected_alpha"] = 0.05 / n_experiments
 
         # Cherry-picking analysis
         if reported_value is not None:
@@ -212,29 +210,29 @@ class WandBIntegration:
                     rank = i + 1
                     break
 
-            report['reported_value'] = reported_value
-            report['rank'] = rank
-            report['is_best'] = rank == 1 if rank else False
+            report["reported_value"] = reported_value
+            report["rank"] = rank
+            report["is_best"] = rank == 1 if rank else False
 
             if rank == 1:
-                report['cherry_picking_warning'] = (
+                report["cherry_picking_warning"] = (
                     f"WARNING: Reported value is the best out of {n_experiments} runs. "
                     f"This has a {100/n_experiments:.1f}% probability by chance alone."
                 )
 
         # Verdict
-        if n_experiments > 10 and report.get('is_best', False):
-            report['verdict'] = (
+        if n_experiments > 10 and report.get("is_best", False):
+            report["verdict"] = (
                 f"INVALID: Reporting best of {n_experiments} is cherry-picking. "
                 f"Report mean ({mean_val:.4f}) and std ({std_val:.4f}) instead."
             )
         elif n_experiments > 1:
-            report['verdict'] = (
+            report["verdict"] = (
                 f"Valid with {n_experiments} experiments. Report: "
                 f"{mean_val:.4f} +/- {std_val:.4f}"
             )
         else:
-            report['verdict'] = (
+            report["verdict"] = (
                 "WARNING: Only 1 experiment. Run multiple seeds for statistical validity."
             )
 
@@ -259,8 +257,7 @@ class MLflowIntegration:
         report = tracker.get_integrity_report()
     """
 
-    def __init__(self, experiment_name: str,
-                 tracking_uri: Optional[str] = None) -> None:
+    def __init__(self, experiment_name: str, tracking_uri: Optional[str] = None) -> None:
         """
         Initialize MLflow integration.
 
@@ -276,8 +273,9 @@ class MLflowIntegration:
         self._current_params: Dict[str, Any] = {}
         self._local_metrics: Dict[str, List[float]] = {}
 
-    def start_run(self, seed: int = 0, params: Optional[Dict[str, Any]] = None,
-                  run_name: Optional[str] = None) -> None:
+    def start_run(
+        self, seed: int = 0, params: Optional[Dict[str, Any]] = None, run_name: Optional[str] = None
+    ) -> None:
         """
         Start a new MLflow run.
 
@@ -301,11 +299,13 @@ class MLflowIntegration:
             self._current_run_id = run.info.run_id
 
             # Log demyst metadata
-            mlflow.log_params({
-                **self._current_params,
-                'demyst_seed': seed,
-                'demyst_tracked': True,
-            })
+            mlflow.log_params(
+                {
+                    **self._current_params,
+                    "demyst_seed": seed,
+                    "demyst_tracked": True,
+                }
+            )
 
         except ImportError:
             warnings.warn("mlflow not installed. Running in local-only mode.")
@@ -326,6 +326,7 @@ class MLflowIntegration:
 
         try:
             import mlflow
+
             mlflow.log_metric(key, value, step=step)
         except ImportError:
             pass
@@ -339,24 +340,21 @@ class MLflowIntegration:
 
     def end_run(self) -> None:
         """End the current run."""
-        final_metrics = {
-            k: v[-1]
-            for k, v in self._local_metrics.items()
-            if v
-        }
+        final_metrics = {k: v[-1] for k, v in self._local_metrics.items() if v}
 
         experiment = ExperimentMetadata(
-            run_id=self._current_run_id or 'unknown',
+            run_id=self._current_run_id or "unknown",
             timestamp=datetime.now().isoformat(),
             seed=self._current_seed,
             config=self._current_params,
             metrics=final_metrics,
-            tags=['demyst_tracked']
+            tags=["demyst_tracked"],
         )
         self._experiments.append(experiment)
 
         try:
             import mlflow
+
             mlflow.end_run()
         except ImportError:
             pass
@@ -367,15 +365,16 @@ class MLflowIntegration:
         """Get all tracked experiments."""
         return self._experiments
 
-    def get_integrity_report(self, metric_name: str = 'accuracy',
-                            reported_value: Optional[float] = None) -> Dict[str, Any]:
+    def get_integrity_report(
+        self, metric_name: str = "accuracy", reported_value: Optional[float] = None
+    ) -> Dict[str, Any]:
         """
         Generate a scientific integrity report.
 
         Identical interface to WandBIntegration for interoperability.
         """
         if not self._experiments:
-            return {'error': 'No experiments tracked'}
+            return {"error": "No experiments tracked"}
 
         values = []
         for exp in self._experiments:
@@ -383,25 +382,25 @@ class MLflowIntegration:
                 values.append(exp.metrics[metric_name])
 
         if not values:
-            return {'error': f'No values found for metric {metric_name}'}
+            return {"error": f"No values found for metric {metric_name}"}
 
         n = len(values)
         mean_val = sum(values) / n
         variance = sum((v - mean_val) ** 2 for v in values) / n
-        std_val = variance ** 0.5
+        std_val = variance**0.5
 
         seeds = [exp.seed for exp in self._experiments]
 
         report = {
-            'metric': metric_name,
-            'num_experiments': n,
-            'seeds_used': seeds,
-            'mean': mean_val,
-            'std': std_val,
-            'min': min(values),
-            'max': max(values),
-            'bonferroni_factor': n,
-            'corrected_alpha': 0.05 / n,
+            "metric": metric_name,
+            "num_experiments": n,
+            "seeds_used": seeds,
+            "mean": mean_val,
+            "std": std_val,
+            "min": min(values),
+            "max": max(values),
+            "bonferroni_factor": n,
+            "corrected_alpha": 0.05 / n,
         }
 
         if reported_value is not None:
@@ -412,20 +411,18 @@ class MLflowIntegration:
                 if abs(val - reported_value) < 1e-9:
                     rank = i + 1
                     break
-                
-            if rank is not None:
-                report['rank'] = rank
-                report['is_best'] = rank == 1
-                if rank == 1:
-                    report['cherry_picking_warning'] = (
-                        f"Reported best of {n} runs"
-                    )
 
-        if n > 10 and report.get('is_best', False):
-            report['verdict'] = f"Cherry-picking detected. Report mean instead."
+            if rank is not None:
+                report["rank"] = rank
+                report["is_best"] = rank == 1
+                if rank == 1:
+                    report["cherry_picking_warning"] = f"Reported best of {n} runs"
+
+        if n > 10 and report.get("is_best", False):
+            report["verdict"] = f"Cherry-picking detected. Report mean instead."
         elif n > 1:
-            report['verdict'] = f"Valid: {mean_val:.4f} +/- {std_val:.4f} ({n} runs)"
+            report["verdict"] = f"Valid: {mean_val:.4f} +/- {std_val:.4f} ({n} runs)"
         else:
-            report['verdict'] = "Run multiple seeds for validity."
+            report["verdict"] = "Run multiple seeds for validity."
 
         return report

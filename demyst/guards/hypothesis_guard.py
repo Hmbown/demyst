@@ -11,18 +11,19 @@ Philosophy: "If you ran 100 experiments, you need to report 100 experiments."
 """
 
 import ast
-import re
-import json
 import hashlib
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple, cast
-from enum import Enum
-from datetime import datetime
+import json
 import math
+import re
+from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 
 class StatisticalRisk(Enum):
     """Risk levels for statistical validity issues."""
+
     VALID = "valid"
     QUESTIONABLE = "questionable"
     INVALID = "invalid"
@@ -32,6 +33,7 @@ class StatisticalRisk(Enum):
 @dataclass
 class ExperimentRecord:
     """Record of a single experiment run."""
+
     experiment_id: str
     timestamp: str
     hyperparameters: Dict[str, Any]
@@ -45,6 +47,7 @@ class ExperimentRecord:
 @dataclass
 class StatisticalViolation:
     """Represents a statistical validity violation."""
+
     violation_type: str
     severity: StatisticalRisk
     line: int
@@ -57,6 +60,7 @@ class StatisticalViolation:
 @dataclass
 class CorrectedResult:
     """Result after applying proper statistical corrections."""
+
     original_p_value: float
     corrected_p_value: float
     correction_method: str
@@ -87,7 +91,7 @@ class BonferroniCorrector:
         return CorrectedResult(
             original_p_value=p_value,
             corrected_p_value=corrected_p,
-            correction_method='bonferroni',
+            correction_method="bonferroni",
             num_comparisons=num_comparisons,
             is_significant=corrected_p < alpha,
             explanation=(
@@ -95,7 +99,7 @@ class BonferroniCorrector:
                 f"Bonferroni-corrected p={corrected_p:.4f}. "
                 f"{'SIGNIFICANT' if corrected_p < alpha else 'NOT SIGNIFICANT'} "
                 f"at alpha={alpha}."
-            )
+            ),
         )
 
     @staticmethod
@@ -127,13 +131,13 @@ class BonferroniCorrector:
             results[original_idx] = CorrectedResult(
                 original_p_value=p,
                 corrected_p_value=corrected_p,
-                correction_method='holm-bonferroni',
+                correction_method="holm-bonferroni",
                 num_comparisons=n,
                 is_significant=is_significant,
                 explanation=(
                     f"Rank {rank+1}/{n}: p={p:.4f}, adjusted alpha={adjusted_alpha:.4f}. "
                     f"{'SIGNIFICANT' if is_significant else 'NOT SIGNIFICANT'}."
-                )
+                ),
             )
 
         return cast(List[CorrectedResult], results)
@@ -166,13 +170,13 @@ class BonferroniCorrector:
             results[original_idx] = CorrectedResult(
                 original_p_value=p,
                 corrected_p_value=corrected_p,
-                correction_method='benjamini-hochberg',
+                correction_method="benjamini-hochberg",
                 num_comparisons=n,
                 is_significant=rank <= max_significant_rank,
                 explanation=(
                     f"Rank {rank}/{n}: p={p:.4f}, FDR threshold={(rank/n)*alpha:.4f}. "
                     f"{'SIGNIFICANT' if rank <= max_significant_rank else 'NOT SIGNIFICANT'}."
-                )
+                ),
             )
 
         return cast(List[CorrectedResult], results)
@@ -197,12 +201,10 @@ class ExperimentTracker:
     def _load_history(self) -> None:
         """Load experiment history from storage."""
         try:
-            with open(self.storage_path, 'r') as f:
+            with open(self.storage_path, "r") as f:
                 data = json.load(f)
-                self.experiments = [
-                    ExperimentRecord(**exp) for exp in data.get('experiments', [])
-                ]
-                self.code_hashes = set(data.get('code_hashes', []))
+                self.experiments = [ExperimentRecord(**exp) for exp in data.get("experiments", [])]
+                self.code_hashes = set(data.get("code_hashes", []))
         except FileNotFoundError:
             self.experiments = []
             self.code_hashes = set()
@@ -210,28 +212,33 @@ class ExperimentTracker:
     def _save_history(self) -> None:
         """Save experiment history to storage."""
         data = {
-            'experiments': [
+            "experiments": [
                 {
-                    'experiment_id': e.experiment_id,
-                    'timestamp': e.timestamp,
-                    'hyperparameters': e.hyperparameters,
-                    'seed': e.seed,
-                    'metric_name': e.metric_name,
-                    'metric_value': e.metric_value,
-                    'p_value': e.p_value,
-                    'code_hash': e.code_hash
+                    "experiment_id": e.experiment_id,
+                    "timestamp": e.timestamp,
+                    "hyperparameters": e.hyperparameters,
+                    "seed": e.seed,
+                    "metric_name": e.metric_name,
+                    "metric_value": e.metric_value,
+                    "p_value": e.p_value,
+                    "code_hash": e.code_hash,
                 }
                 for e in self.experiments
             ],
-            'code_hashes': list(self.code_hashes)
+            "code_hashes": list(self.code_hashes),
         }
-        with open(self.storage_path, 'w') as f:
+        with open(self.storage_path, "w") as f:
             json.dump(data, f, indent=2)
 
-    def record_experiment(self, hyperparameters: Dict[str, Any], seed: int,
-                         metric_name: str, metric_value: float,
-                         p_value: Optional[float] = None,
-                         code: Optional[str] = None) -> ExperimentRecord:
+    def record_experiment(
+        self,
+        hyperparameters: Dict[str, Any],
+        seed: int,
+        metric_name: str,
+        metric_value: float,
+        p_value: Optional[float] = None,
+        code: Optional[str] = None,
+    ) -> ExperimentRecord:
         """Record a new experiment."""
         code_hash = hashlib.sha256(code.encode()).hexdigest()[:16] if code else "unknown"
 
@@ -245,7 +252,7 @@ class ExperimentTracker:
             metric_name=metric_name,
             metric_value=metric_value,
             p_value=p_value,
-            code_hash=code_hash
+            code_hash=code_hash,
         )
 
         self.experiments.append(record)
@@ -254,8 +261,9 @@ class ExperimentTracker:
 
         return record
 
-    def get_experiment_count(self, code_hash: Optional[str] = None,
-                            metric_name: Optional[str] = None) -> int:
+    def get_experiment_count(
+        self, code_hash: Optional[str] = None, metric_name: Optional[str] = None
+    ) -> int:
         """Get count of experiments matching criteria."""
         filtered = self.experiments
 
@@ -276,8 +284,7 @@ class ExperimentTracker:
 
         return [e.seed for e in filtered]
 
-    def analyze_reporting_bias(self, reported_result: float,
-                               metric_name: str) -> Dict[str, Any]:
+    def analyze_reporting_bias(self, reported_result: float, metric_name: str) -> Dict[str, Any]:
         """
         Analyze if a reported result shows signs of cherry-picking.
 
@@ -289,10 +296,7 @@ class ExperimentTracker:
         relevant = [e for e in self.experiments if e.metric_name == metric_name]
 
         if not relevant:
-            return {
-                'warning': 'No experiment history found',
-                'experiments_tracked': 0
-            }
+            return {"warning": "No experiment history found", "experiments_tracked": 0}
 
         values = [e.metric_value for e in relevant]
         n = len(values)
@@ -306,21 +310,21 @@ class ExperimentTracker:
 
         # Calculate probability of seeing this or better by chance
         mean_val = sum(values) / n
-        std_val = (sum((v - mean_val)**2 for v in values) / n) ** 0.5 if n > 1 else 0
+        std_val = (sum((v - mean_val) ** 2 for v in values) / n) ** 0.5 if n > 1 else 0
 
         # If reporting the best result out of n, the probability is 1/n
         cherry_pick_probability = 1.0 / n if rank == 1 else None
 
         return {
-            'experiments_run': n,
-            'reported_value': reported_result,
-            'rank': rank,
-            'is_best': rank == 1,
-            'mean_across_runs': mean_val,
-            'std_across_runs': std_val,
-            'cherry_pick_probability': cherry_pick_probability,
-            'bonferroni_factor': n,
-            'seeds_used': self.get_seeds_used()
+            "experiments_run": n,
+            "reported_value": reported_result,
+            "rank": rank,
+            "is_best": rank == 1,
+            "mean_across_runs": mean_val,
+            "std_across_runs": std_val,
+            "cherry_pick_probability": cherry_pick_probability,
+            "bonferroni_factor": n,
+            "seeds_used": self.get_seeds_used(),
         }
 
 
@@ -335,11 +339,20 @@ class HypothesisAnalyzer(ast.NodeVisitor):
     """
 
     P_VALUE_FUNCTIONS = {
-        'ttest_ind', 'ttest_rel', 'ttest_1samp',
-        'mannwhitneyu', 'wilcoxon', 'kruskal',
-        'chi2_contingency', 'fisher_exact',
-        'pearsonr', 'spearmanr', 'kendalltau',
-        'f_oneway', 'anova', 'anova_lm'
+        "ttest_ind",
+        "ttest_rel",
+        "ttest_1samp",
+        "mannwhitneyu",
+        "wilcoxon",
+        "kruskal",
+        "chi2_contingency",
+        "fisher_exact",
+        "pearsonr",
+        "spearmanr",
+        "kendalltau",
+        "f_oneway",
+        "anova",
+        "anova_lm",
     }
 
     def __init__(self) -> None:
@@ -380,37 +393,39 @@ class HypothesisAnalyzer(ast.NodeVisitor):
 
         if func_name and func_name in self.P_VALUE_FUNCTIONS:
             test_info = {
-                'function': func_name,
-                'line': node.lineno,
-                'in_loop': self.in_loop,
-                'containing_function': self.current_function
+                "function": func_name,
+                "line": node.lineno,
+                "in_loop": self.in_loop,
+                "containing_function": self.current_function,
             }
             self.statistical_tests.append(test_info)
 
             # Statistical test in a loop without correction
             if self.in_loop:
-                self.violations.append(StatisticalViolation(
-                    violation_type='uncorrected_multiple_tests',
-                    severity=StatisticalRisk.INVALID,
-                    line=node.lineno,
-                    description=(
-                        f"Statistical test {func_name}() called inside a loop. "
-                        "Multiple comparisons require p-value correction."
-                    ),
-                    statistical_impact=(
-                        "Running multiple statistical tests inflates the false positive rate. "
-                        f"With 20 tests at alpha=0.05, you have a 64% chance of at least one "
-                        "false positive (1 - 0.95^20)."
-                    ),
-                    corrected_interpretation=(
-                        "Apply Bonferroni correction: divide alpha by number of tests, "
-                        "or use Benjamini-Hochberg for FDR control."
-                    ),
-                    recommendation=(
-                        "from statsmodels.stats.multitest import multipletests\n"
-                        "rejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')"
+                self.violations.append(
+                    StatisticalViolation(
+                        violation_type="uncorrected_multiple_tests",
+                        severity=StatisticalRisk.INVALID,
+                        line=node.lineno,
+                        description=(
+                            f"Statistical test {func_name}() called inside a loop. "
+                            "Multiple comparisons require p-value correction."
+                        ),
+                        statistical_impact=(
+                            "Running multiple statistical tests inflates the false positive rate. "
+                            f"With 20 tests at alpha=0.05, you have a 64% chance of at least one "
+                            "false positive (1 - 0.95^20)."
+                        ),
+                        corrected_interpretation=(
+                            "Apply Bonferroni correction: divide alpha by number of tests, "
+                            "or use Benjamini-Hochberg for FDR control."
+                        ),
+                        recommendation=(
+                            "from statsmodels.stats.multitest import multipletests\n"
+                            "rejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')"
+                        ),
                     )
-                ))
+                )
 
         self.generic_visit(node)
 
@@ -418,27 +433,29 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         """Detect conditional logic based on p-values."""
         # Check for p < 0.05 patterns
         if self._is_p_value_check(node.test):
-            self.violations.append(StatisticalViolation(
-                violation_type='conditional_reporting',
-                severity=StatisticalRisk.QUESTIONABLE,
-                line=node.lineno,
-                description=(
-                    "Conditional logic based on p-value detected. "
-                    "This pattern enables selective reporting."
-                ),
-                statistical_impact=(
-                    "Conditioning on significance leads to publication bias. "
-                    "Non-significant results are equally important for science."
-                ),
-                corrected_interpretation=(
-                    "Report ALL results regardless of significance. "
-                    "Use pre-registration to prevent outcome-dependent analysis."
-                ),
-                recommendation=(
-                    "Remove conditional branching on p-values. Report effect sizes "
-                    "and confidence intervals instead of just significance."
+            self.violations.append(
+                StatisticalViolation(
+                    violation_type="conditional_reporting",
+                    severity=StatisticalRisk.QUESTIONABLE,
+                    line=node.lineno,
+                    description=(
+                        "Conditional logic based on p-value detected. "
+                        "This pattern enables selective reporting."
+                    ),
+                    statistical_impact=(
+                        "Conditioning on significance leads to publication bias. "
+                        "Non-significant results are equally important for science."
+                    ),
+                    corrected_interpretation=(
+                        "Report ALL results regardless of significance. "
+                        "Use pre-registration to prevent outcome-dependent analysis."
+                    ),
+                    recommendation=(
+                        "Remove conditional branching on p-values. Report effect sizes "
+                        "and confidence intervals instead of just significance."
+                    ),
                 )
-            ))
+            )
 
         self.generic_visit(node)
 
@@ -456,7 +473,7 @@ class HypothesisAnalyzer(ast.NodeVisitor):
             # Look for patterns like: p < 0.05, pvalue < 0.05
             if isinstance(node.left, ast.Name):
                 name = node.left.id.lower()
-                if 'p' in name or 'pval' in name or 'significance' in name:
+                if "p" in name or "pval" in name or "significance" in name:
                     return True
 
             for comparator in node.comparators:
@@ -479,7 +496,9 @@ class HypothesisGuard:
         4. Generates corrected statistical interpretations
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, experiment_storage: Optional[str] = None) -> None:
+    def __init__(
+        self, config: Optional[Dict[str, Any]] = None, experiment_storage: Optional[str] = None
+    ) -> None:
         self.config = config or {}
         self.corrector = BonferroniCorrector()
         self.tracker = ExperimentTracker(experiment_storage)
@@ -498,11 +517,7 @@ class HypothesisGuard:
         try:
             tree = ast.parse(source)
         except SyntaxError as e:
-            return {
-                'error': f"Syntax error: {e}",
-                'violations': [],
-                'summary': None
-            }
+            return {"error": f"Syntax error: {e}", "violations": [], "summary": None}
 
         self.analyzer = HypothesisAnalyzer()
         self.analyzer.visit(tree)
@@ -513,26 +528,27 @@ class HypothesisGuard:
 
         if num_tests > 1:
             correction_info = {
-                'num_tests_detected': num_tests,
-                'bonferroni_alpha': 0.05 / num_tests,
-                'recommendation': (
+                "num_tests_detected": num_tests,
+                "bonferroni_alpha": 0.05 / num_tests,
+                "recommendation": (
                     f"Detected {num_tests} statistical tests. "
                     f"Use alpha = {0.05/num_tests:.4f} for significance, "
                     f"or apply FDR correction."
-                )
+                ),
             }
 
         summary = self._generate_summary()
 
         return {
-            'violations': [self._violation_to_dict(v) for v in self.analyzer.violations],
-            'statistical_tests': self.analyzer.statistical_tests,
-            'correction_info': correction_info,
-            'summary': summary
+            "violations": [self._violation_to_dict(v) for v in self.analyzer.violations],
+            "statistical_tests": self.analyzer.statistical_tests,
+            "correction_info": correction_info,
+            "summary": summary,
         }
 
-    def correct_result(self, p_value: float, num_experiments: int,
-                       method: str = 'bonferroni') -> CorrectedResult:
+    def correct_result(
+        self, p_value: float, num_experiments: int, method: str = "bonferroni"
+    ) -> CorrectedResult:
         """
         Apply correction to a reported p-value.
 
@@ -544,17 +560,18 @@ class HypothesisGuard:
         Returns:
             CorrectedResult with corrected p-value and interpretation
         """
-        if method == 'bonferroni':
+        if method == "bonferroni":
             return self.corrector.bonferroni(p_value, num_experiments)
-        elif method == 'holm':
+        elif method == "holm":
             return self.corrector.holm_bonferroni([p_value] * num_experiments)[0]
-        elif method == 'fdr_bh':
+        elif method == "fdr_bh":
             return self.corrector.benjamini_hochberg([p_value] * num_experiments)[0]
         else:
             raise ValueError(f"Unknown correction method: {method}")
 
-    def validate_reported_result(self, reported_p: float, reported_metric: float,
-                                 metric_name: str) -> Dict[str, Any]:
+    def validate_reported_result(
+        self, reported_p: float, reported_metric: float, metric_name: str
+    ) -> Dict[str, Any]:
         """
         Validate a result claimed in a paper/report against experiment history.
 
@@ -573,7 +590,7 @@ class HypothesisGuard:
         corrected_p = reported_p
 
         # Check if multiple experiments were run
-        n_experiments = bias_analysis.get('experiments_run', 0)
+        n_experiments = bias_analysis.get("experiments_run", 0)
 
         if n_experiments > 1:
             # Apply Bonferroni correction
@@ -581,42 +598,46 @@ class HypothesisGuard:
             corrected_p = corrected.corrected_p_value
 
             if reported_p < 0.05 and corrected_p >= 0.05:
-                issues.append({
-                    'type': 'significance_lost_after_correction',
-                    'severity': 'critical',
-                    'description': (
-                        f"You ran {n_experiments} experiments. Your p-value of {reported_p:.4f} "
-                        f"becomes {corrected_p:.4f} after Bonferroni correction. "
-                        f"Result is {'NOT ' if corrected_p >= 0.05 else ''}SIGNIFICANT."
-                    )
-                })
+                issues.append(
+                    {
+                        "type": "significance_lost_after_correction",
+                        "severity": "critical",
+                        "description": (
+                            f"You ran {n_experiments} experiments. Your p-value of {reported_p:.4f} "
+                            f"becomes {corrected_p:.4f} after Bonferroni correction. "
+                            f"Result is {'NOT ' if corrected_p >= 0.05 else ''}SIGNIFICANT."
+                        ),
+                    }
+                )
 
-            if bias_analysis.get('is_best', False):
-                issues.append({
-                    'type': 'cherry_picking_detected',
-                    'severity': 'critical',
-                    'description': (
-                        f"The reported result (rank 1/{n_experiments}) is the best outcome. "
-                        f"Probability of this by chance: {1/n_experiments:.2%}. "
-                        f"This constitutes cherry-picking."
-                    )
-                })
+            if bias_analysis.get("is_best", False):
+                issues.append(
+                    {
+                        "type": "cherry_picking_detected",
+                        "severity": "critical",
+                        "description": (
+                            f"The reported result (rank 1/{n_experiments}) is the best outcome. "
+                            f"Probability of this by chance: {1/n_experiments:.2%}. "
+                            f"This constitutes cherry-picking."
+                        ),
+                    }
+                )
 
         verdict = "VALID" if not issues else "INVALID"
 
         return {
-            'original_p_value': reported_p,
-            'corrected_p_value': corrected_p,
-            'experiments_analyzed': n_experiments,
-            'issues': issues,
-            'bias_analysis': bias_analysis,
-            'verdict': verdict
+            "original_p_value": reported_p,
+            "corrected_p_value": corrected_p,
+            "experiments_analyzed": n_experiments,
+            "issues": issues,
+            "bias_analysis": bias_analysis,
+            "verdict": verdict,
         }
 
     def _generate_summary(self) -> Dict[str, Any]:
         """Generate analysis summary."""
         if not self.analyzer:
-            return {'error': 'No analysis performed'}
+            return {"error": "No analysis performed"}
 
         violations = self.analyzer.violations
         invalid = sum(1 for v in violations if v.severity == StatisticalRisk.INVALID)
@@ -630,21 +651,21 @@ class HypothesisGuard:
             verdict = "PASS: No statistical validity issues detected."
 
         return {
-            'total_violations': len(violations),
-            'invalid_count': invalid,
-            'questionable_count': questionable,
-            'statistical_tests_found': len(self.analyzer.statistical_tests),
-            'verdict': verdict
+            "total_violations": len(violations),
+            "invalid_count": invalid,
+            "questionable_count": questionable,
+            "statistical_tests_found": len(self.analyzer.statistical_tests),
+            "verdict": verdict,
         }
 
     def _violation_to_dict(self, v: StatisticalViolation) -> Dict[str, Any]:
         """Convert violation to dictionary."""
         return {
-            'type': v.violation_type,
-            'severity': v.severity.value,
-            'line': v.line,
-            'description': v.description,
-            'statistical_impact': v.statistical_impact,
-            'corrected_interpretation': v.corrected_interpretation,
-            'recommendation': v.recommendation
+            "type": v.violation_type,
+            "severity": v.severity.value,
+            "line": v.line,
+            "description": v.description,
+            "statistical_impact": v.statistical_impact,
+            "corrected_interpretation": v.corrected_interpretation,
+            "recommendation": v.recommendation,
         }

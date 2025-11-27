@@ -16,6 +16,7 @@ from typing import Any, Dict, Generator, Iterable, List, Optional, Union
 # Try to import Rich components
 try:
     from rich.console import Console
+    from rich.markdown import Markdown
     from rich.panel import Panel
     from rich.progress import (
         BarColumn,
@@ -28,9 +29,9 @@ try:
     from rich.syntax import Syntax
     from rich.table import Table
     from rich.text import Text
-    from rich.tree import Tree
-    from rich.markdown import Markdown
     from rich.theme import Theme
+    from rich.tree import Tree
+
     RICH_AVAILABLE = True
 except ImportError:
     RICH_AVAILABLE = False
@@ -60,6 +61,7 @@ DEMYST_THEME = {
 # =============================================================================
 # Console Singleton
 # =============================================================================
+
 
 class DemystConsole:
     """
@@ -138,11 +140,7 @@ class DemystConsole:
                 print("=" * 60)
 
     def print_panel(
-        self,
-        content: str,
-        title: Optional[str] = None,
-        style: str = "default",
-        **kwargs: Any
+        self, content: str, title: Optional[str] = None, style: str = "default", **kwargs: Any
     ) -> None:
         """Print content in a panel."""
         if self._console:
@@ -162,7 +160,7 @@ class DemystConsole:
         line_numbers: bool = True,
         highlight_lines: Optional[set[int]] = None,
         start_line: int = 1,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None:
         """Print syntax-highlighted code."""
         if self._console:
@@ -173,7 +171,7 @@ class DemystConsole:
                 highlight_lines=highlight_lines,
                 start_line=start_line,
                 theme="monokai",
-                **kwargs
+                **kwargs,
             )
             self._console.print(syntax)
         else:
@@ -183,11 +181,7 @@ class DemystConsole:
                 print(f"{marker} {i:4d} | {line}")
 
     def print_table(
-        self,
-        columns: List[str],
-        rows: List[List[str]],
-        title: Optional[str] = None,
-        **kwargs: Any
+        self, columns: List[str], rows: List[List[str]], title: Optional[str] = None, **kwargs: Any
     ) -> None:
         """Print a formatted table."""
         if self._console:
@@ -231,7 +225,7 @@ class DemystConsole:
         # Read source if not provided
         if not source and file_path:
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, "r", encoding="utf-8") as f:
                     source = f.read()
             except Exception:
                 pass
@@ -239,10 +233,10 @@ class DemystConsole:
         source_lines = source.splitlines() if source else []
 
         for v in violations:
-            violation_type = v.get('type', 'unknown')
-            line = v.get('line', 0)
-            description = v.get('description', '')
-            recommendation = v.get('recommendation', '')
+            violation_type = v.get("type", "unknown")
+            line = v.get("line", 0)
+            description = v.get("description", "")
+            recommendation = v.get("recommendation", "")
 
             # Header
             type_style = self._get_violation_style(violation_type)
@@ -254,8 +248,10 @@ class DemystConsole:
                     + (f" in [file]{file_path}[/file]" if file_path else "")
                 )
             else:
-                print(f"\n{violation_type.upper()} Line {line}" +
-                      (f" in {file_path}" if file_path else ""))
+                print(
+                    f"\n{violation_type.upper()} Line {line}"
+                    + (f" in {file_path}" if file_path else "")
+                )
 
             # Description
             if description:
@@ -295,17 +291,17 @@ class DemystConsole:
     def _get_violation_style(self, violation_type: str) -> str:
         """Get the style for a violation type."""
         type_styles = {
-            'mean': 'mirage',
-            'sum': 'mirage',
-            'argmax': 'mirage',
-            'argmin': 'mirage',
-            'leakage': 'leakage',
-            'hypothesis': 'hypothesis',
-            'unit': 'unit',
-            'tensor': 'tensor',
-            'gradient': 'tensor',
+            "mean": "mirage",
+            "sum": "mirage",
+            "argmax": "mirage",
+            "argmin": "mirage",
+            "leakage": "leakage",
+            "hypothesis": "hypothesis",
+            "unit": "unit",
+            "tensor": "tensor",
+            "gradient": "tensor",
         }
-        return type_styles.get(violation_type, 'error')
+        return type_styles.get(violation_type, "error")
 
     def print_summary(
         self,
@@ -330,11 +326,7 @@ class DemystConsole:
             for category, count in counts.items():
                 print(f"  {category}: {count}")
 
-    def print_diff(
-        self,
-        diff: str,
-        title: str = "Changes"
-    ) -> None:
+    def print_diff(self, diff: str, title: str = "Changes") -> None:
         """Print a unified diff with colors."""
         if not diff:
             return
@@ -345,11 +337,11 @@ class DemystConsole:
             self._console.print(f"[bold]{title}[/bold]")
 
             for line in lines:
-                if line.startswith('+') and not line.startswith('+++'):
+                if line.startswith("+") and not line.startswith("+++"):
                     self._console.print(f"[green]{line}[/green]")
-                elif line.startswith('-') and not line.startswith('---'):
+                elif line.startswith("-") and not line.startswith("---"):
                     self._console.print(f"[red]{line}[/red]")
-                elif line.startswith('@@'):
+                elif line.startswith("@@"):
                     self._console.print(f"[cyan]{line}[/cyan]")
                 else:
                     self._console.print(line)
@@ -415,10 +407,7 @@ class _NullContext:
 _console: Optional[DemystConsole] = None
 
 
-def get_console(
-    force_terminal: bool = False,
-    no_color: bool = False
-) -> DemystConsole:
+def get_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
     """Get the global console instance."""
     global _console
     if _console is None:
@@ -426,10 +415,7 @@ def get_console(
     return _console
 
 
-def configure_console(
-    force_terminal: bool = False,
-    no_color: bool = False
-) -> DemystConsole:
+def configure_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
     """Configure and return a new console instance."""
     global _console
     _console = DemystConsole(force_terminal=force_terminal, no_color=no_color)
@@ -439,6 +425,7 @@ def configure_console(
 # =============================================================================
 # Report Formatting
 # =============================================================================
+
 
 def format_analysis_report(
     results: Dict[str, Any],
@@ -463,34 +450,34 @@ def format_analysis_report(
     }
 
     # Process each guard result
-    if 'mirage' in results and not results['mirage'].get('error'):
-        issues = results['mirage'].get('issues', [])
+    if "mirage" in results and not results["mirage"].get("error"):
+        issues = results["mirage"].get("issues", [])
         counts["Mirages"] = len(issues)
         if issues:
             console.print_violations(issues, file_path)
 
-    if 'leakage' in results and not results['leakage'].get('error'):
-        violations = results['leakage'].get('violations', [])
+    if "leakage" in results and not results["leakage"].get("error"):
+        violations = results["leakage"].get("violations", [])
         counts["Data Leakage"] = len(violations)
         if violations:
             console.print_violations(violations, file_path)
 
-    if 'hypothesis' in results and not results['hypothesis'].get('error'):
-        violations = results['hypothesis'].get('violations', [])
+    if "hypothesis" in results and not results["hypothesis"].get("error"):
+        violations = results["hypothesis"].get("violations", [])
         counts["Statistical Issues"] = len(violations)
         if violations:
             console.print_violations(violations, file_path)
 
-    if 'unit' in results and not results['unit'].get('error'):
-        violations = results['unit'].get('violations', [])
+    if "unit" in results and not results["unit"].get("error"):
+        violations = results["unit"].get("violations", [])
         counts["Unit Issues"] = len(violations)
         if violations:
             console.print_violations(violations, file_path)
 
-    if 'tensor' in results and not results['tensor'].get('error'):
-        gradient = results['tensor'].get('gradient_issues', [])
-        norm = results['tensor'].get('normalization_issues', [])
-        reward = results['tensor'].get('reward_issues', [])
+    if "tensor" in results and not results["tensor"].get("error"):
+        gradient = results["tensor"].get("gradient_issues", [])
+        norm = results["tensor"].get("normalization_issues", [])
+        reward = results["tensor"].get("reward_issues", [])
         counts["Tensor Issues"] = len(gradient) + len(norm) + len(reward)
         for issues in [gradient, norm, reward]:
             if issues:

@@ -8,9 +8,11 @@ Handles loading and merging of configuration from:
 """
 
 import os
-import yaml
-from typing import Dict, Any, Optional, List, cast
 from pathlib import Path
+from typing import Any, Dict, List, Optional, cast
+
+import yaml
+
 
 class ConfigManager:
     """Manages Demyst configuration."""
@@ -18,36 +20,20 @@ class ConfigManager:
     DEFAULT_CONFIG = {
         "profile": "default",
         "rules": {
-            "mirage": {
-                "enabled": True,
-                "severity": "critical",
-                "exclude": []
-            },
-            "tensor": {
-                "enabled": True,
-                "severity": "critical",
-                "exclude": []
-            },
-            "leakage": {
-                "enabled": True,
-                "severity": "critical",
-                "exclude": []
-            },
-            "hypothesis": {
-                "enabled": True,
-                "severity": "warning",
-                "exclude": []
-            },
-            "unit": {
-                "enabled": True,
-                "severity": "warning",
-                "exclude": []
-            }
+            "mirage": {"enabled": True, "severity": "critical", "exclude": []},
+            "tensor": {"enabled": True, "severity": "critical", "exclude": []},
+            "leakage": {"enabled": True, "severity": "critical", "exclude": []},
+            "hypothesis": {"enabled": True, "severity": "warning", "exclude": []},
+            "unit": {"enabled": True, "severity": "warning", "exclude": []},
         },
         "ignore_patterns": [
-            "**/test_*", "**/*_test.py", "**/tests/**",
-            "**/.git/**", "**/venv/**", "**/__pycache__/**"
-        ]
+            "**/test_*",
+            "**/*_test.py",
+            "**/tests/**",
+            "**/.git/**",
+            "**/venv/**",
+            "**/__pycache__/**",
+        ],
     }
 
     def __init__(self, config_path: Optional[str] = None):
@@ -61,7 +47,7 @@ class ConfigManager:
         # Load from file if exists
         if os.path.exists(self.config_path):
             try:
-                with open(self.config_path, 'r') as f:
+                with open(self.config_path, "r") as f:
                     user_config = yaml.safe_load(f)
                     if user_config:
                         config = self._merge_configs(config, user_config)
@@ -71,23 +57,23 @@ class ConfigManager:
         # Load profile if specified
         profile_name = str(config.get("profile", "default"))
         if profile_name != "default":
-             profile_config = self._load_profile(profile_name)
-             if profile_config:
-                 # Profile overrides defaults, but user config overrides profile
-                 # So we merge profile into defaults, then user config into that
-                 # Re-loading user config to ensure it takes precedence
-                 base_config = self.DEFAULT_CONFIG.copy()
-                 merged_with_profile = self._merge_configs(base_config, profile_config)
+            profile_config = self._load_profile(profile_name)
+            if profile_config:
+                # Profile overrides defaults, but user config overrides profile
+                # So we merge profile into defaults, then user config into that
+                # Re-loading user config to ensure it takes precedence
+                base_config = self.DEFAULT_CONFIG.copy()
+                merged_with_profile = self._merge_configs(base_config, profile_config)
 
-                 if os.path.exists(self.config_path):
-                     with open(self.config_path, 'r') as f:
-                         user_config = yaml.safe_load(f)
-                         if user_config:
-                             config = self._merge_configs(merged_with_profile, user_config)
-                         else:
-                             config = merged_with_profile
-                 else:
-                     config = merged_with_profile
+                if os.path.exists(self.config_path):
+                    with open(self.config_path, "r") as f:
+                        user_config = yaml.safe_load(f)
+                        if user_config:
+                            config = self._merge_configs(merged_with_profile, user_config)
+                        else:
+                            config = merged_with_profile
+                else:
+                    config = merged_with_profile
 
         return config
 
@@ -97,6 +83,7 @@ class ConfigManager:
             # Dynamic import of profile module
             module_name = f"demyst.profiles.{profile_name}"
             import importlib
+
             module = importlib.import_module(module_name)
             return getattr(module, "PROFILE", {})
         except ImportError:

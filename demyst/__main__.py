@@ -9,7 +9,8 @@ It delegates to the main CLI interface.
 """
 
 import sys
+
 from demyst.cli import main
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

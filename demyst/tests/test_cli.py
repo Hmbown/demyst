@@ -4,12 +4,13 @@ CLI Entry Point Tests
 Tests that all CLI commands work correctly and return appropriate exit codes.
 """
 
-import pytest
+import json
 import subprocess
 import sys
-import json
 import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestCLIBasicCommands:
@@ -18,34 +19,26 @@ class TestCLIBasicCommands:
     def test_version_flag(self):
         """--version should print version and exit 0."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', '--version'],
-            capture_output=True,
-            text=True
+            [sys.executable, "-m", "demyst", "--version"], capture_output=True, text=True
         )
 
         assert result.returncode == 0
-        assert '1.0.0' in result.stdout or '1.0.0' in result.stderr
+        assert "Demyst v1.1.0" in result.stdout or "Demyst v1.1.0" in result.stderr
 
     def test_help_flag(self):
         """--help should print help and exit 0."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', '--help'],
-            capture_output=True,
-            text=True
+            [sys.executable, "-m", "demyst", "--help"], capture_output=True, text=True
         )
 
         assert result.returncode == 0
         # Should contain usage information
         output = result.stdout + result.stderr
-        assert 'demyst' in output.lower()
+        assert "demyst" in output.lower()
 
     def test_no_args_shows_help(self):
         """No arguments should show help or usage."""
-        result = subprocess.run(
-            [sys.executable, '-m', 'demyst'],
-            capture_output=True,
-            text=True
-        )
+        result = subprocess.run([sys.executable, "-m", "demyst"], capture_output=True, text=True)
 
         # Should exit cleanly
         assert result.returncode == 0
@@ -59,10 +52,10 @@ class TestCLIAnalyzeCommand:
     def test_analyze_file_exists(self, swarm_collapse_path):
         """Analyze should work on existing file."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "analyze", str(swarm_collapse_path)],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
         )
 
         # May return 0 or 1 depending on issues found
@@ -71,22 +64,22 @@ class TestCLIAnalyzeCommand:
     def test_analyze_nonexistent_file(self):
         """Analyze should fail gracefully for nonexistent file."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', '/nonexistent/path/file.py'],
+            [sys.executable, "-m", "demyst", "analyze", "/nonexistent/path/file.py"],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # CLI returns error info (may be exit 0 with error in output, or exit 1)
         output = result.stdout + result.stderr
-        assert 'error' in output.lower() or result.returncode == 1
+        assert "error" in output.lower() or result.returncode == 1
 
     def test_analyze_directory(self, examples_dir):
         """Analyze should work on directories."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', str(examples_dir)],
+            [sys.executable, "-m", "demyst", "analyze", str(examples_dir)],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         # Should complete
@@ -99,13 +92,13 @@ class TestCLIMirageCommand:
     def test_mirage_detects_issues(self, swarm_collapse_path):
         """Mirage command should detect mirages."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path)],
+            [sys.executable, "-m", "demyst", "mirage", str(swarm_collapse_path)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 1  # Has mirages
-        assert 'COMPUTATIONAL MIRAGES DETECTED' in result.stdout
+        assert "Computational Mirages Detected" in result.stdout
 
     def test_mirage_clean_file(self, tmp_path):
         """Mirage command should return 0 for clean file."""
@@ -119,22 +112,30 @@ def clean_function():
         clean_file.write_text(clean_code)
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(clean_file)],
+            [sys.executable, "-m", "demyst", "mirage", str(clean_file)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         assert result.returncode == 0
-        assert 'No computational mirages detected' in result.stdout
+        assert "No computational mirages detected" in result.stdout
 
     def test_mirage_fix_dryrun(self, swarm_collapse_path):
         """Mirage command with --fix --dry-run should not modify file."""
         original_content = swarm_collapse_path.read_text()
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(swarm_collapse_path), '--fix', '--dry-run'],
+            [
+                sys.executable,
+                "-m",
+                "demyst",
+                "mirage",
+                str(swarm_collapse_path),
+                "--fix",
+                "--dry-run",
+            ],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # File should not be modified
@@ -144,24 +145,25 @@ def clean_function():
 class TestCLIAllCommands:
     """Test all CLI commands exist and accept --help."""
 
-    @pytest.mark.parametrize("command", [
-        'analyze',
-        'mirage',
-        'leakage',
-        'hypothesis',
-        'units',
-        'tensor',
-        'report',
-        'paper',
-        'ci',
-        'fix'
-    ])
+    @pytest.mark.parametrize(
+        "command",
+        [
+            "analyze",
+            "mirage",
+            "leakage",
+            "hypothesis",
+            "units",
+            "tensor",
+            "report",
+            "paper",
+            "ci",
+            "fix",
+        ],
+    )
     def test_command_help_available(self, command):
         """Each command should have help available."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', command, '--help'],
-            capture_output=True,
-            text=True
+            [sys.executable, "-m", "demyst", command, "--help"], capture_output=True, text=True
         )
 
         assert result.returncode == 0, f"{command} --help should work"
@@ -174,10 +176,10 @@ class TestCLICICommand:
     def test_ci_command_on_examples(self, examples_dir):
         """CI command should work on examples directory."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'ci', str(examples_dir)],
+            [sys.executable, "-m", "demyst", "ci", str(examples_dir)],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         # Should complete without crashing
@@ -186,10 +188,10 @@ class TestCLICICommand:
     def test_ci_strict_mode(self, examples_dir):
         """CI --strict should be more stringent."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'ci', str(examples_dir), '--strict'],
+            [sys.executable, "-m", "demyst", "ci", str(examples_dir), "--strict"],
             capture_output=True,
             text=True,
-            timeout=120
+            timeout=120,
         )
 
         # Examples have issues, strict mode may fail
@@ -202,10 +204,18 @@ class TestCLIOutputFormats:
     def test_json_format_valid(self, swarm_collapse_path):
         """--format json should produce valid JSON."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', str(swarm_collapse_path), '--format', 'json'],
+            [
+                sys.executable,
+                "-m",
+                "demyst",
+                "analyze",
+                str(swarm_collapse_path),
+                "--format",
+                "json",
+            ],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
         )
 
         # Should be valid JSON (if output is present)
@@ -220,10 +230,18 @@ class TestCLIOutputFormats:
     def test_markdown_format(self, swarm_collapse_path):
         """--format markdown should work."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'analyze', str(swarm_collapse_path), '--format', 'markdown'],
+            [
+                sys.executable,
+                "-m",
+                "demyst",
+                "analyze",
+                str(swarm_collapse_path),
+                "--format",
+                "markdown",
+            ],
             capture_output=True,
             text=True,
-            timeout=60
+            timeout=60,
         )
 
         assert result.returncode in [0, 1]
@@ -238,15 +256,15 @@ class TestCLIErrorHandling:
         bad_file.write_text("def broken(:\n    pass")
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(bad_file)],
+            [sys.executable, "-m", "demyst", "mirage", str(bad_file)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # Should fail but not crash
         assert result.returncode == 1
         output = result.stdout + result.stderr
-        assert 'syntax' in output.lower() or 'error' in output.lower()
+        assert "syntax" in output.lower() or "error" in output.lower()
 
     def test_empty_file(self, tmp_path):
         """CLI should handle empty files."""
@@ -254,9 +272,9 @@ class TestCLIErrorHandling:
         empty_file.write_text("")
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'mirage', str(empty_file)],
+            [sys.executable, "-m", "demyst", "mirage", str(empty_file)],
             capture_output=True,
-            text=True
+            text=True,
         )
 
         # Should complete (empty file has no mirages)
@@ -266,28 +284,29 @@ class TestCLIErrorHandling:
 class TestCLIExampleFilesCoverage:
     """Test CLI on all example files."""
 
-    @pytest.mark.parametrize("example_file,command,should_fail", [
-        ("swarm_collapse.py", "mirage", True),
-        ("random_walk.py", "mirage", True),
-    ])
+    @pytest.mark.parametrize(
+        "example_file,command,should_fail",
+        [
+            ("swarm_collapse.py", "mirage", True),
+            ("random_walk.py", "mirage", True),
+        ],
+    )
     def test_example_detection(self, examples_dir, example_file, command, should_fail):
         """Each example should fail its appropriate check."""
         file_path = examples_dir / example_file
 
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', command, str(file_path)],
+            [sys.executable, "-m", "demyst", command, str(file_path)],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         if should_fail:
-            assert result.returncode == 1, \
-                f"{example_file} should fail {command} check"
+            assert result.returncode == 1, f"{example_file} should fail {command} check"
         else:
-            assert result.returncode == 0, \
-                f"{example_file} should pass {command} check"
+            assert result.returncode == 0, f"{example_file} should pass {command} check"
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

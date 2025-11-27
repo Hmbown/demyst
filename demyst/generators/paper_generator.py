@@ -10,13 +10,14 @@ Philosophy: "The paper should be a printout of the code's truth."
 import ast
 import re
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple, cast
 from datetime import datetime
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 
 @dataclass
 class ModelArchitecture:
     """Extracted model architecture information."""
+
     name: str
     layers: List[Dict[str, Any]]
     total_parameters: Optional[int]
@@ -27,6 +28,7 @@ class ModelArchitecture:
 @dataclass
 class TrainingConfiguration:
     """Extracted training configuration."""
+
     optimizer: Optional[str]
     learning_rate: Optional[float]
     batch_size: Optional[int]
@@ -39,6 +41,7 @@ class TrainingConfiguration:
 @dataclass
 class DatasetInfo:
     """Extracted dataset information."""
+
     name: Optional[str]
     source: Optional[str]
     train_size: Optional[int]
@@ -51,6 +54,7 @@ class DatasetInfo:
 @dataclass
 class ExperimentInfo:
     """Extracted experiment information."""
+
     seeds: List[int]
     num_runs: int
     metrics: List[str]
@@ -71,31 +75,70 @@ class MethodologyExtractor(ast.NodeVisitor):
 
     # Known optimizers
     OPTIMIZERS = {
-        'Adam', 'SGD', 'AdamW', 'RMSprop', 'Adagrad', 'Adadelta',
-        'adam', 'sgd', 'adamw', 'rmsprop'
+        "Adam",
+        "SGD",
+        "AdamW",
+        "RMSprop",
+        "Adagrad",
+        "Adadelta",
+        "adam",
+        "sgd",
+        "adamw",
+        "rmsprop",
     }
 
     # Known loss functions
     LOSS_FUNCTIONS = {
-        'CrossEntropyLoss', 'MSELoss', 'BCELoss', 'NLLLoss', 'L1Loss',
-        'cross_entropy', 'mse_loss', 'binary_cross_entropy', 'nll_loss',
-        'categorical_crossentropy', 'sparse_categorical_crossentropy'
+        "CrossEntropyLoss",
+        "MSELoss",
+        "BCELoss",
+        "NLLLoss",
+        "L1Loss",
+        "cross_entropy",
+        "mse_loss",
+        "binary_cross_entropy",
+        "nll_loss",
+        "categorical_crossentropy",
+        "sparse_categorical_crossentropy",
     }
 
     # Known layer types
     LAYER_TYPES = {
-        'Linear', 'Conv1d', 'Conv2d', 'Conv3d', 'LSTM', 'GRU', 'RNN',
-        'BatchNorm1d', 'BatchNorm2d', 'LayerNorm', 'Dropout',
-        'MaxPool1d', 'MaxPool2d', 'AvgPool2d', 'AdaptiveAvgPool2d',
-        'Embedding', 'MultiheadAttention', 'Transformer',
-        'Dense', 'Flatten', 'Reshape'
+        "Linear",
+        "Conv1d",
+        "Conv2d",
+        "Conv3d",
+        "LSTM",
+        "GRU",
+        "RNN",
+        "BatchNorm1d",
+        "BatchNorm2d",
+        "LayerNorm",
+        "Dropout",
+        "MaxPool1d",
+        "MaxPool2d",
+        "AvgPool2d",
+        "AdaptiveAvgPool2d",
+        "Embedding",
+        "MultiheadAttention",
+        "Transformer",
+        "Dense",
+        "Flatten",
+        "Reshape",
     }
 
     # Known datasets
     DATASETS = {
-        'MNIST', 'CIFAR10', 'CIFAR100', 'ImageNet', 'COCO',
-        'load_iris', 'load_boston', 'load_digits', 'fetch_20newsgroups',
-        'load_dataset'
+        "MNIST",
+        "CIFAR10",
+        "CIFAR100",
+        "ImageNet",
+        "COCO",
+        "load_iris",
+        "load_boston",
+        "load_digits",
+        "fetch_20newsgroups",
+        "load_dataset",
     }
 
     def __init__(self) -> None:
@@ -117,8 +160,8 @@ class MethodologyExtractor(ast.NodeVisitor):
         """Extract model class definitions."""
         # Check if this is a nn.Module subclass
         is_model = any(
-            (isinstance(base, ast.Attribute) and base.attr in ['Module', 'Model']) or
-            (isinstance(base, ast.Name) and base.id in ['Module', 'Model', 'nn'])
+            (isinstance(base, ast.Attribute) and base.attr in ["Module", "Model"])
+            or (isinstance(base, ast.Name) and base.id in ["Module", "Model", "nn"])
             for base in node.bases
         )
 
@@ -132,13 +175,15 @@ class MethodologyExtractor(ast.NodeVisitor):
             self.generic_visit(node)
 
             if self._current_layers:
-                self.model_classes.append(ModelArchitecture(
-                    name=self._current_class,
-                    layers=self._current_layers,
-                    total_parameters=None,
-                    input_shape=None,
-                    output_shape=None,
-                ))
+                self.model_classes.append(
+                    ModelArchitecture(
+                        name=self._current_class,
+                        layers=self._current_layers,
+                        total_parameters=None,
+                        input_shape=None,
+                        output_shape=None,
+                    )
+                )
 
             self._current_class = old_class
             self._current_layers = old_layers
@@ -151,7 +196,7 @@ class MethodologyExtractor(ast.NodeVisitor):
         if self._current_class:
             for target in node.targets:
                 if isinstance(target, ast.Attribute) and isinstance(target.value, ast.Name):
-                    if target.value.id == 'self':
+                    if target.value.id == "self":
                         layer_info = self._extract_layer_info(node.value, target.attr)
                         if layer_info:
                             self._current_layers.append(layer_info)
@@ -161,13 +206,15 @@ class MethodologyExtractor(ast.NodeVisitor):
             for target in node.targets:
                 if isinstance(target, ast.Name):
                     name = target.id.lower()
-                    if 'epoch' in name and isinstance(node.value.value, int):
+                    if "epoch" in name and isinstance(node.value.value, int):
                         self._found_epochs = node.value.value
-                    elif 'batch' in name and isinstance(node.value.value, int):
+                    elif "batch" in name and isinstance(node.value.value, int):
                         self._found_batch_size = node.value.value
-                    elif name in ['lr', 'learning_rate'] and isinstance(node.value.value, (int, float)):
+                    elif name in ["lr", "learning_rate"] and isinstance(
+                        node.value.value, (int, float)
+                    ):
                         self._found_lr.append(float(node.value.value))
-                    elif 'seed' in name and isinstance(node.value.value, int):
+                    elif "seed" in name and isinstance(node.value.value, int):
                         self._found_seeds.append(node.value.value)
 
         self.generic_visit(node)
@@ -182,7 +229,7 @@ class MethodologyExtractor(ast.NodeVisitor):
                 self._found_optimizers.append(func_name)
                 # Extract learning rate
                 for kw in node.keywords:
-                    if kw.arg == 'lr' and isinstance(kw.value, ast.Constant):
+                    if kw.arg == "lr" and isinstance(kw.value, ast.Constant):
                         if isinstance(kw.value.value, (int, float)):
                             self._found_lr.append(float(kw.value.value))
 
@@ -197,7 +244,7 @@ class MethodologyExtractor(ast.NodeVisitor):
                     self.datasets.append(dataset_info)
 
             # Seed setting
-            if func_name in ['seed', 'manual_seed', 'set_seed']:
+            if func_name in ["seed", "manual_seed", "set_seed"]:
                 if node.args and isinstance(node.args[0], ast.Constant):
                     if isinstance(node.args[0].value, int):
                         self._found_seeds.append(int(node.args[0].value))
@@ -218,20 +265,20 @@ class MethodologyExtractor(ast.NodeVisitor):
             func_name = self._get_func_name(node)
             if func_name and func_name in self.LAYER_TYPES:
                 info = {
-                    'name': attr_name,
-                    'type': func_name,
-                    'args': [],
-                    'kwargs': {},
+                    "name": attr_name,
+                    "type": func_name,
+                    "args": [],
+                    "kwargs": {},
                 }
 
                 # Extract positional arguments
-                args_list = cast(List[Any], info['args'])
+                args_list = cast(List[Any], info["args"])
                 for arg in node.args:
                     if isinstance(arg, ast.Constant):
                         args_list.append(arg.value)
 
                 # Extract keyword arguments
-                kwargs_dict = cast(Dict[str, Any], info['kwargs'])
+                kwargs_dict = cast(Dict[str, Any], info["kwargs"])
                 for kw in node.keywords:
                     if isinstance(kw.value, ast.Constant) and kw.arg:
                         kwargs_dict[kw.arg] = kw.value.value
@@ -257,7 +304,7 @@ class MethodologyExtractor(ast.NodeVisitor):
 
         # Check keyword arguments
         for kw in node.keywords:
-            if kw.arg == 'split' and isinstance(kw.value, ast.Constant):
+            if kw.arg == "split" and isinstance(kw.value, ast.Constant):
                 split_name = str(kw.value.value)
                 info.splits[split_name] = 1.0
 
@@ -296,7 +343,7 @@ class PaperGenerator:
         print(latex)
     """
 
-    def __init__(self, style: str = 'neurips'):
+    def __init__(self, style: str = "neurips"):
         """
         Initialize the paper generator.
 
@@ -385,36 +432,36 @@ class PaperGenerator:
 
     def _describe_layer(self, layer: Dict[str, Any]) -> str:
         """Generate human-readable description of a layer."""
-        layer_type = layer['type']
-        args = layer.get('args', [])
-        kwargs = layer.get('kwargs', {})
+        layer_type = layer["type"]
+        args = layer.get("args", [])
+        kwargs = layer.get("kwargs", {})
 
-        if layer_type in ['Linear', 'Dense']:
+        if layer_type in ["Linear", "Dense"]:
             if len(args) >= 2:
                 return f"Fully connected layer ({args[0]} $\\rightarrow$ {args[1]} units)"
             elif len(args) >= 1:
                 return f"Fully connected layer ({args[0]} units)"
 
-        elif layer_type in ['Conv2d', 'Conv1d']:
+        elif layer_type in ["Conv2d", "Conv1d"]:
             if len(args) >= 3:
-                kernel = kwargs.get('kernel_size', args[2] if len(args) > 2 else '?')
+                kernel = kwargs.get("kernel_size", args[2] if len(args) > 2 else "?")
                 return f"Convolutional layer ({args[0]} $\\rightarrow$ {args[1]} channels, {kernel}$\\times${kernel} kernel)"
 
-        elif layer_type in ['LSTM', 'GRU']:
+        elif layer_type in ["LSTM", "GRU"]:
             if len(args) >= 2:
                 return f"{layer_type} layer ({args[0]} $\\rightarrow$ {args[1]} hidden units)"
 
-        elif layer_type in ['BatchNorm2d', 'BatchNorm1d', 'LayerNorm']:
+        elif layer_type in ["BatchNorm2d", "BatchNorm1d", "LayerNorm"]:
             return f"{layer_type.replace('Norm', ' Normalization').replace('1d', '').replace('2d', '')} layer"
 
-        elif layer_type == 'Dropout':
-            p = args[0] if args else kwargs.get('p', 0.5)
+        elif layer_type == "Dropout":
+            p = args[0] if args else kwargs.get("p", 0.5)
             return f"Dropout (p={p})"
 
-        elif layer_type in ['MaxPool2d', 'AvgPool2d']:
+        elif layer_type in ["MaxPool2d", "AvgPool2d"]:
             return f"{'Max' if 'Max' in layer_type else 'Average'} pooling layer"
 
-        elif layer_type == 'MultiheadAttention':
+        elif layer_type == "MultiheadAttention":
             if len(args) >= 2:
                 return f"Multi-head attention ({args[1]} heads, {args[0]} embedding dim)"
 
@@ -428,9 +475,9 @@ class PaperGenerator:
 
         if config.optimizer:
             opt_name = {
-                'Adam': 'Adam~\\cite{kingma2014adam}',
-                'AdamW': 'AdamW~\\cite{loshchilov2017decoupled}',
-                'SGD': 'stochastic gradient descent (SGD)',
+                "Adam": "Adam~\\cite{kingma2014adam}",
+                "AdamW": "AdamW~\\cite{loshchilov2017decoupled}",
+                "SGD": "stochastic gradient descent (SGD)",
             }.get(config.optimizer, config.optimizer)
             details.append(f"the {opt_name} optimizer")
 
@@ -444,7 +491,7 @@ class PaperGenerator:
             details.append(f"training for {config.epochs} epochs")
 
         if config.loss_function:
-            loss_name = config.loss_function.replace('Loss', ' loss').replace('_', ' ')
+            loss_name = config.loss_function.replace("Loss", " loss").replace("_", " ")
             details.append(f"optimizing {loss_name}")
 
         if details:
@@ -475,7 +522,9 @@ class PaperGenerator:
 
         if info.seeds:
             if len(info.seeds) == 1:
-                lines.append(f"All experiments use random seed {info.seeds[0]} for reproducibility.")
+                lines.append(
+                    f"All experiments use random seed {info.seeds[0]} for reproducibility."
+                )
             else:
                 seeds_str = ", ".join(str(s) for s in sorted(info.seeds))
                 lines.append(f"We run experiments with {len(info.seeds)} different random seeds ")

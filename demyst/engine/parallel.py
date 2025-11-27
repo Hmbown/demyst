@@ -32,9 +32,11 @@ logger = logging.getLogger(__name__)
 # Data Classes
 # =============================================================================
 
+
 @dataclass
 class FileAnalysisResult:
     """Result of analyzing a single file."""
+
     file_path: str
     success: bool
     duration_ms: float
@@ -49,11 +51,11 @@ class FileAnalysisResult:
     @property
     def total_issues(self) -> int:
         return (
-            self.mirage_count +
-            self.leakage_count +
-            self.hypothesis_count +
-            self.unit_count +
-            self.tensor_count
+            self.mirage_count
+            + self.leakage_count
+            + self.hypothesis_count
+            + self.unit_count
+            + self.tensor_count
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -74,6 +76,7 @@ class FileAnalysisResult:
 @dataclass
 class ParallelAnalysisReport:
     """Aggregated report from parallel analysis."""
+
     directory: str
     file_results: List[FileAnalysisResult] = field(default_factory=list)
     total_files: int = 0
@@ -117,6 +120,7 @@ class ParallelAnalysisReport:
 # Worker Functions (must be at module level for multiprocessing)
 # =============================================================================
 
+
 def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResult:
     """
     Worker function to analyze a single file.
@@ -135,10 +139,10 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
     try:
         # Read the file
         try:
-            with open(file_path, 'r', encoding='utf-8') as f:
+            with open(file_path, "r", encoding="utf-8") as f:
                 source = f.read()
         except UnicodeDecodeError:
-            with open(file_path, 'r', encoding='latin-1') as f:
+            with open(file_path, "r", encoding="latin-1") as f:
                 source = f.read()
 
         results: Dict[str, Any] = {}
@@ -149,65 +153,71 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
         tensor_count = 0
 
         # Run enabled analyses
-        if options.get('mirage', True):
+        if options.get("mirage", True):
             try:
-                from demyst.engine.mirage_detector import MirageDetector
                 import ast
+
+                from demyst.engine.mirage_detector import MirageDetector
+
                 tree = ast.parse(source)
                 detector = MirageDetector()
                 detector.visit(tree)
                 mirage_count = len(detector.mirages)
-                results['mirage'] = {'issues': detector.mirages}
+                results["mirage"] = {"issues": detector.mirages}
             except Exception as e:
-                results['mirage'] = {'error': str(e)}
+                results["mirage"] = {"error": str(e)}
 
-        if options.get('leakage', True):
+        if options.get("leakage", True):
             try:
                 from demyst.guards.leakage_hunter import LeakageHunter
+
                 hunter = LeakageHunter()
                 result = hunter.analyze(source)
-                violations = result.get('violations', [])
+                violations = result.get("violations", [])
                 leakage_count = len(violations)
-                results['leakage'] = result
+                results["leakage"] = result
             except Exception as e:
-                results['leakage'] = {'error': str(e)}
+                results["leakage"] = {"error": str(e)}
 
-        if options.get('hypothesis', True):
+        if options.get("hypothesis", True):
             try:
                 from demyst.guards.hypothesis_guard import HypothesisGuard
+
                 h_guard = HypothesisGuard()
                 result = h_guard.analyze_code(source)
-                violations = result.get('violations', [])
+                violations = result.get("violations", [])
                 hypothesis_count = len(violations)
-                results['hypothesis'] = result
+                results["hypothesis"] = result
             except Exception as e:
-                results['hypothesis'] = {'error': str(e)}
+                results["hypothesis"] = {"error": str(e)}
 
-        if options.get('unit', True):
+        if options.get("unit", True):
             try:
                 from demyst.guards.unit_guard import UnitGuard
+
                 u_guard = UnitGuard()
                 result = u_guard.analyze(source)
-                violations = result.get('violations', [])
+                violations = result.get("violations", [])
                 unit_count = len(violations)
-                results['unit'] = result
+                results["unit"] = result
             except Exception as e:
-                results['unit'] = {'error': str(e)}
+                results["unit"] = {"error": str(e)}
 
-        if options.get('tensor', True):
+        if options.get("tensor", True):
             try:
                 from demyst.guards.tensor_guard import TensorGuard
+
                 t_guard = TensorGuard()
                 result = t_guard.analyze(source)
                 tensor_issues = (
-                    len(result.get('gradient_issues', [])) +
-                    len(result.get('normalization_issues', [])) +
-                    len(result.get('reward_issues', []))
+                    len(result.get("gradient_issues", []))
+                    + len(result.get("normalization_issues", []))
+                    + len(result.get("reward_issues", []))
                 )
                 tensor_count = tensor_issues
-                results['tensor'] = result
+                results["tensor"] = result
             except Exception as e:
-                results['tensor'] = {'error': str(e)}
+                results["tensor"] = {"error": str(e)}
 
         duration_ms = (time.perf_counter() - start_time) * 1000
 
@@ -237,6 +247,7 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
 # Parallel Analyzer
 # =============================================================================
 
+
 class ParallelAnalyzer:
     """
     Parallel analysis engine for Demyst.
@@ -252,17 +263,17 @@ class ParallelAnalyzer:
 
     # Default patterns to ignore
     DEFAULT_IGNORE_PATTERNS: Set[str] = {
-        '__pycache__',
-        '.git',
-        '.venv',
-        'venv',
-        'node_modules',
-        '.mypy_cache',
-        '.pytest_cache',
-        'build',
-        'dist',
-        '.eggs',
-        '*.egg-info',
+        "__pycache__",
+        ".git",
+        ".venv",
+        "venv",
+        "node_modules",
+        ".mypy_cache",
+        ".pytest_cache",
+        "build",
+        "dist",
+        ".eggs",
+        "*.egg-info",
     }
 
     def __init__(
@@ -290,11 +301,11 @@ class ParallelAnalyzer:
 
         # Default analysis options - all enabled
         self.analysis_options = analysis_options or {
-            'mirage': True,
-            'leakage': True,
-            'hypothesis': True,
-            'unit': True,
-            'tensor': True,
+            "mirage": True,
+            "leakage": True,
+            "hypothesis": True,
+            "unit": True,
+            "tensor": True,
         }
 
         self._progress_callback: Optional[Callable[[int, int, str], None]] = None
@@ -305,10 +316,7 @@ class ParallelAnalyzer:
         # Use slightly fewer workers than CPUs to leave room for system
         return max(1, cpu_count - 1)
 
-    def set_progress_callback(
-        self,
-        callback: Callable[[int, int, str], None]
-    ) -> None:
+    def set_progress_callback(self, callback: Callable[[int, int, str], None]) -> None:
         """
         Set a callback for progress updates.
 
@@ -403,12 +411,7 @@ class ParallelAnalyzer:
             worker_count=self.max_workers,
         )
 
-    def _find_files(
-        self,
-        directory: Path,
-        pattern: str,
-        recursive: bool
-    ) -> List[str]:
+    def _find_files(self, directory: Path, pattern: str, recursive: bool) -> List[str]:
         """Find all matching files in directory."""
         files: List[str] = []
 
@@ -432,7 +435,7 @@ class ParallelAnalyzer:
                 return False
 
         # Skip test files by default
-        if path.name.startswith('test_') or path.name.endswith('_test.py'):
+        if path.name.startswith("test_") or path.name.endswith("_test.py"):
             return False
 
         return True
@@ -452,8 +455,7 @@ class ParallelAnalyzer:
             with ExecutorClass(max_workers=self.max_workers) as executor:
                 # Submit all tasks
                 future_to_file = {
-                    executor.submit(_analyze_file_worker, args): args[0]
-                    for args in worker_args
+                    executor.submit(_analyze_file_worker, args): args[0] for args in worker_args
                 }
 
                 # Collect results as they complete
@@ -467,12 +469,14 @@ class ParallelAnalyzer:
                         results.append(result)
                     except Exception as e:
                         # Handle timeout or other errors
-                        results.append(FileAnalysisResult(
-                            file_path=file_path,
-                            success=False,
-                            duration_ms=0,
-                            error=f"Worker error: {e}",
-                        ))
+                        results.append(
+                            FileAnalysisResult(
+                                file_path=file_path,
+                                success=False,
+                                duration_ms=0,
+                                error=f"Worker error: {e}",
+                            )
+                        )
 
                     # Progress callback
                     if self._progress_callback:
@@ -489,6 +493,7 @@ class ParallelAnalyzer:
 # =============================================================================
 # Convenience Functions
 # =============================================================================
+
 
 def analyze_directory_parallel(
     directory: str,

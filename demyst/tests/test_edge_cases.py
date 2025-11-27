@@ -10,10 +10,11 @@ Tests for handling edge cases:
     - Encoding issues
 """
 
-import pytest
-import tempfile
 import os
+import tempfile
 from pathlib import Path
+
+import pytest
 
 
 class TestEmptyFiles:
@@ -27,10 +28,10 @@ class TestEmptyFiles:
         result = guard.analyze("")
 
         assert result is not None
-        assert 'error' not in result or result['error'] is None
-        assert result.get('gradient_issues', []) == []
-        assert result.get('normalization_issues', []) == []
-        assert result.get('reward_issues', []) == []
+        assert "error" not in result or result["error"] is None
+        assert result.get("gradient_issues", []) == []
+        assert result.get("normalization_issues", []) == []
+        assert result.get("reward_issues", []) == []
 
     def test_empty_file_leakage_hunter(self):
         """LeakageHunter should handle empty files gracefully."""
@@ -40,8 +41,8 @@ class TestEmptyFiles:
         result = hunter.analyze("")
 
         assert result is not None
-        assert 'error' not in result or result['error'] is None
-        assert result.get('violations', []) == []
+        assert "error" not in result or result["error"] is None
+        assert result.get("violations", []) == []
 
     def test_empty_file_hypothesis_guard(self):
         """HypothesisGuard should handle empty files gracefully."""
@@ -51,8 +52,8 @@ class TestEmptyFiles:
         result = guard.analyze_code("")
 
         assert result is not None
-        assert 'error' not in result or result['error'] is None
-        assert result.get('violations', []) == []
+        assert "error" not in result or result["error"] is None
+        assert result.get("violations", []) == []
 
     def test_empty_file_unit_guard(self):
         """UnitGuard should handle empty files gracefully."""
@@ -62,28 +63,28 @@ class TestEmptyFiles:
         result = guard.analyze("")
 
         assert result is not None
-        assert 'error' not in result or result['error'] is None
-        assert result.get('violations', []) == []
+        assert "error" not in result or result["error"] is None
+        assert result.get("violations", []) == []
 
     def test_whitespace_only_file(self):
         """All guards should handle whitespace-only files."""
-        from demyst.guards.tensor_guard import TensorGuard
-        from demyst.guards.leakage_hunter import LeakageHunter
         from demyst.guards.hypothesis_guard import HypothesisGuard
+        from demyst.guards.leakage_hunter import LeakageHunter
+        from demyst.guards.tensor_guard import TensorGuard
         from demyst.guards.unit_guard import UnitGuard
 
         whitespace_code = "   \n\t\n   \n"
 
         # All guards should handle whitespace-only code
         for guard, method in [
-            (TensorGuard(), 'analyze'),
-            (LeakageHunter(), 'analyze'),
-            (HypothesisGuard(), 'analyze_code'),
-            (UnitGuard(), 'analyze'),
+            (TensorGuard(), "analyze"),
+            (LeakageHunter(), "analyze"),
+            (HypothesisGuard(), "analyze_code"),
+            (UnitGuard(), "analyze"),
         ]:
             result = getattr(guard, method)(whitespace_code)
             assert result is not None
-            assert 'error' not in result or result['error'] is None
+            assert "error" not in result or result["error"] is None
 
 
 class TestSyntaxErrors:
@@ -99,8 +100,8 @@ class TestSyntaxErrors:
         result = guard.analyze(bad_code)
 
         assert result is not None
-        assert 'error' in result
-        assert 'syntax' in result['error'].lower() or 'Syntax' in result['error']
+        assert "error" in result
+        assert "syntax" in result["error"].lower() or "Syntax" in result["error"]
 
     def test_syntax_error_leakage_hunter(self):
         """LeakageHunter should handle syntax errors gracefully."""
@@ -112,7 +113,7 @@ class TestSyntaxErrors:
         result = hunter.analyze(bad_code)
 
         assert result is not None
-        assert 'error' in result
+        assert "error" in result
 
     def test_syntax_error_hypothesis_guard(self):
         """HypothesisGuard should handle syntax errors gracefully."""
@@ -124,7 +125,7 @@ class TestSyntaxErrors:
         result = guard.analyze_code(bad_code)
 
         assert result is not None
-        assert 'error' in result
+        assert "error" in result
 
     def test_syntax_error_unit_guard(self):
         """UnitGuard should handle syntax errors gracefully."""
@@ -136,7 +137,7 @@ class TestSyntaxErrors:
         result = guard.analyze(bad_code)
 
         assert result is not None
-        assert 'error' in result
+        assert "error" in result
 
     def test_incomplete_code(self):
         """Guards should handle incomplete code."""
@@ -173,33 +174,33 @@ def calcul_vélocité(données):
         tensor_guard = TensorGuard()
         result = tensor_guard.analyze(unicode_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
         unit_guard = UnitGuard()
         result = unit_guard.analyze(unicode_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_unicode_strings(self):
         """Guards should handle Unicode strings in code."""
         from demyst.guards.leakage_hunter import LeakageHunter
 
-        unicode_code = '''
+        unicode_code = """
 message = "日本語テキスト 中文 한국어"
 description = "Ñoño español café"
 symbols = "∑∏∫∂∇"
-'''
+"""
 
         hunter = LeakageHunter()
         result = hunter.analyze(unicode_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_unicode_comments(self):
         """Guards should handle Unicode comments."""
         from demyst.guards.hypothesis_guard import HypothesisGuard
 
-        unicode_code = '''
+        unicode_code = """
 # 这是一个注释
 # Комментарий на русском
 # コメント
@@ -207,27 +208,27 @@ symbols = "∑∏∫∂∇"
 def function():
     # إضافة عربية
     pass
-'''
+"""
 
         guard = HypothesisGuard()
         result = guard.analyze_code(unicode_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_emoji_in_strings(self):
         """Guards should handle emoji in strings."""
         from demyst.guards.tensor_guard import TensorGuard
 
-        emoji_code = '''
+        emoji_code = """
 status = "✅ Success"
 warning = "⚠️ Warning"
 error = "❌ Error"
-'''
+"""
 
         guard = TensorGuard()
         result = guard.analyze(emoji_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
 
 class TestLargeFiles:
@@ -238,15 +239,12 @@ class TestLargeFiles:
         from demyst.guards.tensor_guard import TensorGuard
 
         # Generate code with 100 functions
-        functions = "\n".join([
-            f"def function_{i}(x):\n    return x + {i}\n"
-            for i in range(100)
-        ])
+        functions = "\n".join([f"def function_{i}(x):\n    return x + {i}\n" for i in range(100)])
 
         guard = TensorGuard()
         result = guard.analyze(functions)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_deeply_nested_code(self):
         """Guards should handle deeply nested code."""
@@ -262,7 +260,7 @@ class TestLargeFiles:
         guard = HypothesisGuard()
         result = guard.analyze_code(nested)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_long_lines(self):
         """Guards should handle very long lines."""
@@ -274,21 +272,18 @@ class TestLargeFiles:
         guard = UnitGuard()
         result = guard.analyze(long_line)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_many_imports(self):
         """Guards should handle files with many imports."""
         from demyst.guards.leakage_hunter import LeakageHunter
 
-        imports = "\n".join([
-            f"import module_{i}"
-            for i in range(50)
-        ])
+        imports = "\n".join([f"import module_{i}" for i in range(50)])
 
         hunter = LeakageHunter()
         result = hunter.analyze(imports)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
 
 class TestMalformedInput:
@@ -305,7 +300,7 @@ class TestMalformedInput:
         result = guard.analyze(binary_like)
         assert result is not None
         # Should either report error or empty results
-        assert 'error' in result or result.get('gradient_issues', []) == []
+        assert "error" in result or result.get("gradient_issues", []) == []
 
     def test_null_characters(self):
         """Guards should handle null characters in code."""
@@ -331,7 +326,7 @@ class TestMalformedInput:
         guard = HypothesisGuard()
         result = guard.analyze_code(mixed_endings)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
 
 class TestCommentOnlyFiles:
@@ -339,8 +334,8 @@ class TestCommentOnlyFiles:
 
     def test_comment_only_file(self):
         """Guards should handle files with only comments."""
-        from demyst.guards.tensor_guard import TensorGuard
         from demyst.guards.leakage_hunter import LeakageHunter
+        from demyst.guards.tensor_guard import TensorGuard
 
         comment_only = '''
 # This file contains only comments
@@ -357,12 +352,12 @@ Docstring without any code
         tensor_guard = TensorGuard()
         result = tensor_guard.analyze(comment_only)
         assert result is not None
-        assert result.get('gradient_issues', []) == []
+        assert result.get("gradient_issues", []) == []
 
         hunter = LeakageHunter()
         result = hunter.analyze(comment_only)
         assert result is not None
-        assert result.get('violations', []) == []
+        assert result.get("violations", []) == []
 
 
 class TestSpecialPythonConstructs:
@@ -372,7 +367,7 @@ class TestSpecialPythonConstructs:
         """Guards should handle async functions."""
         from demyst.guards.tensor_guard import TensorGuard
 
-        async_code = '''
+        async_code = """
 import asyncio
 
 async def fetch_data():
@@ -382,18 +377,18 @@ async def fetch_data():
 async def process():
     data = await fetch_data()
     return sum(data)
-'''
+"""
 
         guard = TensorGuard()
         result = guard.analyze(async_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_decorators(self):
         """Guards should handle decorators."""
         from demyst.guards.hypothesis_guard import HypothesisGuard
 
-        decorated_code = '''
+        decorated_code = """
 @staticmethod
 @classmethod
 @property
@@ -404,55 +399,56 @@ def decorated_function(self):
 @contextmanager
 def context():
     yield
-'''
+"""
 
         guard = HypothesisGuard()
         result = guard.analyze_code(decorated_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_type_hints(self):
         """Guards should handle type hints."""
         from demyst.guards.unit_guard import UnitGuard
 
-        typed_code = '''
+        typed_code = """
 from typing import List, Dict, Optional, Union
 
 def typed_function(x: int, y: List[float]) -> Dict[str, Union[int, str]]:
     result: Dict[str, Union[int, str]] = {}
     value: Optional[int] = None
     return result
-'''
+"""
 
         guard = UnitGuard()
         result = guard.analyze(typed_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_walrus_operator(self):
         """Guards should handle walrus operator (Python 3.8+)."""
         from demyst.guards.leakage_hunter import LeakageHunter
 
-        walrus_code = '''
+        walrus_code = """
 if (n := len(data)) > 10:
     print(f"Large data: {n}")
 
 while (line := file.readline()):
     process(line)
-'''
+"""
 
         hunter = LeakageHunter()
         result = hunter.analyze(walrus_code)
         assert result is not None
-        assert 'error' not in result or result['error'] is None
+        assert "error" not in result or result["error"] is None
 
     def test_match_statement(self):
         """Guards should handle match statement (Python 3.10+)."""
-        from demyst.guards.tensor_guard import TensorGuard
         import sys
 
+        from demyst.guards.tensor_guard import TensorGuard
+
         if sys.version_info >= (3, 10):
-            match_code = '''
+            match_code = """
 def process(command):
     match command:
         case "start":
@@ -461,7 +457,7 @@ def process(command):
             return 0
         case _:
             return -1
-'''
+"""
             guard = TensorGuard()
             result = guard.analyze(match_code)
             assert result is not None
@@ -472,20 +468,22 @@ class TestCLIEdgeCases:
 
     def test_nonexistent_file(self):
         """CLI should handle nonexistent files gracefully."""
-        from demyst.cli import safe_read_file
         import pytest
+
+        from demyst.cli import safe_read_file
 
         with pytest.raises(FileNotFoundError):
             safe_read_file("/nonexistent/path/to/file.py")
 
     def test_directory_instead_of_file(self):
         """CLI should handle directories when file is expected."""
-        from demyst.cli import safe_read_file
         import pytest
+
+        from demyst.cli import safe_read_file
 
         with pytest.raises(IsADirectoryError):
             safe_read_file("/tmp")
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

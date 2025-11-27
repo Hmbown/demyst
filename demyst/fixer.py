@@ -36,18 +36,21 @@ logger = logging.getLogger(__name__)
 try:
     import libcst as cst
     from libcst import matchers as m
+
     LIBCST_AVAILABLE = True
 except ImportError:
     LIBCST_AVAILABLE = False
-    cst = None
+    cst = None  # type: ignore
 
 
 # =============================================================================
 # Enumerations and Data Classes
 # =============================================================================
 
+
 class FixType(Enum):
     """Types of fixes that can be applied."""
+
     MIRAGE_MEAN = auto()
     MIRAGE_SUM = auto()
     MIRAGE_ARGMAX = auto()
@@ -59,6 +62,7 @@ class FixType(Enum):
 
 class FixResult(Enum):
     """Result of a fix attempt."""
+
     SUCCESS = auto()
     SKIPPED = auto()
     FAILED = auto()
@@ -68,6 +72,7 @@ class FixResult(Enum):
 @dataclass
 class FixAction:
     """Represents a single fix action to be applied."""
+
     type: FixType
     line: int
     column: int = 0
@@ -91,6 +96,7 @@ class FixAction:
 @dataclass
 class FixReport:
     """Report of fix operations performed on a file."""
+
     file_path: str
     actions: List[FixAction] = field(default_factory=list)
     applied: int = 0
@@ -143,34 +149,28 @@ if LIBCST_AVAILABLE:
             # Map violations by line number for fast lookup
             self._violations_by_line: Dict[int, List[Dict[str, Any]]] = {}
             for v in violations:
-                line = v.get('line', 0)
+                line = v.get("line", 0)
                 if line not in self._violations_by_line:
                     self._violations_by_line[line] = []
                 self._violations_by_line[line].append(v)
 
         def _find_violation_for_node(
-            self,
-            node: cst.Call,
-            func_name: str
+            self, node: cst.Call, func_name: str
         ) -> Optional[Dict[str, Any]]:
             """Find a matching violation for this node."""
             # This is a simplified matching - in production you'd use metadata
             for violations in self._violations_by_line.values():
                 for v in violations:
-                    if v.get('type') == func_name:
+                    if v.get("type") == func_name:
                         return v
             return None
 
-        def leave_Call(
-            self,
-            original_node: cst.Call,
-            updated_node: cst.Call
-        ) -> cst.BaseExpression:
+        def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
             """Transform destructive calls to VariationTensor equivalents."""
             # Check for attribute calls (np.mean, array.mean)
             if isinstance(updated_node.func, cst.Attribute):
                 func_name = updated_node.func.attr.value
-                if func_name in ('mean', 'sum', 'argmax', 'argmin'):
+                if func_name in ("mean", "sum", "argmax", "argmin"):
                     violation = self._find_violation_for_node(updated_node, func_name)
                     if violation:
                         try:
@@ -184,7 +184,7 @@ if LIBCST_AVAILABLE:
             # Check for direct calls
             elif isinstance(updated_node.func, cst.Name):
                 func_name = updated_node.func.value
-                if func_name in ('mean', 'sum', 'argmax', 'argmin'):
+                if func_name in ("mean", "sum", "argmax", "argmin"):
                     violation = self._find_violation_for_node(updated_node, func_name)
                     if violation:
                         try:
@@ -197,11 +197,7 @@ if LIBCST_AVAILABLE:
 
             return updated_node
 
-        def _transform_to_variation(
-            self,
-            node: cst.Call,
-            operation: str
-        ) -> cst.Call:
+        def _transform_to_variation(self, node: cst.Call, operation: str) -> cst.Call:
             """Create VariationTensor transformation."""
             # Extract data argument
             if isinstance(node.func, cst.Attribute):
@@ -218,13 +214,13 @@ if LIBCST_AVAILABLE:
             )
 
             # Build method call
-            if operation == 'sum':
-                method_name = 'ensemble_sum'
+            if operation == "sum":
+                method_name = "ensemble_sum"
                 # Extract axis if present
                 axis_arg = None
                 for arg in node.args[1:] if isinstance(node.func, cst.Name) else node.args:
                     if isinstance(arg, cst.Arg):
-                        if arg.keyword is not None and arg.keyword.value == 'axis':
+                        if arg.keyword is not None and arg.keyword.value == "axis":
                             axis_arg = arg.value
                         elif arg.keyword is None and axis_arg is None:
                             axis_arg = arg.value
@@ -237,7 +233,7 @@ if LIBCST_AVAILABLE:
                     args=[cst.Arg(value=axis_arg)] if axis_arg else [],
                 )
             else:
-                method_name = 'collapse'
+                method_name = "collapse"
                 return cst.Call(
                     func=cst.Attribute(
                         value=variation_call,
@@ -246,31 +242,24 @@ if LIBCST_AVAILABLE:
                     args=[cst.Arg(value=cst.SimpleString(f"'{operation}'"))],
                 )
 
-        def _record_fix(
-            self,
-            operation: str,
-            original: cst.Call,
-            transformed: cst.Call
-        ) -> None:
+        def _record_fix(self, operation: str, original: cst.Call, transformed: cst.Call) -> None:
             """Record a fix that was applied."""
             fix_type_map = {
-                'mean': FixType.MIRAGE_MEAN,
-                'sum': FixType.MIRAGE_SUM,
-                'argmax': FixType.MIRAGE_ARGMAX,
-                'argmin': FixType.MIRAGE_ARGMIN,
+                "mean": FixType.MIRAGE_MEAN,
+                "sum": FixType.MIRAGE_SUM,
+                "argmax": FixType.MIRAGE_ARGMAX,
+                "argmin": FixType.MIRAGE_ARGMIN,
             }
 
-            self.applied_fixes.append(FixAction(
-                type=fix_type_map.get(operation, FixType.MIRAGE_MEAN),
-                line=0,  # Would need metadata for accurate line
-                description=f"Transformed {operation} to VariationTensor",
-            ))
+            self.applied_fixes.append(
+                FixAction(
+                    type=fix_type_map.get(operation, FixType.MIRAGE_MEAN),
+                    line=0,  # Would need metadata for accurate line
+                    description=f"Transformed {operation} to VariationTensor",
+                )
+            )
 
-        def leave_Module(
-            self,
-            original_node: cst.Module,
-            updated_node: cst.Module
-        ) -> cst.Module:
+        def leave_Module(self, original_node: cst.Module, updated_node: cst.Module) -> cst.Module:
             """Add VariationTensor import if needed."""
             if not self._needs_import:
                 return updated_node
@@ -297,7 +286,10 @@ if LIBCST_AVAILABLE:
                 if isinstance(stmt, cst.SimpleStatementLine):
                     for item in stmt.body:
                         if isinstance(item, cst.ImportFrom):
-                            if isinstance(item.module, cst.Name) and item.module.value == "__future__":
+                            if (
+                                isinstance(item.module, cst.Name)
+                                and item.module.value == "__future__"
+                            ):
                                 insert_idx = i + 1
                 # Stop at first non-import
                 if not self._is_import(stmt):
@@ -311,16 +303,14 @@ if LIBCST_AVAILABLE:
         def _is_import(self, stmt: cst.BaseStatement) -> bool:
             """Check if statement is an import."""
             if isinstance(stmt, cst.SimpleStatementLine):
-                return any(
-                    isinstance(item, (cst.Import, cst.ImportFrom))
-                    for item in stmt.body
-                )
+                return any(isinstance(item, (cst.Import, cst.ImportFrom)) for item in stmt.body)
             return False
 
 
 # =============================================================================
 # Main Fixer Class
 # =============================================================================
+
 
 class DemystFixer:
     """
@@ -339,10 +329,7 @@ class DemystFixer:
     """
 
     def __init__(
-        self,
-        dry_run: bool = False,
-        interactive: bool = False,
-        backup: bool = True
+        self, dry_run: bool = False, interactive: bool = False, backup: bool = True
     ) -> None:
         """
         Initialize the fixer.
@@ -362,11 +349,7 @@ class DemystFixer:
         """Return the fix backend being used."""
         return "libcst" if self._use_cst else "text"
 
-    def fix_file(
-        self,
-        filepath: str,
-        violations: List[Dict[str, Any]]
-    ) -> FixReport:
+    def fix_file(self, filepath: str, violations: List[Dict[str, Any]]) -> FixReport:
         """
         Apply fixes to a single file.
 
@@ -419,7 +402,7 @@ class DemystFixer:
                     "Fix produced invalid Python",
                     original_code=source[:200],
                     attempted_result=fixed_source[:200],
-                    file_path=filepath
+                    file_path=filepath,
                 )
 
         # Show diff
@@ -432,7 +415,7 @@ class DemystFixer:
         # Interactive mode
         if self.interactive and not self.dry_run:
             response = input("\n  Apply these fixes? [y/N] ").strip().lower()
-            if response != 'y':
+            if response != "y":
                 print("  Skipped.")
                 report.skipped = len(actions)
                 return report
@@ -441,16 +424,16 @@ class DemystFixer:
         if not self.dry_run and fixed_source != source:
             # Create backup if enabled
             if self.backup:
-                backup_path = filepath + '.bak'
+                backup_path = filepath + ".bak"
                 try:
-                    with open(backup_path, 'w', encoding='utf-8') as f:
+                    with open(backup_path, "w", encoding="utf-8") as f:
                         f.write(source)
                 except Exception:
                     pass  # Non-fatal
 
             # Write the fixed file
             try:
-                with open(filepath, 'w', encoding='utf-8') as f:
+                with open(filepath, "w", encoding="utf-8") as f:
                     f.write(fixed_source)
                 report.applied = len(actions)
                 print(f"  Applied {len(actions)} fix(es) to {filepath}")
@@ -463,9 +446,7 @@ class DemystFixer:
         return report
 
     def fix_directory(
-        self,
-        directory: str,
-        violations_by_file: Dict[str, List[Dict[str, Any]]]
+        self, directory: str, violations_by_file: Dict[str, List[Dict[str, Any]]]
     ) -> List[FixReport]:
         """
         Apply fixes to multiple files in a directory.
@@ -484,31 +465,26 @@ class DemystFixer:
                 reports.append(report)
             except DemystError as e:
                 print(f"  Error fixing {filepath}: {e}")
-                reports.append(FixReport(
-                    file_path=filepath,
-                    failed=len(violations)
-                ))
+                reports.append(FixReport(file_path=filepath, failed=len(violations)))
 
         return reports
 
     def _can_fix(self, violation: Dict[str, Any]) -> bool:
         """Determine if a violation is auto-fixable."""
-        fixable_types = {'mean', 'sum', 'argmax', 'argmin', 'premature_discretization'}
-        return violation.get('type') in fixable_types
+        fixable_types = {"mean", "sum", "argmax", "argmin", "premature_discretization"}
+        return violation.get("type") in fixable_types
 
     def _read_file(self, filepath: str) -> str:
         """Read a file with proper encoding handling."""
         try:
-            with open(filepath, 'r', encoding='utf-8') as f:
+            with open(filepath, "r", encoding="utf-8") as f:
                 return f.read()
         except UnicodeDecodeError:
-            with open(filepath, 'r', encoding='latin-1') as f:
+            with open(filepath, "r", encoding="latin-1") as f:
                 return f.read()
 
     def _fix_with_cst(
-        self,
-        source: str,
-        violations: List[Dict[str, Any]]
+        self, source: str, violations: List[Dict[str, Any]]
     ) -> Tuple[str, List[FixAction]]:
         """Apply fixes using LibCST."""
         assert cst is not None
@@ -524,38 +500,38 @@ class DemystFixer:
         return new_tree.code, transformer.applied_fixes
 
     def _fix_with_text(
-        self,
-        source: str,
-        violations: List[Dict[str, Any]]
+        self, source: str, violations: List[Dict[str, Any]]
     ) -> Tuple[str, List[FixAction]]:
         """Apply fixes using text-based approach (fallback)."""
         lines = source.splitlines(keepends=True)
         actions: List[FixAction] = []
 
         # Sort by line number descending to avoid offset issues
-        sorted_violations = sorted(violations, key=lambda v: v.get('line', 0), reverse=True)
+        sorted_violations = sorted(violations, key=lambda v: v.get("line", 0), reverse=True)
 
         for v in sorted_violations:
-            line_idx = v.get('line', 0) - 1
+            line_idx = v.get("line", 0) - 1
             if 0 <= line_idx < len(lines):
-                vtype = v.get('type', 'unknown')
+                vtype = v.get("type", "unknown")
                 original_line = lines[line_idx]
 
                 # Add TODO comment if not already present
-                if '# TODO: demyst' not in original_line and '# demyst-fix' not in original_line:
+                if "# TODO: demyst" not in original_line and "# demyst-fix" not in original_line:
                     comment = f"  # TODO: demyst - Use VariationTensor for '{vtype}' to preserve variance\n"
-                    lines[line_idx] = original_line.rstrip('\n') + comment
+                    lines[line_idx] = original_line.rstrip("\n") + comment
 
-                    actions.append(FixAction(
-                        type=FixType.COMMENT_TODO,
-                        line=v.get('line', 0),
-                        original_code=original_line.strip(),
-                        fixed_code=lines[line_idx].strip(),
-                        description=f"Added TODO for {vtype}",
-                        violation=v
-                    ))
+                    actions.append(
+                        FixAction(
+                            type=FixType.COMMENT_TODO,
+                            line=v.get("line", 0),
+                            original_code=original_line.strip(),
+                            fixed_code=lines[line_idx].strip(),
+                            description=f"Added TODO for {vtype}",
+                            violation=v,
+                        )
+                    )
 
-        return ''.join(lines), actions
+        return "".join(lines), actions
 
     def _validate_python(self, source: str) -> None:
         """Validate that source is valid Python."""
@@ -563,6 +539,7 @@ class DemystFixer:
             cst.parse_module(source)
         else:
             import ast
+
             ast.parse(source)
 
     def _get_diff(self, original: str, modified: str) -> str:
@@ -571,24 +548,20 @@ class DemystFixer:
         modified_lines = modified.splitlines(keepends=True)
 
         diff = difflib.unified_diff(
-            original_lines,
-            modified_lines,
-            fromfile='original',
-            tofile='fixed',
-            lineterm=''
+            original_lines, modified_lines, fromfile="original", tofile="fixed", lineterm=""
         )
 
-        return ''.join(diff)
+        return "".join(diff)
 
     def _get_fix_description(self, violation: Dict[str, Any]) -> str:
         """Get a description of the fix."""
-        vtype = violation.get('type', 'unknown')
+        vtype = violation.get("type", "unknown")
         descriptions = {
-            'mean': "Transform np.mean to VariationTensor.collapse('mean')",
-            'sum': "Transform np.sum to VariationTensor.ensemble_sum()",
-            'argmax': "Transform np.argmax to VariationTensor.collapse('argmax')",
-            'argmin': "Transform np.argmin to VariationTensor.collapse('argmin')",
-            'premature_discretization': "Wrap discretization in VariationTensor tracking",
+            "mean": "Transform np.mean to VariationTensor.collapse('mean')",
+            "sum": "Transform np.sum to VariationTensor.ensemble_sum()",
+            "argmax": "Transform np.argmax to VariationTensor.collapse('argmax')",
+            "argmin": "Transform np.argmin to VariationTensor.collapse('argmin')",
+            "premature_discretization": "Wrap discretization in VariationTensor tracking",
         }
         return descriptions.get(vtype, "Auto-fix not yet implemented")
 
@@ -597,10 +570,9 @@ class DemystFixer:
 # Convenience Functions
 # =============================================================================
 
+
 def fix_source(
-    source: str,
-    violations: List[Dict[str, Any]],
-    dry_run: bool = False
+    source: str, violations: List[Dict[str, Any]], dry_run: bool = False
 ) -> Tuple[str, List[FixAction]]:
     """
     Fix violations in source code.

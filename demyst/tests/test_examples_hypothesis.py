@@ -4,15 +4,18 @@ Hypothesis/P-Hacking Detection Tests for Example Files
 Tests that biology_gene_expression.py has its p-hacking patterns detected.
 """
 
-import pytest
 import subprocess
 import sys
+
+import pytest
 
 
 class TestBiologyGeneExpression:
     """Tests for biology_gene_expression.py p-hacking detection."""
 
-    def test_hypothesis_guard_analyzes_without_error(self, biology_gene_expression_source, hypothesis_guard):
+    def test_hypothesis_guard_analyzes_without_error(
+        self, biology_gene_expression_source, hypothesis_guard
+    ):
         """HypothesisGuard should analyze the file without crashing."""
         result = hypothesis_guard.analyze_code(biology_gene_expression_source)
 
@@ -26,21 +29,22 @@ class TestBiologyGeneExpression:
         # The file has intentional errors:
         # - Multiple t-tests in loop without correction (line 21)
         # - Conditional reporting "if p < 0.05" (line 24)
-        violations = result.get('violations', [])
+        violations = result.get("violations", [])
         assert len(violations) > 0, "Should detect p-hacking violations"
 
     def test_detects_multiple_testing_issue(self, biology_gene_expression_source, hypothesis_guard):
         """Should detect uncorrected multiple comparisons."""
         result = hypothesis_guard.analyze_code(biology_gene_expression_source)
 
-        violations = result.get('violations', [])
+        violations = result.get("violations", [])
 
         # Look for multiple testing violation
         multiple_test_violations = [
-            v for v in violations
-            if 'multiple' in v.get('type', '').lower() or
-               'loop' in v.get('description', '').lower() or
-               'uncorrected' in v.get('type', '').lower()
+            v
+            for v in violations
+            if "multiple" in v.get("type", "").lower()
+            or "loop" in v.get("description", "").lower()
+            or "uncorrected" in v.get("type", "").lower()
         ]
         assert len(multiple_test_violations) >= 1, "Should detect uncorrected multiple comparisons"
 
@@ -48,14 +52,15 @@ class TestBiologyGeneExpression:
         """Should detect conditional reporting pattern (p-hacking)."""
         result = hypothesis_guard.analyze_code(biology_gene_expression_source)
 
-        violations = result.get('violations', [])
+        violations = result.get("violations", [])
 
         # Look for conditional reporting violation
         conditional_violations = [
-            v for v in violations
-            if 'conditional' in v.get('type', '').lower() or
-               'p_value_threshold' in v.get('type', '').lower() or
-               'p < 0.05' in v.get('description', '')
+            v
+            for v in violations
+            if "conditional" in v.get("type", "").lower()
+            or "p_value_threshold" in v.get("type", "").lower()
+            or "p < 0.05" in v.get("description", "")
         ]
         # May or may not detect this specific pattern
         # The important thing is that some violation is detected
@@ -67,10 +72,10 @@ class TestHypothesisCLI:
     def test_hypothesis_command_completes(self, biology_gene_expression_path):
         """Hypothesis command should complete without crashing."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'hypothesis', str(biology_gene_expression_path)],
+            [sys.executable, "-m", "demyst", "hypothesis", str(biology_gene_expression_path)],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         # Should complete (exit 0 or 1 based on findings)
@@ -79,10 +84,10 @@ class TestHypothesisCLI:
     def test_hypothesis_command_produces_output(self, biology_gene_expression_path):
         """Hypothesis command should produce meaningful output."""
         result = subprocess.run(
-            [sys.executable, '-m', 'demyst', 'hypothesis', str(biology_gene_expression_path)],
+            [sys.executable, "-m", "demyst", "hypothesis", str(biology_gene_expression_path)],
             capture_output=True,
             text=True,
-            timeout=30
+            timeout=30,
         )
 
         # Should produce some output
@@ -115,5 +120,5 @@ class TestBonferroniCorrection:
         assert result.is_significant  # 0.001 < 0.05
 
 
-if __name__ == '__main__':
-    pytest.main([__file__, '-v'])
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

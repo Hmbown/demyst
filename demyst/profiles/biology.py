@@ -8,15 +8,12 @@ PROFILE = {
     "rules": {
         "hypothesis": {
             "enabled": True,
-            "severity": "critical"  # p-hacking is a major issue in bio
+            "severity": "critical",  # p-hacking is a major issue in bio
         },
         "leakage": {
             "enabled": True,
-            "severity": "critical"  # Train/test contamination in biomarkers
+            "severity": "critical",  # Train/test contamination in biomarkers
         },
-        "unit": {
-            "enabled": True,
-            "severity": "warning"
-        }
+        "unit": {"enabled": True, "severity": "warning"},
     }
 }

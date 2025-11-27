@@ -10,14 +10,15 @@ Philosophy: "If the gradient dies in silence, the model learns nothing."
 """
 
 import ast
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple, cast
-from enum import Enum
 import warnings
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 
 class GradientRisk(Enum):
     """Risk levels for gradient flow issues."""
+
     SAFE = "safe"
     WARNING = "warning"
     CRITICAL = "critical"
@@ -27,6 +28,7 @@ class GradientRisk(Enum):
 @dataclass
 class GradientIssue:
     """Represents a detected gradient flow issue."""
+
     issue_type: str
     severity: GradientRisk
     line: int
@@ -39,6 +41,7 @@ class GradientIssue:
 @dataclass
 class NormalizationIssue:
     """Represents a normalization blindness issue."""
+
     layer_name: str
     line: int
     issue_type: str
@@ -50,6 +53,7 @@ class NormalizationIssue:
 @dataclass
 class RewardIssue:
     """Represents a reward hacking vulnerability."""
+
     function_name: str
     line: int
     issue_type: str
@@ -70,12 +74,12 @@ class GradientDeathDetector(ast.NodeVisitor):
     """
 
     ACTIVATION_SATURATION_RISK = {
-        'Sigmoid': {'depth_threshold': 3, 'risk': GradientRisk.CRITICAL},
-        'Tanh': {'depth_threshold': 4, 'risk': GradientRisk.WARNING},
-        'Softmax': {'depth_threshold': 1, 'risk': GradientRisk.WARNING},
+        "Sigmoid": {"depth_threshold": 3, "risk": GradientRisk.CRITICAL},
+        "Tanh": {"depth_threshold": 4, "risk": GradientRisk.WARNING},
+        "Softmax": {"depth_threshold": 1, "risk": GradientRisk.WARNING},
     }
 
-    GRADIENT_PRESERVING = {'ReLU', 'LeakyReLU', 'GELU', 'SiLU', 'Mish'}
+    GRADIENT_PRESERVING = {"ReLU", "LeakyReLU", "GELU", "SiLU", "Mish"}
 
     def __init__(self) -> None:
         self.issues: List[GradientIssue] = []
@@ -92,8 +96,8 @@ class GradientDeathDetector(ast.NodeVisitor):
 
         # Check if this is a PyTorch module
         is_nn_module = any(
-            (isinstance(base, ast.Attribute) and base.attr == 'Module') or
-            (isinstance(base, ast.Name) and base.id in ['Module', 'nn.Module'])
+            (isinstance(base, ast.Attribute) and base.attr == "Module")
+            or (isinstance(base, ast.Name) and base.id in ["Module", "nn.Module"])
             for base in node.bases
         )
 
@@ -115,7 +119,7 @@ class GradientDeathDetector(ast.NodeVisitor):
         self.current_function = node.name
 
         # Reset tracking for forward pass
-        if node.name == 'forward' and self.current_class:
+        if node.name == "forward" and self.current_class:
             self.activation_chain = []
             self.has_residual = False
 
@@ -127,11 +131,9 @@ class GradientDeathDetector(ast.NodeVisitor):
         layer_name = self._get_layer_name(node)
 
         if layer_name:
-            self.detected_layers.append({
-                'name': layer_name,
-                'line': node.lineno,
-                'col': node.col_offset
-            })
+            self.detected_layers.append(
+                {"name": layer_name, "line": node.lineno, "col": node.col_offset}
+            )
 
             # Track activation chains
             if layer_name in self.ACTIVATION_SATURATION_RISK:
@@ -192,27 +194,32 @@ class GradientDeathDetector(ast.NodeVisitor):
 
                 risk_info = self.ACTIVATION_SATURATION_RISK[activation]
 
-                if saturating_count >= cast(int, risk_info['depth_threshold']) and not self.has_residual:
-                    self.issues.append(GradientIssue(
-                        issue_type='gradient_death_chain',
-                        severity=cast(GradientRisk, risk_info['risk']),
-                        line=line,
-                        col=0,
-                        description=(
-                            f"Detected {saturating_count} consecutive {activation} activations "
-                            f"without residual connections. Gradients will vanish."
-                        ),
-                        recommendation=(
-                            f"Add residual/skip connections, or replace {activation} with "
-                            f"ReLU/GELU in intermediate layers. Consider gradient checkpointing."
-                        ),
-                        scientific_impact=(
-                            "Vanishing gradients cause early layers to stop learning, "
-                            "making the network effectively shallower than designed. "
-                            "This is a form of 'silent failure' - the model trains but "
-                            "cannot learn complex hierarchical features."
+                if (
+                    saturating_count >= cast(int, risk_info["depth_threshold"])
+                    and not self.has_residual
+                ):
+                    self.issues.append(
+                        GradientIssue(
+                            issue_type="gradient_death_chain",
+                            severity=cast(GradientRisk, risk_info["risk"]),
+                            line=line,
+                            col=0,
+                            description=(
+                                f"Detected {saturating_count} consecutive {activation} activations "
+                                f"without residual connections. Gradients will vanish."
+                            ),
+                            recommendation=(
+                                f"Add residual/skip connections, or replace {activation} with "
+                                f"ReLU/GELU in intermediate layers. Consider gradient checkpointing."
+                            ),
+                            scientific_impact=(
+                                "Vanishing gradients cause early layers to stop learning, "
+                                "making the network effectively shallower than designed. "
+                                "This is a form of 'silent failure' - the model trains but "
+                                "cannot learn complex hierarchical features."
+                            ),
                         )
-                    ))
+                    )
             else:
                 # Non-saturating activation resets the chain
                 saturating_count = 0
@@ -230,16 +237,27 @@ class NormalizationAnalyzer(ast.NodeVisitor):
     """
 
     NORMALIZATION_LAYERS = {
-        'BatchNorm1d', 'BatchNorm2d', 'BatchNorm3d',
-        'LayerNorm', 'GroupNorm', 'InstanceNorm1d',
-        'InstanceNorm2d', 'InstanceNorm3d',
-        'batch_norm', 'layer_norm', 'group_norm'
+        "BatchNorm1d",
+        "BatchNorm2d",
+        "BatchNorm3d",
+        "LayerNorm",
+        "GroupNorm",
+        "InstanceNorm1d",
+        "InstanceNorm2d",
+        "InstanceNorm3d",
+        "batch_norm",
+        "layer_norm",
+        "group_norm",
     }
 
     DISTRIBUTION_SENSITIVE = {
-        'Dropout', 'AlphaDropout',
-        'attention', 'self_attention', 'multi_head_attention',
-        'softmax', 'log_softmax'
+        "Dropout",
+        "AlphaDropout",
+        "attention",
+        "self_attention",
+        "multi_head_attention",
+        "softmax",
+        "log_softmax",
     }
 
     def __init__(self) -> None:
@@ -263,18 +281,17 @@ class NormalizationAnalyzer(ast.NodeVisitor):
 
         if layer_name:
             is_norm = any(norm in layer_name for norm in self.NORMALIZATION_LAYERS)
-            is_sensitive = any(sens.lower() in layer_name.lower()
-                             for sens in self.DISTRIBUTION_SENSITIVE)
+            is_sensitive = any(
+                sens.lower() in layer_name.lower() for sens in self.DISTRIBUTION_SENSITIVE
+            )
 
             if is_norm or is_sensitive:
-                self.layer_sequence.append((
-                    'norm' if is_norm else 'sensitive',
-                    layer_name,
-                    node.lineno
-                ))
+                self.layer_sequence.append(
+                    ("norm" if is_norm else "sensitive", layer_name, node.lineno)
+                )
 
             # Check for BatchNorm batch_size argument
-            if 'BatchNorm' in layer_name:
+            if "BatchNorm" in layer_name:
                 self._check_batch_norm_config(node, layer_name)
 
         self.generic_visit(node)
@@ -291,46 +308,50 @@ class NormalizationAnalyzer(ast.NodeVisitor):
         """Check BatchNorm configuration for potential issues."""
         # Check for track_running_stats=False (dangerous in eval mode)
         for keyword in node.keywords:
-            if keyword.arg == 'track_running_stats':
+            if keyword.arg == "track_running_stats":
                 if isinstance(keyword.value, ast.Constant) and keyword.value.value is False:
-                    self.issues.append(NormalizationIssue(
-                        layer_name=layer_name,
-                        line=node.lineno,
-                        issue_type='unstable_batch_stats',
-                        description=(
-                            f"{layer_name} with track_running_stats=False will use batch "
-                            "statistics during evaluation, causing non-deterministic behavior."
-                        ),
-                        masked_statistics=['running_mean', 'running_var'],
-                        recommendation=(
-                            "Keep track_running_stats=True for production models. "
-                            "Batch statistics during eval hide distribution shifts between "
-                            "training and deployment data."
+                    self.issues.append(
+                        NormalizationIssue(
+                            layer_name=layer_name,
+                            line=node.lineno,
+                            issue_type="unstable_batch_stats",
+                            description=(
+                                f"{layer_name} with track_running_stats=False will use batch "
+                                "statistics during evaluation, causing non-deterministic behavior."
+                            ),
+                            masked_statistics=["running_mean", "running_var"],
+                            recommendation=(
+                                "Keep track_running_stats=True for production models. "
+                                "Batch statistics during eval hide distribution shifts between "
+                                "training and deployment data."
+                            ),
                         )
-                    ))
+                    )
 
     def _analyze_normalization_sequence(self) -> None:
         """Analyze layer sequence for normalization blindness patterns."""
         for i, (layer_type, name, line) in enumerate(self.layer_sequence):
-            if layer_type == 'norm':
+            if layer_type == "norm":
                 # Check if next layer is distribution-sensitive
                 if i + 1 < len(self.layer_sequence):
                     next_type, next_name, next_line = self.layer_sequence[i + 1]
-                    if next_type == 'sensitive':
-                        self.issues.append(NormalizationIssue(
-                            layer_name=name,
-                            line=line,
-                            issue_type='normalization_before_sensitive',
-                            description=(
-                                f"{name} immediately before {next_name} will mask "
-                                "feature scale information that the sensitive layer needs."
-                            ),
-                            masked_statistics=['feature_scale', 'distribution_shift'],
-                            recommendation=(
-                                f"Consider moving {name} after {next_name}, or add "
-                                "an explicit scale/shift parameter that is logged for analysis."
+                    if next_type == "sensitive":
+                        self.issues.append(
+                            NormalizationIssue(
+                                layer_name=name,
+                                line=line,
+                                issue_type="normalization_before_sensitive",
+                                description=(
+                                    f"{name} immediately before {next_name} will mask "
+                                    "feature scale information that the sensitive layer needs."
+                                ),
+                                masked_statistics=["feature_scale", "distribution_shift"],
+                                recommendation=(
+                                    f"Consider moving {name} after {next_name}, or add "
+                                    "an explicit scale/shift parameter that is logged for analysis."
+                                ),
                             )
-                        ))
+                        )
 
 
 class RewardHackingDetector(ast.NodeVisitor):
@@ -344,8 +365,8 @@ class RewardHackingDetector(ast.NodeVisitor):
         4. Reward clipping that destroys gradient signal
     """
 
-    AGGREGATION_OPS = {'mean', 'sum', 'average', 'reduce_mean', 'reduce_sum'}
-    CLIPPING_OPS = {'clip', 'clamp', 'clip_by_value'}
+    AGGREGATION_OPS = {"mean", "sum", "average", "reduce_mean", "reduce_sum"}
+    CLIPPING_OPS = {"clip", "clamp", "clip_by_value"}
 
     def __init__(self) -> None:
         self.issues: List[RewardIssue] = []
@@ -380,19 +401,22 @@ class RewardHackingDetector(ast.NodeVisitor):
             if op_name:
                 op_type = self._classify_operation(op_name)
                 if op_type:
-                    self.reward_operations.append({
-                        'name': op_name,
-                        'type': op_type,
-                        'line': node.lineno,
-                        'node': node
-                    })
+                    self.reward_operations.append(
+                        {"name": op_name, "type": op_type, "line": node.lineno, "node": node}
+                    )
 
         self.generic_visit(node)
 
     def _is_reward_function(self, node: ast.FunctionDef) -> bool:
         """Check if function is a reward function."""
-        reward_indicators = ['reward', 'compute_reward', 'get_reward',
-                           'calculate_reward', 'step_reward', 'episode_reward']
+        reward_indicators = [
+            "reward",
+            "compute_reward",
+            "get_reward",
+            "calculate_reward",
+            "step_reward",
+            "episode_reward",
+        ]
         return any(ind in node.name.lower() for ind in reward_indicators)
 
     def _get_operation_name(self, node: ast.Call) -> Optional[str]:
@@ -407,9 +431,9 @@ class RewardHackingDetector(ast.NodeVisitor):
         """Classify operation type."""
         name_lower = name.lower()
         if any(agg in name_lower for agg in self.AGGREGATION_OPS):
-            return 'aggregation'
+            return "aggregation"
         if any(clip in name_lower for clip in self.CLIPPING_OPS):
-            return 'clipping'
+            return "clipping"
         return None
 
     def _analyze_reward_function(self, node: ast.FunctionDef) -> None:
@@ -418,50 +442,54 @@ class RewardHackingDetector(ast.NodeVisitor):
         has_clipping = False
 
         for op in self.reward_operations:
-            if op['type'] == 'aggregation':
+            if op["type"] == "aggregation":
                 has_aggregation = True
-                self.issues.append(RewardIssue(
-                    function_name=str(self.current_function),
-                    line=op['line'],
-                    issue_type='reward_aggregation_mirage',
-                    description=(
-                        f"Reward function uses {op['name']}() which hides negative spikes. "
-                        "An agent could achieve high mean reward while causing "
-                        "catastrophic failures on individual steps."
-                    ),
-                    exploit_vector=(
-                        "Agent learns to maximize average reward by taking many small "
-                        "positive actions while occasionally taking severely negative actions "
-                        "that are masked by the mean."
-                    ),
-                    recommendation=(
-                        "Track reward variance alongside mean. Add penalty for high-variance "
-                        "reward signals. Consider using CVaR (Conditional Value at Risk) "
-                        "instead of mean for safety-critical applications."
+                self.issues.append(
+                    RewardIssue(
+                        function_name=str(self.current_function),
+                        line=op["line"],
+                        issue_type="reward_aggregation_mirage",
+                        description=(
+                            f"Reward function uses {op['name']}() which hides negative spikes. "
+                            "An agent could achieve high mean reward while causing "
+                            "catastrophic failures on individual steps."
+                        ),
+                        exploit_vector=(
+                            "Agent learns to maximize average reward by taking many small "
+                            "positive actions while occasionally taking severely negative actions "
+                            "that are masked by the mean."
+                        ),
+                        recommendation=(
+                            "Track reward variance alongside mean. Add penalty for high-variance "
+                            "reward signals. Consider using CVaR (Conditional Value at Risk) "
+                            "instead of mean for safety-critical applications."
+                        ),
                     )
-                ))
+                )
 
-            elif op['type'] == 'clipping':
+            elif op["type"] == "clipping":
                 has_clipping = True
-                self.issues.append(RewardIssue(
-                    function_name=str(self.current_function),
-                    line=op['line'],
-                    issue_type='reward_clipping_blindness',
-                    description=(
-                        f"Reward clipping with {op['name']}() destroys gradient signal "
-                        "for extreme rewards. Agent cannot distinguish between 'very bad' "
-                        "and 'catastrophically bad' actions."
-                    ),
-                    exploit_vector=(
-                        "Agent cannot learn to avoid worst-case scenarios because "
-                        "gradient signal is zero for clipped regions."
-                    ),
-                    recommendation=(
-                        "Use soft clipping (tanh scaling) instead of hard clipping. "
-                        "Log unclipped rewards for analysis. Consider reward shaping "
-                        "that preserves relative ordering of outcomes."
+                self.issues.append(
+                    RewardIssue(
+                        function_name=str(self.current_function),
+                        line=op["line"],
+                        issue_type="reward_clipping_blindness",
+                        description=(
+                            f"Reward clipping with {op['name']}() destroys gradient signal "
+                            "for extreme rewards. Agent cannot distinguish between 'very bad' "
+                            "and 'catastrophically bad' actions."
+                        ),
+                        exploit_vector=(
+                            "Agent cannot learn to avoid worst-case scenarios because "
+                            "gradient signal is zero for clipped regions."
+                        ),
+                        recommendation=(
+                            "Use soft clipping (tanh scaling) instead of hard clipping. "
+                            "Log unclipped rewards for analysis. Consider reward shaping "
+                            "that preserves relative ordering of outcomes."
+                        ),
                     )
-                ))
+                )
 
 
 class TensorGuard:
@@ -494,11 +522,11 @@ class TensorGuard:
             tree = ast.parse(source)
         except SyntaxError as e:
             return {
-                'error': f"Syntax error in source: {e}",
-                'gradient_issues': [],
-                'normalization_issues': [],
-                'reward_issues': [],
-                'summary': None
+                "error": f"Syntax error in source: {e}",
+                "gradient_issues": [],
+                "normalization_issues": [],
+                "reward_issues": [],
+                "summary": None,
             }
 
         # Run all detectors
@@ -517,31 +545,36 @@ class TensorGuard:
 
         # Generate summary
         total_issues = len(gradient_issues) + len(norm_issues) + len(reward_issues)
-        critical_count = sum(1 for i in gradient_issues
-                          if i.severity in [GradientRisk.CRITICAL, GradientRisk.FATAL])
+        critical_count = sum(
+            1 for i in gradient_issues if i.severity in [GradientRisk.CRITICAL, GradientRisk.FATAL]
+        )
 
         summary = {
-            'total_issues': total_issues,
-            'critical_issues': critical_count,
-            'gradient_death_risks': len(gradient_issues),
-            'normalization_blindness': len(norm_issues),
-            'reward_hacking_vulnerabilities': len(reward_issues),
-            'verdict': self._compute_verdict(gradient_issues, norm_issues, reward_issues)
+            "total_issues": total_issues,
+            "critical_issues": critical_count,
+            "gradient_death_risks": len(gradient_issues),
+            "normalization_blindness": len(norm_issues),
+            "reward_hacking_vulnerabilities": len(reward_issues),
+            "verdict": self._compute_verdict(gradient_issues, norm_issues, reward_issues),
         }
 
         return {
-            'gradient_issues': [self._issue_to_dict(i) for i in gradient_issues],
-            'normalization_issues': [self._norm_issue_to_dict(i) for i in norm_issues],
-            'reward_issues': [self._reward_issue_to_dict(i) for i in reward_issues],
-            'summary': summary
+            "gradient_issues": [self._issue_to_dict(i) for i in gradient_issues],
+            "normalization_issues": [self._norm_issue_to_dict(i) for i in norm_issues],
+            "reward_issues": [self._reward_issue_to_dict(i) for i in reward_issues],
+            "summary": summary,
         }
 
-    def _compute_verdict(self, gradient_issues: List[GradientIssue],
-                        norm_issues: List[NormalizationIssue],
-                        reward_issues: List[RewardIssue]) -> str:
+    def _compute_verdict(
+        self,
+        gradient_issues: List[GradientIssue],
+        norm_issues: List[NormalizationIssue],
+        reward_issues: List[RewardIssue],
+    ) -> str:
         """Compute overall verdict."""
-        critical = any(i.severity in [GradientRisk.CRITICAL, GradientRisk.FATAL]
-                      for i in gradient_issues)
+        critical = any(
+            i.severity in [GradientRisk.CRITICAL, GradientRisk.FATAL] for i in gradient_issues
+        )
 
         if critical or len(reward_issues) > 0:
             return "FAIL: Critical integrity issues detected. Do not deploy."
@@ -553,33 +586,33 @@ class TensorGuard:
     def _issue_to_dict(self, issue: GradientIssue) -> Dict[str, Any]:
         """Convert GradientIssue to dictionary."""
         return {
-            'type': issue.issue_type,
-            'severity': issue.severity.value,
-            'line': issue.line,
-            'col': issue.col,
-            'description': issue.description,
-            'recommendation': issue.recommendation,
-            'scientific_impact': issue.scientific_impact
+            "type": issue.issue_type,
+            "severity": issue.severity.value,
+            "line": issue.line,
+            "col": issue.col,
+            "description": issue.description,
+            "recommendation": issue.recommendation,
+            "scientific_impact": issue.scientific_impact,
         }
 
     def _norm_issue_to_dict(self, issue: NormalizationIssue) -> Dict[str, Any]:
         """Convert NormalizationIssue to dictionary."""
         return {
-            'layer': issue.layer_name,
-            'line': issue.line,
-            'type': issue.issue_type,
-            'description': issue.description,
-            'masked_statistics': issue.masked_statistics,
-            'recommendation': issue.recommendation
+            "layer": issue.layer_name,
+            "line": issue.line,
+            "type": issue.issue_type,
+            "description": issue.description,
+            "masked_statistics": issue.masked_statistics,
+            "recommendation": issue.recommendation,
         }
 
     def _reward_issue_to_dict(self, issue: RewardIssue) -> Dict[str, Any]:
         """Convert RewardIssue to dictionary."""
         return {
-            'function': issue.function_name,
-            'line': issue.line,
-            'type': issue.issue_type,
-            'description': issue.description,
-            'exploit_vector': issue.exploit_vector,
-            'recommendation': issue.recommendation
+            "function": issue.function_name,
+            "line": issue.line,
+            "type": issue.issue_type,
+            "description": issue.description,
+            "exploit_vector": issue.exploit_vector,
+            "recommendation": issue.recommendation,
         }

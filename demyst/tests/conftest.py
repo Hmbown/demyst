@@ -7,8 +7,9 @@ Provides shared fixtures for all test modules:
 - Guard instance fixtures (mirage_detector, hypothesis_guard, unit_guard)
 """
 
-import pytest
 from pathlib import Path
+
+import pytest
 
 
 # Project root detection
@@ -91,6 +92,7 @@ def chemistry_stoichiometry_source(chemistry_stoichiometry_path) -> str:
 def mirage_detector():
     """Fresh MirageDetector instance."""
     from demyst.engine.mirage_detector import MirageDetector
+
     return MirageDetector()
 
 
@@ -98,6 +100,7 @@ def mirage_detector():
 def hypothesis_guard():
     """Fresh HypothesisGuard instance."""
     from demyst.guards.hypothesis_guard import HypothesisGuard
+
     return HypothesisGuard()
 
 
@@ -105,6 +108,7 @@ def hypothesis_guard():
 def unit_guard():
     """Fresh UnitGuard instance."""
     from demyst.guards.unit_guard import UnitGuard
+
     return UnitGuard()
 
 
@@ -112,6 +116,7 @@ def unit_guard():
 def tensor_guard():
     """Fresh TensorGuard instance."""
     from demyst.guards.tensor_guard import TensorGuard
+
     return TensorGuard()
 
 
@@ -119,4 +124,5 @@ def tensor_guard():
 def leakage_hunter():
     """Fresh LeakageHunter instance."""
     from demyst.guards.leakage_hunter import LeakageHunter
+
     return LeakageHunter()

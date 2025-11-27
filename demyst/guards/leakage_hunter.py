@@ -8,17 +8,18 @@ Philosophy: "If test data touches training, your benchmark is a lie."
 """
 
 import ast
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple, cast
-from enum import Enum
 import re
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Any, Dict, List, Optional, Set, Tuple, cast
 
 
 class TaintLevel(Enum):
     """Taint levels for data flow tracking."""
+
     CLEAN = "clean"  # No taint, safe to use anywhere
     TRAIN = "train"  # Training data only
-    TEST = "test"    # Test data - NEVER touch training
+    TEST = "test"  # Test data - NEVER touch training
     VALIDATION = "validation"  # Validation data
     HYPERPARAMETER = "hyperparameter"  # Data used for hyperparameter tuning
     MIXED = "mixed"  # Contaminated - train and test mixed (CRITICAL)
@@ -27,6 +28,7 @@ class TaintLevel(Enum):
 @dataclass
 class TaintSource:
     """Represents a source of tainted data."""
+
     name: str
     level: TaintLevel
     line: int
@@ -37,6 +39,7 @@ class TaintSource:
 @dataclass
 class LeakageViolation:
     """Represents a detected data leakage violation."""
+
     violation_type: str
     severity: str  # 'critical', 'warning', 'info'
     line: int
@@ -52,6 +55,7 @@ class LeakageViolation:
 @dataclass
 class DataFlowPath:
     """Represents a path of data flow through the code."""
+
     source: TaintSource
     transformations: List[Tuple[str, int]]  # (operation, line)
     sink: str
@@ -72,8 +76,9 @@ class DataFlowTracker:
         self.taint_map: Dict[str, TaintSource] = {}
         self.flow_paths: List[DataFlowPath] = []
 
-    def add_source(self, name: str, level: TaintLevel, line: int, col: int,
-                   source_type: str) -> None:
+    def add_source(
+        self, name: str, level: TaintLevel, line: int, col: int, source_type: str
+    ) -> None:
         """Register a new taint source."""
         self.taint_map[name] = TaintSource(
             name=name, level=level, line=line, col=col, source_type=source_type
@@ -104,11 +109,7 @@ class DataFlowTracker:
             combined_level = TaintLevel.CLEAN
 
         self.taint_map[target] = TaintSource(
-            name=target,
-            level=combined_level,
-            line=line,
-            col=0,
-            source_type='propagation'
+            name=target, level=combined_level, line=line, col=0, source_type="propagation"
         )
 
     def get_taint(self, name: str) -> Optional[TaintSource]:
@@ -122,10 +123,10 @@ class DataFlowTracker:
             return None
 
         # Test data in training context
-        if taint.level == TaintLevel.TEST and context in ['train', 'fit', 'training_loop']:
+        if taint.level == TaintLevel.TEST and context in ["train", "fit", "training_loop"]:
             return LeakageViolation(
-                violation_type='test_in_training',
-                severity='critical',
+                violation_type="test_in_training",
+                severity="critical",
                 line=line,
                 col=0,
                 tainted_variable=variable,
@@ -143,14 +144,19 @@ class DataFlowTracker:
                 recommendation=(
                     "Ensure complete separation of test data. Use sklearn's train_test_split "
                     "or similar and verify test indices never appear in training loops."
-                )
+                ),
             )
 
         # Test data in hyperparameter tuning
-        if taint.level == TaintLevel.TEST and context in ['tune', 'hyperparameter', 'grid_search', 'optuna']:
+        if taint.level == TaintLevel.TEST and context in [
+            "tune",
+            "hyperparameter",
+            "grid_search",
+            "optuna",
+        ]:
             return LeakageViolation(
-                violation_type='test_in_tuning',
-                severity='critical',
+                violation_type="test_in_tuning",
+                severity="critical",
                 line=line,
                 col=0,
                 tainted_variable=variable,
@@ -167,14 +173,14 @@ class DataFlowTracker:
                 recommendation=(
                     "Use a three-way split: train/validation/test. Tune on validation, "
                     "evaluate ONCE on test. Never iterate based on test performance."
-                )
+                ),
             )
 
         # Mixed data is always a violation
         if taint.level == TaintLevel.MIXED:
             return LeakageViolation(
-                violation_type='data_contamination',
-                severity='critical',
+                violation_type="data_contamination",
+                severity="critical",
                 line=line,
                 col=0,
                 tainted_variable=variable,
@@ -191,7 +197,7 @@ class DataFlowTracker:
                 recommendation=(
                     "Trace back data flow and find where train/test data was combined. "
                     "Rebuild data pipeline with clear separation."
-                )
+                ),
             )
 
         return None
@@ -210,29 +216,48 @@ class TaintAnalyzer(ast.NodeVisitor):
 
     # Functions that load data
     DATA_LOADERS = {
-        'load_dataset', 'read_csv', 'read_parquet', 'load_data',
-        'fetch_openml', 'load_iris', 'load_mnist', 'load_cifar10',
-        'ImageFolder', 'DataLoader', 'TensorDataset'
+        "load_dataset",
+        "read_csv",
+        "read_parquet",
+        "load_data",
+        "fetch_openml",
+        "load_iris",
+        "load_mnist",
+        "load_cifar10",
+        "ImageFolder",
+        "DataLoader",
+        "TensorDataset",
     }
 
     # Functions that split data
     DATA_SPLITTERS = {
-        'train_test_split': ['X_train', 'X_test', 'y_train', 'y_test'],
-        'split': ['train', 'test'],
-        'random_split': ['train_dataset', 'test_dataset'],
-        'kfold': ['train_idx', 'test_idx'],
+        "train_test_split": ["X_train", "X_test", "y_train", "y_test"],
+        "split": ["train", "test"],
+        "random_split": ["train_dataset", "test_dataset"],
+        "kfold": ["train_idx", "test_idx"],
     }
 
     # Training-related contexts
     TRAINING_CONTEXTS = {
-        'fit', 'train', 'training_step', 'train_epoch',
-        'backward', 'step', 'optimize'
+        "fit",
+        "train",
+        "training_step",
+        "train_epoch",
+        "backward",
+        "step",
+        "optimize",
     }
 
     # Hyperparameter tuning contexts
     TUNING_CONTEXTS = {
-        'tune', 'hyperparameter_search', 'grid_search', 'random_search',
-        'optuna', 'ray_tune', 'hyperopt', 'cross_val_score'
+        "tune",
+        "hyperparameter_search",
+        "grid_search",
+        "random_search",
+        "optuna",
+        "ray_tune",
+        "hyperopt",
+        "cross_val_score",
     }
 
     def __init__(self) -> None:
@@ -252,9 +277,9 @@ class TaintAnalyzer(ast.NodeVisitor):
         # Determine context type
         name_lower = node.name.lower()
         if any(train in name_lower for train in self.TRAINING_CONTEXTS):
-            self.current_context = 'train'
+            self.current_context = "train"
         elif any(tune in name_lower for tune in self.TUNING_CONTEXTS):
-            self.current_context = 'tune'
+            self.current_context = "tune"
         else:
             self.current_context = None
 
@@ -311,9 +336,7 @@ class TaintAnalyzer(ast.NodeVisitor):
             iter_vars = self._extract_variables(node.iter)
             for var in iter_vars:
                 if self.current_context:
-                    violation = self.tracker.check_violation(
-                        var, self.current_context, node.lineno
-                    )
+                    violation = self.tracker.check_violation(var, self.current_context, node.lineno)
                     if violation:
                         self.violations.append(violation)
 
@@ -331,18 +354,18 @@ class TaintAnalyzer(ast.NodeVisitor):
         """Handle data loading function calls."""
         # Check if this is a test/train split load
         for keyword in node.keywords:
-            if keyword.arg == 'split':
+            if keyword.arg == "split":
                 if isinstance(keyword.value, ast.Constant):
                     split_name = keyword.value.value
-                    if 'test' in str(split_name).lower():
+                    if "test" in str(split_name).lower():
                         self._register_test_source(node, func_name)
-                    elif 'train' in str(split_name).lower():
+                    elif "train" in str(split_name).lower():
                         self._register_train_source(node, func_name)
 
     def _handle_data_split(self, node: ast.Call, func_name: str) -> None:
         """Handle data splitting function calls."""
         # train_test_split typically returns (train, test) pairs
-        parent = getattr(node, '_parent', None)
+        parent = getattr(node, "_parent", None)
         if parent and isinstance(parent, ast.Assign):
             targets = parent.targets[0]
             if isinstance(targets, ast.Tuple):
@@ -355,17 +378,13 @@ class TaintAnalyzer(ast.NodeVisitor):
                         name_lower = name.lower()
 
                         # Infer taint from variable name
-                        if 'test' in name_lower:
+                        if "test" in name_lower:
+                            self.tracker.add_source(name, TaintLevel.TEST, node.lineno, 0, "split")
+                        elif "train" in name_lower:
+                            self.tracker.add_source(name, TaintLevel.TRAIN, node.lineno, 0, "split")
+                        elif "val" in name_lower:
                             self.tracker.add_source(
-                                name, TaintLevel.TEST, node.lineno, 0, 'split'
-                            )
-                        elif 'train' in name_lower:
-                            self.tracker.add_source(
-                                name, TaintLevel.TRAIN, node.lineno, 0, 'split'
-                            )
-                        elif 'val' in name_lower:
-                            self.tracker.add_source(
-                                name, TaintLevel.VALIDATION, node.lineno, 0, 'split'
+                                name, TaintLevel.VALIDATION, node.lineno, 0, "split"
                             )
 
     def _check_training_call(self, node: ast.Call, func_name: str) -> None:
@@ -374,14 +393,14 @@ class TaintAnalyzer(ast.NodeVisitor):
         for arg in node.args:
             vars_used = self._extract_variables(arg)
             for var in vars_used:
-                violation = self.tracker.check_violation(var, 'train', node.lineno)
+                violation = self.tracker.check_violation(var, "train", node.lineno)
                 if violation:
                     self.violations.append(violation)
 
         for keyword in node.keywords:
             vars_used = self._extract_variables(keyword.value)
             for var in vars_used:
-                violation = self.tracker.check_violation(var, 'train', node.lineno)
+                violation = self.tracker.check_violation(var, "train", node.lineno)
                 if violation:
                     self.violations.append(violation)
 
@@ -390,29 +409,25 @@ class TaintAnalyzer(ast.NodeVisitor):
         for arg in node.args:
             vars_used = self._extract_variables(arg)
             for var in vars_used:
-                violation = self.tracker.check_violation(var, 'tune', node.lineno)
+                violation = self.tracker.check_violation(var, "tune", node.lineno)
                 if violation:
                     self.violations.append(violation)
 
     def _register_test_source(self, node: ast.Call, func_name: str) -> None:
         """Register a test data source."""
-        parent = getattr(node, '_parent', None)
+        parent = getattr(node, "_parent", None)
         if parent and isinstance(parent, ast.Assign):
             for target in parent.targets:
                 if isinstance(target, ast.Name):
-                    self.tracker.add_source(
-                        target.id, TaintLevel.TEST, node.lineno, 0, 'load'
-                    )
+                    self.tracker.add_source(target.id, TaintLevel.TEST, node.lineno, 0, "load")
 
     def _register_train_source(self, node: ast.Call, func_name: str) -> None:
         """Register a train data source."""
-        parent = getattr(node, '_parent', None)
+        parent = getattr(node, "_parent", None)
         if parent and isinstance(parent, ast.Assign):
             for target in parent.targets:
                 if isinstance(target, ast.Name):
-                    self.tracker.add_source(
-                        target.id, TaintLevel.TRAIN, node.lineno, 0, 'load'
-                    )
+                    self.tracker.add_source(target.id, TaintLevel.TRAIN, node.lineno, 0, "load")
 
     def _extract_variables(self, node: ast.AST) -> List[str]:
         """Extract all variable names from an AST node."""
@@ -471,10 +486,10 @@ class LeakageHunter:
             tree = ast.parse(source)
         except SyntaxError as e:
             return {
-                'error': f"Syntax error: {e}",
-                'violations': [],
-                'taint_map': {},
-                'summary': None
+                "error": f"Syntax error: {e}",
+                "violations": [],
+                "taint_map": {},
+                "summary": None,
             }
 
         # Add parent references for context
@@ -493,12 +508,12 @@ class LeakageHunter:
         summary = self._generate_summary(all_violations)
 
         return {
-            'violations': [self._violation_to_dict(v) for v in all_violations],
-            'taint_map': {
-                name: {'level': src.level.value, 'line': src.line}
+            "violations": [self._violation_to_dict(v) for v in all_violations],
+            "taint_map": {
+                name: {"level": src.level.value, "line": src.line}
                 for name, src in self.analyzer.tracker.taint_map.items()
             },
-            'summary': summary
+            "summary": summary,
         }
 
     def _add_parent_refs(self, tree: ast.AST) -> None:
@@ -511,15 +526,11 @@ class LeakageHunter:
     def _pattern_based_detection(self, source: str) -> List[LeakageViolation]:
         """Detect common leakage patterns using regex."""
         violations = []
-        lines = source.split('\n')
+        lines = source.split("\n")
 
         # Pattern 1: fit_transform on full data, then split
-        fit_transform_pattern = re.compile(
-            r'\.fit_transform\s*\(\s*(\w+)\s*\)'
-        )
-        split_pattern = re.compile(
-            r'train_test_split'
-        )
+        fit_transform_pattern = re.compile(r"\.fit_transform\s*\(\s*(\w+)\s*\)")
+        split_pattern = re.compile(r"train_test_split")
 
         fit_transform_line = None
         fit_transform_var = None
@@ -532,78 +543,78 @@ class LeakageHunter:
 
             if fit_transform_line and split_pattern.search(line):
                 if i > fit_transform_line:
-                    violations.append(LeakageViolation(
-                        violation_type='preprocessing_leakage',
-                        severity='critical',
-                        line=fit_transform_line,
-                        col=0,
-                        tainted_variable=fit_transform_var or 'unknown',
-                        taint_source='fit_transform',
-                        contaminated_context='preprocessing',
-                        description=(
-                            f"fit_transform() called on line {fit_transform_line} BEFORE "
-                            f"train_test_split on line {i}. Preprocessing statistics "
-                            "(mean, std, etc.) are computed using test data."
-                        ),
-                        scientific_impact=(
-                            "Preprocessing learns from test data. Features are scaled/normalized "
-                            "using information that should be held out. This is subtle but "
-                            "causes overestimation of model performance."
-                        ),
-                        recommendation=(
-                            "Split data FIRST, then fit preprocessing on train only:\n"
-                            "  X_train, X_test = train_test_split(X)\n"
-                            "  scaler.fit(X_train)\n"
-                            "  X_train = scaler.transform(X_train)\n"
-                            "  X_test = scaler.transform(X_test)"
+                    violations.append(
+                        LeakageViolation(
+                            violation_type="preprocessing_leakage",
+                            severity="critical",
+                            line=fit_transform_line,
+                            col=0,
+                            tainted_variable=fit_transform_var or "unknown",
+                            taint_source="fit_transform",
+                            contaminated_context="preprocessing",
+                            description=(
+                                f"fit_transform() called on line {fit_transform_line} BEFORE "
+                                f"train_test_split on line {i}. Preprocessing statistics "
+                                "(mean, std, etc.) are computed using test data."
+                            ),
+                            scientific_impact=(
+                                "Preprocessing learns from test data. Features are scaled/normalized "
+                                "using information that should be held out. This is subtle but "
+                                "causes overestimation of model performance."
+                            ),
+                            recommendation=(
+                                "Split data FIRST, then fit preprocessing on train only:\n"
+                                "  X_train, X_test = train_test_split(X)\n"
+                                "  scaler.fit(X_train)\n"
+                                "  X_train = scaler.transform(X_train)\n"
+                                "  X_test = scaler.transform(X_test)"
+                            ),
                         )
-                    ))
+                    )
                     fit_transform_line = None
 
         # Pattern 2: cross_val_score after target encoding/feature selection
-        target_encoding_pattern = re.compile(
-            r'(TargetEncoder|target_encode|WOEEncoder)\s*\('
-        )
-        cross_val_pattern = re.compile(
-            r'cross_val_score\s*\('
-        )
+        target_encoding_pattern = re.compile(r"(TargetEncoder|target_encode|WOEEncoder)\s*\(")
+        cross_val_pattern = re.compile(r"cross_val_score\s*\(")
 
         for i, line in enumerate(lines, 1):
             if target_encoding_pattern.search(line):
                 # Look for cross_val later
-                for j, later_line in enumerate(lines[i:], i+1):
+                for j, later_line in enumerate(lines[i:], i + 1):
                     if cross_val_pattern.search(later_line):
-                        violations.append(LeakageViolation(
-                            violation_type='target_leakage',
-                            severity='critical',
-                            line=i,
-                            col=0,
-                            tainted_variable='encoded_features',
-                            taint_source='target_encoding',
-                            contaminated_context='cross_validation',
-                            description=(
-                                f"Target encoding on line {i} before cross_val_score on line {j}. "
-                                "Target encoding MUST happen inside each CV fold."
-                            ),
-                            scientific_impact=(
-                                "Target encoding uses target values to create features. "
-                                "If done before CV, validation folds see encoded values "
-                                "computed from their own targets."
-                            ),
-                            recommendation=(
-                                "Use sklearn Pipeline to ensure encoding happens per-fold:\n"
-                                "  pipe = Pipeline([('encoder', TargetEncoder()), ('model', clf)])\n"
-                                "  cross_val_score(pipe, X, y)"
+                        violations.append(
+                            LeakageViolation(
+                                violation_type="target_leakage",
+                                severity="critical",
+                                line=i,
+                                col=0,
+                                tainted_variable="encoded_features",
+                                taint_source="target_encoding",
+                                contaminated_context="cross_validation",
+                                description=(
+                                    f"Target encoding on line {i} before cross_val_score on line {j}. "
+                                    "Target encoding MUST happen inside each CV fold."
+                                ),
+                                scientific_impact=(
+                                    "Target encoding uses target values to create features. "
+                                    "If done before CV, validation folds see encoded values "
+                                    "computed from their own targets."
+                                ),
+                                recommendation=(
+                                    "Use sklearn Pipeline to ensure encoding happens per-fold:\n"
+                                    "  pipe = Pipeline([('encoder', TargetEncoder()), ('model', clf)])\n"
+                                    "  cross_val_score(pipe, X, y)"
+                                ),
                             )
-                        ))
+                        )
                         break
 
         return violations
 
     def _generate_summary(self, violations: List[LeakageViolation]) -> Dict[str, Any]:
         """Generate analysis summary."""
-        critical = sum(1 for v in violations if v.severity == 'critical')
-        warning = sum(1 for v in violations if v.severity == 'warning')
+        critical = sum(1 for v in violations if v.severity == "critical")
+        warning = sum(1 for v in violations if v.severity == "warning")
 
         violation_types: Dict[str, int] = {}
         for v in violations:
@@ -617,24 +628,24 @@ class LeakageHunter:
             verdict = "PASS: No data leakage detected."
 
         return {
-            'total_violations': len(violations),
-            'critical_count': critical,
-            'warning_count': warning,
-            'violation_types': violation_types,
-            'verdict': verdict
+            "total_violations": len(violations),
+            "critical_count": critical,
+            "warning_count": warning,
+            "violation_types": violation_types,
+            "verdict": verdict,
         }
 
     def _violation_to_dict(self, v: LeakageViolation) -> Dict[str, Any]:
         """Convert violation to dictionary."""
         return {
-            'type': v.violation_type,
-            'severity': v.severity,
-            'line': v.line,
-            'col': v.col,
-            'variable': v.tainted_variable,
-            'source': v.taint_source,
-            'context': v.contaminated_context,
-            'description': v.description,
-            'scientific_impact': v.scientific_impact,
-            'recommendation': v.recommendation
+            "type": v.violation_type,
+            "severity": v.severity,
+            "line": v.line,
+            "col": v.col,
+            "variable": v.tainted_variable,
+            "source": v.taint_source,
+            "context": v.contaminated_context,
+            "description": v.description,
+            "scientific_impact": v.scientific_impact,
+            "recommendation": v.recommendation,
         }

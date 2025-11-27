@@ -4,17 +4,156 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "scilint"
-version = "0.1.0"
-description = "Scientific Linter & Refactor Engine - Detects Computational Mirages"
+version = "1.0.0"
+description = "The Scientific Integrity Platform for AI Research"
 readme = "README.md"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
     {name = "Scilint Team"}
 ]
+keywords = [
+    "linting",
+    "scientific-computing",
+    "machine-learning",
+    "data-science",
+    "integrity",
+    "reproducibility",
+    "p-hacking",
+    "data-leakage"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Quality Assurance",
+]
 dependencies = [
-    "numpy",
+    "numpy>=1.20.0",
+    "PyYAML>=6.0",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=1.9.0"]
+jax = ["jax>=0.3.0", "jaxlib>=0.3.0"]
+tracking = ["wandb>=0.12.0", "mlflow>=1.20.0"]
+all = [
+    "torch>=1.9.0",
+    "jax>=0.3.0",
+    "jaxlib>=0.3.0",
+    "wandb>=0.12.0",
+    "mlflow>=1.20.0",
+]
+dev = [
+    "pytest>=6.0.0",
+    "pytest-cov>=2.0.0",
+    "mypy>=1.0.0",
+    "black>=23.0.0",
+    "isort>=5.0.0",
+    "pre-commit>=3.0.0",
 ]
 
 [project.scripts]
-scilint = "scilint.engine.transpiler:main"
+scilint = "scilint.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/scilint/scilint"
+Documentation = "https://github.com/scilint/scilint#readme"
+Repository = "https://github.com/scilint/scilint"
+Issues = "https://github.com/scilint/scilint/issues"
+
+# Tool configurations
+
+[tool.black]
+line-length = 100
+target-version = ['py38', 'py39', 'py310', 'py311', 'py312']
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+    | \.mypy_cache
+    | \.pytest_cache
+    | \.venv
+    | venv
+    | __pycache__
+    | build
+    | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
+skip = [".git", "__pycache__", "venv", ".venv", "build", "dist"]
+known_first_party = ["scilint"]
+
+[tool.mypy]
+python_version = "3.8"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_equality = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "torch.*",
+    "jax.*",
+    "wandb.*",
+    "mlflow.*",
+    "scipy.*",
+    "sklearn.*",
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+testpaths = ["scilint/tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "-v",
+    "--tb=short",
+    "--strict-markers",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+]
+
+[tool.coverage.run]
+source = ["scilint"]
+branch = true
+omit = [
+    "scilint/tests/*",
+    "scilint/__main__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
+fail_under = 80
+show_missing = true

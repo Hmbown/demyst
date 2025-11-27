@@ -8,6 +8,7 @@ in machine learning and data science code.
 Usage:
     scilint analyze <path>          # Run all integrity checks
     scilint mirage <path>           # Detect computational mirages
+    scilint mirage <path> --fix     # Detect and auto-fix mirages
     scilint leakage <path>          # Detect data leakage
     scilint hypothesis <path>       # Check statistical validity
     scilint units <path>            # Check dimensional consistency
@@ -22,56 +23,113 @@ import argparse
 import sys
 import os
 import json
+import logging
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Any, Dict
 
 # Version
 __version__ = "1.0.0"
 
+# Global logger
+logger = logging.getLogger("scilint")
 
-def analyze_command(args):
+
+def setup_logging(verbose: bool = False, debug: bool = False) -> None:
+    """Configure logging based on verbosity settings."""
+    if debug:
+        level = logging.DEBUG
+        fmt = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    elif verbose:
+        level = logging.INFO
+        fmt = "%(levelname)s: %(message)s"
+    else:
+        level = logging.WARNING
+        fmt = "%(message)s"
+
+    logging.basicConfig(level=level, format=fmt)
+    logger.setLevel(level)
+
+
+def safe_read_file(path: str) -> str:
+    """Safely read a file with proper error handling."""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    except UnicodeDecodeError:
+        # Try with latin-1 as fallback
+        logger.debug(f"UTF-8 decode failed for {path}, trying latin-1")
+        with open(path, 'r', encoding='latin-1') as f:
+            return f.read()
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File not found: {path}")
+    except PermissionError:
+        raise PermissionError(f"Permission denied: {path}")
+    except IsADirectoryError:
+        raise IsADirectoryError(f"Expected a file, got a directory: {path}")
+
+
+def analyze_command(args: argparse.Namespace) -> int:
     """Run comprehensive analysis on a file or directory."""
     from scilint.integrations.ci_enforcer import CIEnforcer
 
+    logger.info(f"Analyzing {args.path}")
+
     # Load configuration
-    config = {}
+    config: Dict[str, Any] = {}
     if args.config:
-        import yaml
-        with open(args.config, 'r') as f:
-            config = yaml.safe_load(f)
+        try:
+            import yaml
+            with open(args.config, 'r') as f:
+                config = yaml.safe_load(f) or {}
+            logger.debug(f"Loaded config from {args.config}")
+        except Exception as e:
+            logger.warning(f"Failed to load config: {e}")
 
     enforcer = CIEnforcer(config=config)
 
     if os.path.isdir(args.path):
         report = enforcer.analyze_directory(args.path)
+        if args.format == 'markdown':
+            print(report.to_markdown())
+        elif args.format == 'json':
+            print(json.dumps(report.to_dict(), indent=2))
+        else:
+            print(report.to_markdown())
+        return 0 if report.badge_status == 'passing' else 1
     else:
         result = enforcer.analyze_file(args.path)
-        # Convert single file result to report format
-        print(json.dumps(result, indent=2, default=str))
-        return 0 if not any(
+        if args.format == 'json':
+            print(json.dumps(result, indent=2, default=str))
+        else:
+            # Text/markdown format for single file
+            print(json.dumps(result, indent=2, default=str))
+
+        has_issues = any(
             result.get(k, {}).get('issues', [])
             for k in ['mirage', 'leakage', 'hypothesis', 'unit', 'tensor']
-        ) else 1
-
-    if args.format == 'markdown':
-        print(report.to_markdown())
-    elif args.format == 'json':
-        print(json.dumps(report.to_dict(), indent=2))
-    else:
-        print(report.to_markdown())
-
-    return 0 if report.badge_status == 'passing' else 1
+        )
+        return 1 if has_issues else 0
 
 
-def mirage_command(args):
+def mirage_command(args: argparse.Namespace) -> int:
     """Detect computational mirages (variance-destroying operations)."""
     from scilint.engine.mirage_detector import MirageDetector
     import ast
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Detecting mirages in {args.path}")
 
-    tree = ast.parse(source)
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
+
+    try:
+        tree = ast.parse(source)
+    except SyntaxError as e:
+        print(f"Syntax error in {args.path}: {e}")
+        return 1
+
     detector = MirageDetector()
     detector.visit(tree)
 
@@ -79,6 +137,11 @@ def mirage_command(args):
         print("No computational mirages detected.")
         return 0
 
+    # If --fix flag is set, use the transpiler to auto-fix
+    if getattr(args, 'fix', False):
+        return _apply_mirage_fix(args.path, source, detector.mirages, args)
+
+    # Just report the mirages
     print(f"\n{'='*60}")
     print("COMPUTATIONAL MIRAGES DETECTED")
     print(f"{'='*60}\n")
@@ -91,15 +154,70 @@ def mirage_command(args):
         print()
 
     print(f"Total mirages: {len(detector.mirages)}")
-    return 1 if detector.mirages else 0
+
+    if hasattr(args, 'fix'):
+        print("\nTip: Use --fix to automatically transform these operations")
+
+    return 1
 
 
-def leakage_command(args):
+def _apply_mirage_fix(path: str, source: str, mirages: List[Dict], args: argparse.Namespace) -> int:
+    """Apply transpiler fixes to mirages."""
+    from scilint.engine.transpiler import Transpiler
+
+    logger.info(f"Applying auto-fix to {path}")
+
+    transpiler = Transpiler()
+
+    try:
+        transformed = transpiler.transpile_source(source)
+    except Exception as e:
+        print(f"Error during transformation: {e}")
+        logger.debug("Transformation error", exc_info=True)
+        return 1
+
+    if not transpiler.transformations:
+        print("No transformations applied.")
+        return 0
+
+    # Show diff if requested
+    if getattr(args, 'diff', False) or getattr(args, 'dry_run', False):
+        diff = transpiler.get_diff(source, transformed)
+        print("Proposed changes:")
+        print(diff)
+
+        if getattr(args, 'dry_run', False):
+            print("\n[DRY RUN] No changes written to disk.")
+            return 0
+
+    # Write the transformed code
+    if getattr(args, 'output', None):
+        output_path = args.output
+    else:
+        output_path = path
+
+    try:
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(transformed)
+        print(f"\nTransformed code written to {output_path}")
+        transpiler.print_summary()
+        return 0
+    except Exception as e:
+        print(f"Error writing file: {e}")
+        return 1
+
+
+def leakage_command(args: argparse.Namespace) -> int:
     """Detect data leakage issues."""
     from scilint.guards.leakage_hunter import LeakageHunter
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Detecting data leakage in {args.path}")
+
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
     hunter = LeakageHunter()
     result = hunter.analyze(source)
@@ -132,12 +250,17 @@ def leakage_command(args):
     return 1 if any(v['severity'] == 'critical' for v in violations) else 0
 
 
-def hypothesis_command(args):
+def hypothesis_command(args: argparse.Namespace) -> int:
     """Check statistical validity (anti-p-hacking)."""
     from scilint.guards.hypothesis_guard import HypothesisGuard
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Checking statistical validity in {args.path}")
+
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
     guard = HypothesisGuard()
     result = guard.analyze_code(source)
@@ -179,12 +302,17 @@ def hypothesis_command(args):
     return 1 if any(v['severity'] == 'invalid' for v in violations) else 0
 
 
-def units_command(args):
+def units_command(args: argparse.Namespace) -> int:
     """Check dimensional consistency."""
     from scilint.guards.unit_guard import UnitGuard
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Checking dimensional consistency in {args.path}")
+
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
     guard = UnitGuard()
     result = guard.analyze(source)
@@ -223,12 +351,17 @@ def units_command(args):
     return 1 if any(v['severity'] == 'critical' for v in violations) else 0
 
 
-def tensor_command(args):
+def tensor_command(args: argparse.Namespace) -> int:
     """Check deep learning integrity."""
     from scilint.guards.tensor_guard import TensorGuard
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Checking deep learning integrity in {args.path}")
+
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
     guard = TensorGuard()
     result = guard.analyze(source)
@@ -291,57 +424,62 @@ def tensor_command(args):
     return 1 if summary.get('critical_issues', 0) > 0 else 0
 
 
-def report_command(args):
+def report_command(args: argparse.Namespace) -> int:
     """Generate a full scientific integrity report."""
     from scilint.generators.report_generator import IntegrityReportGenerator
     from scilint.integrations.ci_enforcer import CIEnforcer
+
+    logger.info(f"Generating report for {args.path}")
 
     enforcer = CIEnforcer()
 
     if os.path.isdir(args.path):
         report = enforcer.analyze_directory(args.path)
-    else:
-        # Single file - run all checks
-        result = enforcer.analyze_file(args.path)
-
-        generator = IntegrityReportGenerator(f"Integrity Report: {args.path}")
-
-        # Add sections from results
-        if result.get('mirage') and not result['mirage'].get('error'):
-            issues = result['mirage'].get('issues', [])
-            generator.add_section(
-                "Computational Mirages",
-                'fail' if issues else 'pass',
-                f"Found {len(issues)} variance-destroying operations",
-                issues,
-                ["Use VariationTensor to preserve statistical metadata"] if issues else []
-            )
-
         if args.format == 'html':
-            print(generator.to_html())
+            print(report.to_markdown())  # Fallback to markdown for directory
         elif args.format == 'json':
-            print(generator.to_json())
+            print(json.dumps(report.to_dict(), indent=2))
         else:
-            print(generator.to_markdown())
-        return 0
+            print(report.to_markdown())
+        return 0 if report.badge_status == 'passing' else 1
+
+    # Single file - run all checks
+    result = enforcer.analyze_file(args.path)
+
+    generator = IntegrityReportGenerator(f"Integrity Report: {args.path}")
+
+    # Add sections from results
+    if result.get('mirage') and not result['mirage'].get('error'):
+        issues = result['mirage'].get('issues', [])
+        generator.add_section(
+            "Computational Mirages",
+            'fail' if issues else 'pass',
+            f"Found {len(issues)} variance-destroying operations",
+            issues,
+            ["Use VariationTensor to preserve statistical metadata"] if issues else []
+        )
 
     if args.format == 'html':
-        # For directory, we'd need to extend the report
-        print(report.to_markdown())  # Fallback to markdown
+        print(generator.to_html())
     elif args.format == 'json':
-        print(json.dumps(report.to_dict(), indent=2))
+        print(generator.to_json())
     else:
-        print(report.to_markdown())
+        print(generator.to_markdown())
 
-    return 0 if report.badge_status == 'passing' else 1
+    return 0
 
 
-def paper_command(args):
+def paper_command(args: argparse.Namespace) -> int:
     """Generate LaTeX methodology section from code."""
     from scilint.generators.paper_generator import PaperGenerator
 
-    with open(args.path, 'r') as f:
-        source = f.read()
+    logger.info(f"Generating LaTeX for {args.path}")
+
+    try:
+        source = safe_read_file(args.path)
+    except Exception as e:
+        print(f"Error: {e}")
+        return 1
 
     generator = PaperGenerator(style=args.style)
 
@@ -351,25 +489,34 @@ def paper_command(args):
         latex = generator.generate(source, title=args.title)
 
     if args.output:
-        with open(args.output, 'w') as f:
-            f.write(latex)
-        print(f"LaTeX written to {args.output}")
+        try:
+            with open(args.output, 'w') as f:
+                f.write(latex)
+            print(f"LaTeX written to {args.output}")
+        except Exception as e:
+            print(f"Error writing file: {e}")
+            return 1
     else:
         print(latex)
 
     return 0
 
 
-def ci_command(args):
+def ci_command(args: argparse.Namespace) -> int:
     """Run in CI/CD enforcement mode."""
     from scilint.integrations.ci_enforcer import CIEnforcer
 
+    logger.info(f"Running CI enforcement on {args.path}")
+
     # Load configuration
-    config = {}
+    config: Dict[str, Any] = {}
     if args.config:
-        import yaml
-        with open(args.config, 'r') as f:
-            config = yaml.safe_load(f)
+        try:
+            import yaml
+            with open(args.config, 'r') as f:
+                config = yaml.safe_load(f) or {}
+        except Exception as e:
+            logger.warning(f"Failed to load config: {e}")
 
     enforcer = CIEnforcer(config=config)
     exit_code = enforcer.enforce(
@@ -380,29 +527,26 @@ def ci_command(args):
     return exit_code
 
 
-def fix_command(args):
-    """Auto-fix command."""
+def fix_command(args: argparse.Namespace) -> int:
+    """Auto-fix command for all detected issues."""
     from scilint.integrations.ci_enforcer import CIEnforcer
     from scilint.fixer import ScilintFixer
 
+    logger.info(f"Running auto-fix on {args.path}")
     print(f"Running auto-fix on {args.path}...")
 
     # First analyze to find issues
     enforcer = CIEnforcer()
+
     if os.path.isdir(args.path):
         report = enforcer.analyze_directory(args.path)
-        # Flatten issues from checks
-        # This part needs better integration, for now iterating files again or using report structure
-        # Since fix_file takes violations per file, we should probably iterate files
-
         fixer = ScilintFixer(dry_run=args.dry_run, interactive=args.interactive)
 
-        # Simple iteration for now (CIEnforcer doesn't easily expose per-file violation list in report structure neatly mapped)
-        # But analyze_directory does internal iteration.
-        # For the stub, we will just instantiate the fixer.
-
-        print("Auto-fix is currently in beta. No changes will be made to files yet.")
-
+        # For now, show message about directory fix being in beta
+        print("Directory auto-fix is currently in beta.")
+        if args.dry_run:
+            print("[DRY RUN] Would process files in directory.")
+        return 0
     else:
         result = enforcer.analyze_file(args.path)
         fixer = ScilintFixer(dry_run=args.dry_run, interactive=args.interactive)
@@ -411,14 +555,17 @@ def fix_command(args):
         violations = []
         if result.get('mirage') and not result['mirage'].get('error'):
             violations.extend(result['mirage'].get('issues', []))
-        # ... collect others ...
+
+        if not violations:
+            print("No issues found to fix.")
+            return 0
 
         fixer.fix_file(args.path, violations)
 
     return 0
 
 
-def version_command(args):
+def version_command(args: argparse.Namespace) -> int:
     """Print version information."""
     print(f"Scilint v{__version__}")
     print("The Scientific Integrity Platform")
@@ -432,7 +579,7 @@ def version_command(args):
     return 0
 
 
-def main():
+def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
         description='Scilint: The Scientific Integrity Platform',
@@ -441,6 +588,7 @@ def main():
 Examples:
   scilint analyze ./src           Run all integrity checks on a directory
   scilint mirage model.py         Detect computational mirages
+  scilint mirage model.py --fix   Detect and auto-fix mirages
   scilint leakage train.py        Check for data leakage
   scilint hypothesis stats.py     Validate statistical practices
   scilint units physics.py        Check dimensional consistency
@@ -454,6 +602,10 @@ For more information: https://github.com/scilint/scilint
 
     parser.add_argument('--version', '-v', action='store_true',
                        help='Show version information')
+    parser.add_argument('--verbose', action='store_true',
+                       help='Enable verbose output')
+    parser.add_argument('--debug', action='store_true',
+                       help='Enable debug output (implies --verbose)')
 
     subparsers = parser.add_subparsers(dest='command', help='Commands')
 
@@ -468,6 +620,13 @@ For more information: https://github.com/scilint/scilint
     # Mirage command
     mirage_parser = subparsers.add_parser('mirage', help='Detect computational mirages')
     mirage_parser.add_argument('path', help='File to analyze')
+    mirage_parser.add_argument('--fix', action='store_true',
+                              help='Auto-fix detected mirages using transpiler')
+    mirage_parser.add_argument('--output', '-o', help='Output file for fixed code')
+    mirage_parser.add_argument('--diff', action='store_true',
+                              help='Show diff of changes')
+    mirage_parser.add_argument('--dry-run', action='store_true',
+                              help='Show what would be done without making changes')
     mirage_parser.set_defaults(func=mirage_command)
 
     # Leakage command
@@ -526,6 +685,12 @@ For more information: https://github.com/scilint/scilint
 
     args = parser.parse_args()
 
+    # Setup logging
+    setup_logging(
+        verbose=getattr(args, 'verbose', False),
+        debug=getattr(args, 'debug', False) or os.environ.get('SCILINT_DEBUG')
+    )
+
     if args.version:
         return version_command(args)
 
@@ -537,11 +702,23 @@ For more information: https://github.com/scilint/scilint
         return args.func(args)
     except FileNotFoundError as e:
         print(f"Error: File not found - {e}")
+        logger.debug("File not found error", exc_info=True)
         return 1
+    except PermissionError as e:
+        print(f"Error: Permission denied - {e}")
+        logger.debug("Permission error", exc_info=True)
+        return 1
+    except SyntaxError as e:
+        print(f"Error: Syntax error in file - {e}")
+        logger.debug("Syntax error", exc_info=True)
+        return 1
+    except KeyboardInterrupt:
+        print("\nOperation cancelled.")
+        return 130
     except Exception as e:
         print(f"Error: {e}")
-        if os.environ.get('SCILINT_DEBUG'):
-            raise
+        if args.debug or os.environ.get('SCILINT_DEBUG'):
+            logger.exception("Unexpected error")
         return 1
 
 

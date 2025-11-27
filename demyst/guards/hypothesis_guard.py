@@ -15,7 +15,7 @@ import re
 import json
 import hashlib
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, cast
 from enum import Enum
 from datetime import datetime
 import math
@@ -109,7 +109,7 @@ class BonferroniCorrector:
         indexed = [(p, i) for i, p in enumerate(p_values)]
         sorted_p = sorted(indexed)
 
-        results = [None] * n
+        results: List[Optional[CorrectedResult]] = [None] * n
         rejected_any = False
 
         for rank, (p, original_idx) in enumerate(sorted_p):
@@ -136,7 +136,7 @@ class BonferroniCorrector:
                 )
             )
 
-        return results
+        return cast(List[CorrectedResult], results)
 
     @staticmethod
     def benjamini_hochberg(p_values: List[float], alpha: float = 0.05) -> List[CorrectedResult]:
@@ -150,7 +150,7 @@ class BonferroniCorrector:
         indexed = [(p, i) for i, p in enumerate(p_values)]
         sorted_p = sorted(indexed)
 
-        results = [None] * n
+        results: List[Optional[CorrectedResult]] = [None] * n
         max_significant_rank = 0
 
         # Find largest k where p(k) <= k/n * alpha
@@ -175,7 +175,7 @@ class BonferroniCorrector:
                 )
             )
 
-        return results
+        return cast(List[CorrectedResult], results)
 
 
 class ExperimentTracker:
@@ -188,13 +188,13 @@ class ExperimentTracker:
         - Local: Tracks experiments in JSON files
     """
 
-    def __init__(self, storage_path: Optional[str] = None):
+    def __init__(self, storage_path: Optional[str] = None) -> None:
         self.storage_path = storage_path or ".demyst_experiments.json"
         self.experiments: List[ExperimentRecord] = []
         self.code_hashes: Set[str] = set()
         self._load_history()
 
-    def _load_history(self):
+    def _load_history(self) -> None:
         """Load experiment history from storage."""
         try:
             with open(self.storage_path, 'r') as f:
@@ -207,7 +207,7 @@ class ExperimentTracker:
             self.experiments = []
             self.code_hashes = set()
 
-    def _save_history(self):
+    def _save_history(self) -> None:
         """Save experiment history to storage."""
         data = {
             'experiments': [
@@ -342,21 +342,21 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         'f_oneway', 'anova', 'anova_lm'
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.violations: List[StatisticalViolation] = []
         self.statistical_tests: List[Dict[str, Any]] = []
         self.current_function: Optional[str] = None
         self.in_loop: bool = False
         self.loop_depth: int = 0
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function context."""
         old_function = self.current_function
         self.current_function = node.name
         self.generic_visit(node)
         self.current_function = old_function
 
-    def visit_For(self, node: ast.For):
+    def visit_For(self, node: ast.For) -> None:
         """Track loop context."""
         old_in_loop = self.in_loop
         self.in_loop = True
@@ -365,7 +365,7 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         self.loop_depth -= 1
         self.in_loop = old_in_loop if self.loop_depth == 0 else True
 
-    def visit_While(self, node: ast.While):
+    def visit_While(self, node: ast.While) -> None:
         """Track while loop context."""
         old_in_loop = self.in_loop
         self.in_loop = True
@@ -374,7 +374,7 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         self.loop_depth -= 1
         self.in_loop = old_in_loop if self.loop_depth == 0 else True
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Detect statistical test calls."""
         func_name = self._get_func_name(node)
 
@@ -414,7 +414,7 @@ class HypothesisAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_If(self, node: ast.If):
+    def visit_If(self, node: ast.If) -> None:
         """Detect conditional logic based on p-values."""
         # Check for p < 0.05 patterns
         if self._is_p_value_check(node.test):
@@ -479,7 +479,7 @@ class HypothesisGuard:
         4. Generates corrected statistical interpretations
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None, experiment_storage: Optional[str] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, experiment_storage: Optional[str] = None) -> None:
         self.config = config or {}
         self.corrector = BonferroniCorrector()
         self.tracker = ExperimentTracker(experiment_storage)

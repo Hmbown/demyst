@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Any, Optional, Dict, Union, List
 
 class VariationTensor:
     """
@@ -6,14 +7,14 @@ class VariationTensor:
     instead of collapsing it with operations like mean(), sum(), etc.
     """
     
-    def __init__(self, data, axis=None, keepdims=False, metadata=None):
+    def __init__(self, data: Any, axis: Optional[int] = None, keepdims: bool = False, metadata: Optional[Dict[str, Any]] = None) -> None:
         self.data = data
         self.axis = axis
         self.keepdims = keepdims
         self.metadata = metadata or {}
-        self._variation_history = []
+        self._variation_history: List[Dict[str, Any]] = []
         
-    def collapse(self, operation='mean'):
+    def collapse(self, operation: str = 'mean') -> Any:
         """
         Perform the collapse operation while preserving variation history
         """
@@ -40,7 +41,7 @@ class VariationTensor:
             
         return result
     
-    def ensemble_sum(self, axis=None):
+    def ensemble_sum(self, axis: Optional[int] = None) -> Any:
         """
         Sum operation that preserves ensemble information
         """

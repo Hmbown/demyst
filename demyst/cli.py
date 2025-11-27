@@ -688,7 +688,7 @@ For more information: https://github.com/demyst/demyst
     # Setup logging
     setup_logging(
         verbose=getattr(args, 'verbose', False),
-        debug=getattr(args, 'debug', False) or os.environ.get('DEMYST_DEBUG')
+        debug=getattr(args, 'debug', False) or bool(os.environ.get('DEMYST_DEBUG'))
     )
 
     if args.version:
@@ -699,7 +699,7 @@ For more information: https://github.com/demyst/demyst
         return 0
 
     try:
-        return args.func(args)
+        return int(args.func(args))
     except FileNotFoundError as e:
         print(f"Error: File not found - {e}")
         logger.debug("File not found error", exc_info=True)

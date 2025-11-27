@@ -175,8 +175,8 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
         if options.get('hypothesis', True):
             try:
                 from demyst.guards.hypothesis_guard import HypothesisGuard
-                guard = HypothesisGuard()
-                result = guard.analyze_code(source)
+                h_guard = HypothesisGuard()
+                result = h_guard.analyze_code(source)
                 violations = result.get('violations', [])
                 hypothesis_count = len(violations)
                 results['hypothesis'] = result
@@ -186,8 +186,8 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
         if options.get('unit', True):
             try:
                 from demyst.guards.unit_guard import UnitGuard
-                guard = UnitGuard()
-                result = guard.analyze(source)
+                u_guard = UnitGuard()
+                result = u_guard.analyze(source)
                 violations = result.get('violations', [])
                 unit_count = len(violations)
                 results['unit'] = result
@@ -197,8 +197,8 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
         if options.get('tensor', True):
             try:
                 from demyst.guards.tensor_guard import TensorGuard
-                guard = TensorGuard()
-                result = guard.analyze(source)
+                t_guard = TensorGuard()
+                result = t_guard.analyze(source)
                 tensor_issues = (
                     len(result.get('gradient_issues', [])) +
                     len(result.get('normalization_issues', [])) +

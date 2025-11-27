@@ -21,45 +21,51 @@ try:
 except ImportError:
     HYPOTHESIS_AVAILABLE = False
     # Create dummy decorators
-    def given(*args, **kwargs):
-        def decorator(f):
+    from typing import Any, Callable
+    
+    # Create dummy decorators
+    def given(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+        def decorator(f: Callable) -> Callable:
             return pytest.mark.skip(reason="hypothesis not installed")(f)
         return decorator
 
-    def settings(*args, **kwargs):
-        def decorator(f):
+    def settings(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+        def decorator(f: Callable) -> Callable:
             return f
         return decorator
 
-    def example(*args, **kwargs):
-        def decorator(f):
+    def example(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+        def decorator(f: Callable) -> Callable:
             return f
         return decorator
 
-    def assume(x):
+    def assume(x: Any) -> None:
         pass
 
     class st:
         @staticmethod
-        def text(*args, **kwargs):
+        def text(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def integers(*args, **kwargs):
+        def integers(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def lists(*args, **kwargs):
+        def lists(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def one_of(*args, **kwargs):
+        def one_of(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def sampled_from(*args, **kwargs):
+        def sampled_from(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def just(*args, **kwargs):
+        def just(*args: Any, **kwargs: Any) -> Any:
             return None
         @staticmethod
-        def booleans(*args, **kwargs):
+        def booleans(*args: Any, **kwargs: Any) -> Any:
+            return None
+        @staticmethod
+        def binary(*args: Any, **kwargs: Any) -> Any:
             return None
 
     class HealthCheck:
@@ -98,6 +104,11 @@ if HYPOTHESIS_AVAILABLE:
     DISCRETIZATION_FUNCS = st.sampled_from([
         "round", "int", "floor", "ceil",
     ])
+else:
+    # Dummy strategies to prevent NameError
+    def mirage_code_snippet(): return None
+    def safe_code_snippet(): return None
+    def valid_python_code(): return None
 
 
 # =============================================================================
@@ -189,7 +200,7 @@ class TestMirageDetectorProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=mirage_code_snippet())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
-    def test_detects_mirages_in_generated_code(self, code: str):
+    def test_detects_mirages_in_generated_code(self, code: str) -> None:
         """MirageDetector should find mirages in code containing them."""
         from demyst.engine.mirage_detector import MirageDetector
 
@@ -209,7 +220,7 @@ class TestMirageDetectorProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=safe_code_snippet())
     @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
-    def test_no_false_positives_in_safe_code(self, code: str):
+    def test_no_false_positives_in_safe_code(self, code: str) -> None:
         """MirageDetector should not flag safe code as mirages."""
         from demyst.engine.mirage_detector import MirageDetector
 
@@ -229,7 +240,7 @@ class TestMirageDetectorProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=valid_python_code())
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
-    def test_detector_never_crashes(self, code: str):
+    def test_detector_never_crashes(self, code: str) -> None:
         """MirageDetector should never crash on valid Python code."""
         from demyst.engine.mirage_detector import MirageDetector
 
@@ -257,7 +268,7 @@ class TestTranspilerProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=mirage_code_snippet())
     @settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow], deadline=None)
-    def test_transpiler_produces_valid_python(self, code: str):
+    def test_transpiler_produces_valid_python(self, code: str) -> None:
         """Transpiled code should always be valid Python."""
         from demyst.engine.transpiler import Transpiler
 
@@ -286,7 +297,7 @@ class TestTranspilerProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(code=safe_code_snippet())
     @settings(max_examples=30, suppress_health_check=[HealthCheck.too_slow], deadline=None)
-    def test_transpiler_preserves_safe_code(self, code: str):
+    def test_transpiler_preserves_safe_code(self, code: str) -> None:
         """Transpiler should not modify code without mirages."""
         from demyst.engine.transpiler import Transpiler
 
@@ -319,7 +330,7 @@ class TestExceptionProperties:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(message=st.text(min_size=1, max_size=100))
     @settings(max_examples=50)
-    def test_demyst_error_always_has_message(self, message: str):
+    def test_demyst_error_always_has_message(self, message: str) -> None:
         """DemystError should always preserve the message."""
         from demyst.exceptions import DemystError
 
@@ -332,7 +343,7 @@ class TestExceptionProperties:
         line=st.integers(min_value=1, max_value=10000),
     )
     @settings(max_examples=50)
-    def test_analysis_error_includes_line_number(self, message: str, line: int):
+    def test_analysis_error_includes_line_number(self, message: str, line: int) -> None:
         """AnalysisError should include line number in details."""
         from demyst.exceptions import AnalysisError
 
@@ -354,7 +365,7 @@ class TestConfigProperties:
         severity=st.sampled_from(["critical", "warning", "info"]),
     )
     @settings(max_examples=30)
-    def test_rule_config_accepts_valid_values(self, enabled: bool, severity: str):
+    def test_rule_config_accepts_valid_values(self, enabled: bool, severity: str) -> None:
         """RuleConfig should accept valid configuration values."""
         try:
             from demyst.config.models import RuleConfig, Severity, PYDANTIC_AVAILABLE
@@ -388,7 +399,7 @@ class TestRegressions:
         ("x = 1 + 2", 0),
         ("import numpy as np\nresult = np.array([1,2,3])", 0),
     ])
-    def test_specific_mirage_counts(self, code: str, expected_count: int):
+    def test_specific_mirage_counts(self, code: str, expected_count: int) -> None:
         """Test specific code patterns with known mirage counts."""
         from demyst.engine.mirage_detector import MirageDetector
 
@@ -414,7 +425,7 @@ class TestFuzzing:
     @pytest.mark.skipif(not HYPOTHESIS_AVAILABLE, reason="hypothesis not installed")
     @given(garbage=st.binary(min_size=0, max_size=1000))
     @settings(max_examples=100, suppress_health_check=[HealthCheck.too_slow])
-    def test_detector_handles_garbage_gracefully(self, garbage: bytes):
+    def test_detector_handles_garbage_gracefully(self, garbage: bytes) -> None:
         """Detector should handle non-code input gracefully."""
         from demyst.engine.mirage_detector import MirageDetector
 
@@ -441,7 +452,7 @@ class TestFuzzing:
         width=st.integers(min_value=1, max_value=5),
     )
     @settings(max_examples=20)
-    def test_detector_handles_deep_nesting(self, depth: int, width: int):
+    def test_detector_handles_deep_nesting(self, depth: int, width: int) -> None:
         """Detector should handle deeply nested code."""
         from demyst.engine.mirage_detector import MirageDetector
 

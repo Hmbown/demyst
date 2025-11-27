@@ -5,7 +5,7 @@ Generates comprehensive reports on code scientific integrity
 in multiple formats (Markdown, HTML, JSON).
 """
 
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, cast
 from dataclasses import dataclass
 from datetime import datetime
 import json
@@ -47,7 +47,7 @@ class IntegrityReportGenerator:
         }
 
     def add_section(self, title: str, status: str, content: str,
-                   issues: List[Dict[str, Any]], recommendations: List[str]):
+                   issues: List[Dict[str, Any]], recommendations: List[str]) -> None:
         """Add a section to the report."""
         self.sections.append(ReportSection(
             title=title,
@@ -57,7 +57,7 @@ class IntegrityReportGenerator:
             recommendations=recommendations,
         ))
 
-    def add_metadata(self, key: str, value: Any):
+    def add_metadata(self, key: str, value: Any) -> None:
         """Add metadata to the report."""
         self.metadata[key] = value
 
@@ -299,4 +299,4 @@ class IntegrityReportGenerator:
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert report to dictionary."""
-        return json.loads(self.to_json())
+        return cast(Dict[str, Any], json.loads(self.to_json()))

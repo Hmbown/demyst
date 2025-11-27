@@ -44,7 +44,7 @@ class WandBIntegration:
         report = tracker.get_integrity_report()
     """
 
-    def __init__(self, project: str, entity: Optional[str] = None):
+    def __init__(self, project: str, entity: Optional[str] = None) -> None:
         """
         Initialize WandB integration.
 
@@ -61,7 +61,7 @@ class WandBIntegration:
         self._local_metrics: Dict[str, List[float]] = {}
 
     def init(self, config: Optional[Dict[str, Any]] = None,
-            seed: Optional[int] = None, **kwargs):
+            seed: Optional[int] = None, **kwargs: Any) -> None:
         """
         Initialize a new run with integrity tracking.
 
@@ -96,7 +96,7 @@ class WandBIntegration:
             warnings.warn("wandb not installed. Running in local-only mode.")
             self._run = None
 
-    def log(self, metrics: Dict[str, float], step: Optional[int] = None):
+    def log(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
         """
         Log metrics with integrity tracking.
 
@@ -118,14 +118,15 @@ class WandBIntegration:
             except Exception as e:
                 warnings.warn(f"Failed to log to wandb: {e}")
 
-    def finish(self):
+    def finish(self) -> None:
         """
         Finish the current run and record experiment metadata.
         """
         # Record experiment
         final_metrics = {
-            k: v[-1] if v else None
+            k: v[-1]
             for k, v in self._local_metrics.items()
+            if v
         }
 
         run_id = self._run.id if self._run else f"local_{datetime.now().timestamp()}"
@@ -259,7 +260,7 @@ class MLflowIntegration:
     """
 
     def __init__(self, experiment_name: str,
-                tracking_uri: Optional[str] = None):
+                 tracking_uri: Optional[str] = None) -> None:
         """
         Initialize MLflow integration.
 
@@ -276,7 +277,7 @@ class MLflowIntegration:
         self._local_metrics: Dict[str, List[float]] = {}
 
     def start_run(self, seed: int = 0, params: Optional[Dict[str, Any]] = None,
-                 run_name: Optional[str] = None):
+                  run_name: Optional[str] = None) -> None:
         """
         Start a new MLflow run.
 
@@ -310,7 +311,7 @@ class MLflowIntegration:
             warnings.warn("mlflow not installed. Running in local-only mode.")
             self._current_run_id = f"local_{datetime.now().timestamp()}"
 
-    def log_metric(self, key: str, value: float, step: Optional[int] = None):
+    def log_metric(self, key: str, value: float, step: Optional[int] = None) -> None:
         """
         Log a metric value.
 
@@ -331,16 +332,17 @@ class MLflowIntegration:
         except Exception as e:
             warnings.warn(f"Failed to log to mlflow: {e}")
 
-    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None):
+    def log_metrics(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
         """Log multiple metrics."""
         for key, value in metrics.items():
             self.log_metric(key, value, step)
 
-    def end_run(self):
+    def end_run(self) -> None:
         """End the current run."""
         final_metrics = {
-            k: v[-1] if v else None
+            k: v[-1]
             for k, v in self._local_metrics.items()
+            if v
         }
 
         experiment = ExperimentMetadata(

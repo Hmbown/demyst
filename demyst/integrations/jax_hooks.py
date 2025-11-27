@@ -7,7 +7,7 @@ Provides:
     3. Gradient flow analysis for JAX functions
 """
 
-from typing import Dict, Any, Optional, List, Callable, Tuple
+from typing import Dict, Any, Optional, List, Callable, Tuple, cast
 from dataclasses import dataclass
 from functools import wraps
 import warnings
@@ -44,7 +44,7 @@ class JaxVariation:
         print(var_arr.variation_history)
     """
 
-    def __init__(self, array, metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, array: Any, metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Initialize JaxVariation wrapper.
 
@@ -57,7 +57,7 @@ class JaxVariation:
         self._variation_history: List[JaxOperationRecord] = []
 
     @property
-    def array(self):
+    def array(self) -> Any:
         """Access underlying array."""
         return self._array
 
@@ -77,7 +77,7 @@ class JaxVariation:
         ]
 
     def collapse(self, operation: str = 'mean', axis: Optional[int] = None,
-                keepdims: bool = False):
+                keepdims: bool = False) -> Any:
         """
         Perform collapse operation while preserving variation history.
 
@@ -129,7 +129,7 @@ class JaxVariation:
             return self._array
 
     def safe_reduce(self, reduce_fn: Callable, axis: Optional[int] = None,
-                   operation_name: str = 'custom_reduce'):
+                   operation_name: str = 'custom_reduce') -> Any:
         """
         Apply a custom reduction function while tracking variance loss.
 
@@ -166,7 +166,7 @@ class JaxVariation:
 
 def jax_safe_transform(track_gradients: bool = True,
                        warn_on_vanishing: bool = True,
-                       vanishing_threshold: float = 1e-7):
+                       vanishing_threshold: float = 1e-7) -> Callable:
     """
     Decorator for JAX functions that adds scientific integrity checks.
 
@@ -183,7 +183,7 @@ def jax_safe_transform(track_gradients: bool = True,
     """
     def decorator(fn: Callable) -> Callable:
         @wraps(fn)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
             result = fn(*args, **kwargs)
 
             # If tracking gradients, wrap in gradient analysis
@@ -199,7 +199,7 @@ def jax_safe_transform(track_gradients: bool = True,
                             grads = grad_fn(*args, **kwargs)
 
                             # Analyze gradients
-                            def analyze_grad_tree(tree, prefix=''):
+                            def analyze_grad_tree(tree: Any, prefix: str = '') -> List[str]:
                                 issues = []
                                 if isinstance(tree, dict):
                                     for k, v in tree.items():
@@ -226,8 +226,9 @@ def jax_safe_transform(track_gradients: bool = True,
             return result
 
         # Attach metadata for introspection
-        wrapper._demyst_tracked = True
-        wrapper._demyst_config = {
+        wrapper_with_attrs = cast(Any, wrapper)
+        wrapper_with_attrs._demyst_tracked = True
+        wrapper_with_attrs._demyst_config = {
             'track_gradients': track_gradients,
             'warn_on_vanishing': warn_on_vanishing,
             'vanishing_threshold': vanishing_threshold,
@@ -248,7 +249,7 @@ class JaxIntegrityAnalyzer:
         3. Gradient flow problems
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.operation_log: List[Dict[str, Any]] = []
         self.issues: List[str] = []
 
@@ -263,7 +264,7 @@ class JaxIntegrityAnalyzer:
         Returns:
             Analysis report
         """
-        report = {
+        report: Dict[str, Any] = {
             'function_name': fn.__name__ if hasattr(fn, '__name__') else str(fn),
             'collapse_operations': [],
             'numerical_risks': [],

@@ -1,16 +1,17 @@
 import ast
+from typing import List, Dict, Any, Optional
 
 class MirageDetector(ast.NodeVisitor):
     """
     AST visitor that detects destructive operations that collapse physical information
     """
     
-    def __init__(self, config=None):
-        self.mirages = []
-        self.current_function = None
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self.mirages: List[Dict[str, Any]] = []
+        self.current_function: Optional[str] = None
         self.config = config or {}
         
-    def visit_Call(self, node):
+    def visit_Call(self, node: ast.Call) -> None:
         """Detect destructive numpy operations"""
         if isinstance(node.func, ast.Attribute):
             # Detect np.mean(), np.sum(), etc.
@@ -39,14 +40,14 @@ class MirageDetector(ast.NodeVisitor):
         
         self.generic_visit(node)
     
-    def visit_FunctionDef(self, node):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track current function context"""
         old_function = self.current_function
         self.current_function = node.name
         self.generic_visit(node)
         self.current_function = old_function
     
-    def _is_array_like(self, node):
+    def _is_array_like(self, node: ast.AST) -> bool:
         """Heuristic to determine if a node represents array-like data"""
         if isinstance(node, ast.Name):
             # More general heuristic: any variable that might contain numeric data

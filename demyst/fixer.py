@@ -39,7 +39,7 @@ try:
     LIBCST_AVAILABLE = True
 except ImportError:
     LIBCST_AVAILABLE = False
-    cst = None  # type: ignore
+    cst = None
 
 
 # =============================================================================
@@ -560,7 +560,7 @@ class DemystFixer:
     def _validate_python(self, source: str) -> None:
         """Validate that source is valid Python."""
         if self._use_cst:
-            cst.parse_module(source)  # type: ignore
+            cst.parse_module(source)
         else:
             import ast
             ast.parse(source)

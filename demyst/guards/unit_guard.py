@@ -42,7 +42,7 @@ class Dimension:
     """
     exponents: Tuple[int, ...]  # (L, M, T, I, Θ, N, J)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if len(self.exponents) != 7:
             object.__setattr__(self, 'exponents', tuple(list(self.exponents) + [0] * (7 - len(self.exponents))))
 
@@ -214,7 +214,7 @@ class UnitInferenceEngine:
         4. Type annotations
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.type_environment: Dict[str, Dimension] = {}
         self.compiled_patterns = [
             (re.compile(pattern, re.IGNORECASE), dim)
@@ -261,7 +261,7 @@ class UnitInferenceEngine:
 
         return None
 
-    def register_type(self, name: str, dimension: Dimension):
+    def register_type(self, name: str, dimension: Dimension) -> None:
         """Register a known type for a variable."""
         self.type_environment[name] = dimension
 
@@ -282,13 +282,13 @@ class DimensionalAnalyzer(ast.NodeVisitor):
         3. Function parameters and returns
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.engine = UnitInferenceEngine()
         self.violations: List[UnitViolation] = []
         self.current_function: Optional[str] = None
         self.assignments: Dict[str, Dimension] = {}
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function definitions and infer parameter dimensions."""
         old_function = self.current_function
         self.current_function = node.name
@@ -302,7 +302,7 @@ class DimensionalAnalyzer(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Track assignments and check dimensional consistency."""
         # Infer dimension of right side
         right_dim = self._infer_expression_dimension(node.value)
@@ -346,7 +346,7 @@ class DimensionalAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_BinOp(self, node: ast.BinOp):
+    def visit_BinOp(self, node: ast.BinOp) -> None:
         """Check binary operations for dimensional consistency."""
         left_dim = self._infer_expression_dimension(node.left)
         right_dim = self._infer_expression_dimension(node.right)
@@ -379,7 +379,7 @@ class DimensionalAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Compare(self, node: ast.Compare):
+    def visit_Compare(self, node: ast.Compare) -> None:
         """Check comparisons for dimensional consistency."""
         left_dim = self._infer_expression_dimension(node.left)
 
@@ -483,7 +483,7 @@ class UnitGuard:
             print(f"Line {v['line']}: {v['description']}")
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
         self.config = config or {}
         self.analyzer: Optional[DimensionalAnalyzer] = None
 

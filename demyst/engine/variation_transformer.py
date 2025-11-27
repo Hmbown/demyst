@@ -1,17 +1,17 @@
 import ast
-from typing import Dict, List
+from typing import Dict, List, Any, Set, Optional
 
 class VariationTransformer(ast.NodeTransformer):
     """
     Transforms AST to replace destructive operations with VariationTensor equivalents
     """
     
-    def __init__(self, mirages: List[Dict]):
+    def __init__(self, mirages: List[Dict[str, Any]]) -> None:
         self.mirages = mirages
         self.mirage_nodes = {id(m['node']): m for m in mirages}
-        self.imports_added = set()
+        self.imports_added: Set[str] = set()
         
-    def visit_Call(self, node):
+    def visit_Call(self, node: ast.Call) -> Any:
         """Transform destructive calls to VariationTensor equivalents"""
         if id(node) in self.mirage_nodes:
             mirage = self.mirage_nodes[id(node)]
@@ -25,7 +25,7 @@ class VariationTransformer(ast.NodeTransformer):
         
         return self.generic_visit(node)
     
-    def visit_ImportFrom(self, node):
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> Any:
         """Add VariationTensor import if needed"""
         if node.module == '__future__':
             return node
@@ -42,7 +42,7 @@ class VariationTransformer(ast.NodeTransformer):
         
         return node
     
-    def visit_Module(self, node):
+    def visit_Module(self, node: ast.Module) -> Any:
         """Ensure VariationTensor import is added at the top"""
         self.generic_visit(node)
         
@@ -57,7 +57,7 @@ class VariationTransformer(ast.NodeTransformer):
         
         return node
     
-    def _create_variation_tensor_collapse(self, node, operation):
+    def _create_variation_tensor_collapse(self, node: ast.Call, operation: str) -> ast.Call:
         """Create VariationTensor(...).collapse() call"""
         # Extract arguments from original call
         args = [self.visit(arg) for arg in node.args]
@@ -83,7 +83,7 @@ class VariationTransformer(ast.NodeTransformer):
         
         return collapse_call
     
-    def _create_variation_tensor_ensemble_sum(self, node):
+    def _create_variation_tensor_ensemble_sum(self, node: ast.Call) -> ast.Call:
         """Create VariationTensor(...).ensemble_sum() call"""
         args = [self.visit(arg) for arg in node.args]
         keywords = [self.visit(kw) for kw in node.keywords]
@@ -117,7 +117,7 @@ class VariationTransformer(ast.NodeTransformer):
         
         return ensemble_sum_call
     
-    def _create_discretization_wrapper(self, node):
+    def _create_discretization_wrapper(self, node: ast.Call) -> Any:
         """Wrap discretization in VariationTensor for metadata preservation"""
         # For now, just preserve the data before discretization
         # This is a more complex transformation that would need domain knowledge

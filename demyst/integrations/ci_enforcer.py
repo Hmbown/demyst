@@ -173,7 +173,7 @@ class CIEnforcer:
         self.config = self.config_manager.config
         self._import_guards()
 
-    def _import_guards(self):
+    def _import_guards(self) -> None:
         """Import guard classes (lazy to avoid circular imports)."""
         try:
             from ..guards.tensor_guard import TensorGuard
@@ -211,7 +211,7 @@ class CIEnforcer:
         except Exception as e:
             return {'error': f"Failed to read file: {e}"}
 
-        results = {
+        results: Dict[str, Any] = {
             'filepath': filepath,
             'mirage': None,
             'tensor': None,
@@ -333,43 +333,43 @@ class CIEnforcer:
         hypothesis_issues = []
         unit_issues = []
 
-        for filepath in all_files:
-            result = self.analyze_file(filepath)
+        for file_path_str in all_files:
+            result = self.analyze_file(file_path_str)
 
             # Collect mirage issues
             if result.get('mirage') and not result['mirage'].get('error'):
                 for issue in result['mirage'].get('issues', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     mirage_issues.append(issue)
 
             # Collect tensor issues
             if result.get('tensor') and not result['tensor'].get('error'):
                 for issue in result['tensor'].get('gradient_issues', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     tensor_issues.append(issue)
                 for issue in result['tensor'].get('normalization_issues', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     tensor_issues.append(issue)
                 for issue in result['tensor'].get('reward_issues', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     tensor_issues.append(issue)
 
             # Collect leakage issues
             if result.get('leakage') and not result['leakage'].get('error'):
                 for issue in result['leakage'].get('violations', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     leakage_issues.append(issue)
 
             # Collect hypothesis issues
             if result.get('hypothesis') and not result['hypothesis'].get('error'):
                 for issue in result['hypothesis'].get('violations', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     hypothesis_issues.append(issue)
 
             # Collect unit issues
             if result.get('unit') and not result['unit'].get('error'):
                 for issue in result['unit'].get('violations', []):
-                    issue['file'] = filepath
+                    issue['file'] = file_path_str
                     unit_issues.append(issue)
 
         # Build check results

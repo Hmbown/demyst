@@ -10,7 +10,7 @@ Philosophy: "The paper should be a printout of the code's truth."
 import ast
 import re
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, cast
 from datetime import datetime
 
 
@@ -98,7 +98,7 @@ class MethodologyExtractor(ast.NodeVisitor):
         'load_dataset'
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.model_classes: List[ModelArchitecture] = []
         self.training_configs: List[TrainingConfiguration] = []
         self.datasets: List[DatasetInfo] = []
@@ -113,7 +113,7 @@ class MethodologyExtractor(ast.NodeVisitor):
         self._found_epochs: Optional[int] = None
         self._found_batch_size: Optional[int] = None
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Extract model class definitions."""
         # Check if this is a nn.Module subclass
         is_model = any(
@@ -145,7 +145,7 @@ class MethodologyExtractor(ast.NodeVisitor):
         else:
             self.generic_visit(node)
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Extract layer definitions and configurations."""
         # Check for layer assignments in model classes
         if self._current_class:
@@ -172,7 +172,7 @@ class MethodologyExtractor(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Extract optimizer, loss, and dataset information."""
         func_name = self._get_func_name(node)
 
@@ -183,7 +183,8 @@ class MethodologyExtractor(ast.NodeVisitor):
                 # Extract learning rate
                 for kw in node.keywords:
                     if kw.arg == 'lr' and isinstance(kw.value, ast.Constant):
-                        self._found_lr.append(float(kw.value.value))
+                        if isinstance(kw.value.value, (int, float)):
+                            self._found_lr.append(float(kw.value.value))
 
             # Loss functions
             if func_name in self.LOSS_FUNCTIONS:
@@ -198,7 +199,8 @@ class MethodologyExtractor(ast.NodeVisitor):
             # Seed setting
             if func_name in ['seed', 'manual_seed', 'set_seed']:
                 if node.args and isinstance(node.args[0], ast.Constant):
-                    self._found_seeds.append(int(node.args[0].value))
+                    if isinstance(node.args[0].value, int):
+                        self._found_seeds.append(int(node.args[0].value))
 
         self.generic_visit(node)
 
@@ -223,14 +225,16 @@ class MethodologyExtractor(ast.NodeVisitor):
                 }
 
                 # Extract positional arguments
+                args_list = cast(List[Any], info['args'])
                 for arg in node.args:
                     if isinstance(arg, ast.Constant):
-                        info['args'].append(arg.value)
+                        args_list.append(arg.value)
 
                 # Extract keyword arguments
+                kwargs_dict = cast(Dict[str, Any], info['kwargs'])
                 for kw in node.keywords:
-                    if isinstance(kw.value, ast.Constant):
-                        info['kwargs'][kw.arg] = kw.value.value
+                    if isinstance(kw.value, ast.Constant) and kw.arg:
+                        kwargs_dict[kw.arg] = kw.value.value
 
                 return info
         return None
@@ -320,6 +324,7 @@ class PaperGenerator:
 
         self.extractor = MethodologyExtractor()
         self.extractor.visit(tree)
+        assert self.extractor is not None
 
         sections = []
 
@@ -360,6 +365,7 @@ class PaperGenerator:
 
     def _generate_architecture_section(self) -> str:
         """Generate model architecture description."""
+        assert self.extractor is not None
         lines = ["\\subsection{Model Architecture}", ""]
 
         for model in self.extractor.model_classes:
@@ -452,6 +458,7 @@ class PaperGenerator:
 
     def _generate_dataset_section(self) -> str:
         """Generate dataset description section."""
+        assert self.extractor is not None
         lines = ["\\subsection{Dataset}", ""]
 
         for dataset in self.extractor.datasets:

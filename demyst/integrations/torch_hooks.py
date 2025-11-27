@@ -57,7 +57,7 @@ class TorchVariation:
         print(var_tensor.variation_history)  # See what was lost
     """
 
-    def __init__(self, tensor, metadata: Optional[Dict[str, Any]] = None):
+    def __init__(self, tensor: Any, metadata: Optional[Dict[str, Any]] = None) -> None:
         """
         Initialize TorchVariation wrapper.
 
@@ -70,7 +70,7 @@ class TorchVariation:
         self._variation_history: List[Dict[str, Any]] = []
 
     @property
-    def tensor(self):
+    def tensor(self) -> Any:
         """Access underlying tensor."""
         return self._tensor
 
@@ -80,7 +80,7 @@ class TorchVariation:
         return self._variation_history
 
     def collapse(self, operation: str = 'mean', dim: Optional[int] = None,
-                keepdim: bool = False):
+                keepdim: bool = False) -> Any:
         """
         Perform collapse operation while preserving variation history.
 
@@ -123,7 +123,9 @@ class TorchVariation:
             pre_stats['std_after'] = float(result.std()) if hasattr(result, 'std') and result.numel() > 1 else 0.0
 
             # Calculate information loss metrics
-            pre_stats['variance_destroyed'] = pre_stats['std_before']**2 - pre_stats['std_after']**2
+            std_before = float(pre_stats['std_before'])  # type: ignore
+            std_after = float(pre_stats['std_after'])    # type: ignore
+            pre_stats['variance_destroyed'] = std_before**2 - std_after**2
             pre_stats['elements_collapsed'] = self._tensor.numel() - (result.numel() if hasattr(result, 'numel') else 1)
 
             self._variation_history.append(pre_stats)
@@ -134,7 +136,7 @@ class TorchVariation:
             warnings.warn("PyTorch not available. Returning mock result.")
             return self._tensor
 
-    def ensemble_sum(self, dim: int = 0):
+    def ensemble_sum(self, dim: int = 0) -> Any:
         """
         Sum while preserving ensemble variance information.
 
@@ -160,7 +162,7 @@ class TorchVariation:
         except ImportError:
             return self._tensor
 
-    def safe_argmax(self, dim: Optional[int] = None):
+    def safe_argmax(self, dim: Optional[int] = None) -> Any:
         """
         Argmax with warnings about information loss.
 
@@ -224,7 +226,7 @@ class TorchModuleWrapper:
     SATURATION_THRESHOLD = 0.99
     DEAD_NEURON_THRESHOLD = 0.01
 
-    def __init__(self, module):
+    def __init__(self, module: Any) -> None:
         """
         Initialize wrapper.
 
@@ -237,7 +239,7 @@ class TorchModuleWrapper:
         self._hooks: List[Any] = []
         self._forward_hooks: List[Any] = []
 
-    def register_hooks(self):
+    def register_hooks(self) -> None:
         """Register gradient and activation monitoring hooks."""
         try:
             import torch.nn as nn
@@ -259,7 +261,7 @@ class TorchModuleWrapper:
         except ImportError:
             warnings.warn("PyTorch not available. Hooks not registered.")
 
-    def remove_hooks(self):
+    def remove_hooks(self) -> None:
         """Remove all registered hooks."""
         for hook in self._hooks + self._forward_hooks:
             hook.remove()
@@ -268,7 +270,7 @@ class TorchModuleWrapper:
 
     def _make_gradient_hook(self, layer_name: str) -> Callable:
         """Create a gradient monitoring hook for a layer."""
-        def hook(module, grad_input, grad_output):
+        def hook(module: Any, grad_input: Any, grad_output: Any) -> None:
             try:
                 import torch
 
@@ -311,7 +313,7 @@ class TorchModuleWrapper:
 
     def _make_activation_hook(self, layer_name: str) -> Callable:
         """Create an activation monitoring hook for a layer."""
-        def hook(module, input, output):
+        def hook(module: Any, input: Any, output: Any) -> None:
             try:
                 import torch
 
@@ -364,7 +366,7 @@ class TorchModuleWrapper:
         Returns:
             Dictionary with gradient and activation analysis
         """
-        report = {
+        report: Dict[str, Any] = {
             'gradient_health': {},
             'activation_health': {},
             'issues': [],
@@ -399,13 +401,13 @@ class TorchModuleWrapper:
                 )
 
         # Analyze activations
-        for layer_name, stats_list in self._activation_stats.items():
-            if not stats_list:
+        for layer_name, act_stats_list in self._activation_stats.items():
+            if not act_stats_list:
                 continue
 
-            recent = stats_list[-10:]
-            avg_saturation = sum(s.saturation_ratio for s in recent) / len(recent)
-            avg_dead = sum(s.dead_ratio for s in recent) / len(recent)
+            act_recent = act_stats_list[-10:]
+            avg_saturation = sum(s.saturation_ratio for s in act_recent) / len(act_recent)
+            avg_dead = sum(s.dead_ratio for s in act_recent) / len(act_recent)
 
             report['activation_health'][layer_name] = {
                 'avg_saturation': avg_saturation,
@@ -426,10 +428,10 @@ class TorchModuleWrapper:
 
         return report
 
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to wrapped module."""
         return getattr(self.module, name)
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
         """Forward call to wrapped module."""
         return self.module(*args, **kwargs)

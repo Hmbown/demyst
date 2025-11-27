@@ -29,7 +29,7 @@ class ValidationReport:
     warnings: List[str]
     errors: List[str]
     
-    def __str__(self):
+    def __str__(self) -> str:
         status = "✅ PASSED" if self.passed else "❌ FAILED"
         return f"{status} | Physics: {self.physics_tests_passed}/{self.physics_tests_total} | Variation: {self.variation_tests_passed}/{self.variation_tests_total} | Improvement: {self.improvement_description}"
 
@@ -41,12 +41,12 @@ class PhysicsOracle:
     
     def __init__(self, repo_path: str):
         self.repo_path = repo_path
-        self.original_results = {}
-        self.refactored_results = {}
-        self.physics_tests = []
-        self.variation_tests = []
+        self.original_results: Dict[str, Any] = {}
+        self.refactored_results: Dict[str, Any] = {}
+        self.physics_tests: List[Any] = []
+        self.variation_tests: List[Any] = []
         
-    def validate(self, refactored_code: str, validation_suite: str = None) -> ValidationReport:
+    def validate(self, refactored_code: str, validation_suite: Optional[str] = None) -> ValidationReport:
         """
         Run validation suite on refactored code
         
@@ -57,19 +57,19 @@ class PhysicsOracle:
         Returns:
             ValidationReport with results
         """
-        warnings = []
-        errors = []
+        warnings: List[str] = []
+        errors: List[str] = []
         
         try:
             # Step 1: Run original code validation
             print("🔍 Running original code validation...")
-            original_report = self._run_original_validation(validation_suite)
+            original_report = self._run_original_validation(validation_suite or "")
             if not original_report['physics_tests_passed'] == original_report['physics_tests_total']:
                 warnings.append("Original physics tests had failures - this is our baseline")
             
             # Step 2: Run refactored code validation
             print("🔬 Running refactored code validation...")
-            refactored_report = self._run_refactored_validation(refactored_code, validation_suite)
+            refactored_report = self._run_refactored_validation(refactored_code, validation_suite or "")
             
             # Step 3: Compare results
             print("📊 Comparing physics results...")
@@ -304,7 +304,7 @@ class PhysicsOracle:
         return significance_results
 
 
-def main():
+def main() -> None:
     """Command-line interface for Physics Oracle"""
     import argparse
     

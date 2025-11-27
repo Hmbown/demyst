@@ -84,7 +84,7 @@ class ProfileNotFoundError(ConfigurationError):
     """Raised when a specified profile cannot be found."""
 
     def __init__(self, profile_name: str, available_profiles: Optional[List[str]] = None) -> None:
-        details = {"profile_name": profile_name}
+        details: Dict[str, Any] = {"profile_name": profile_name}
         if available_profiles:
             details["available_profiles"] = available_profiles
         suggestion = f"Use one of the available profiles: {', '.join(available_profiles or [])}"
@@ -496,7 +496,7 @@ class PluginValidationError(PluginError):
         missing_interface: Optional[str] = None,
         validation_errors: Optional[List[str]] = None
     ) -> None:
-        details = {}
+        details: Dict[str, Any] = {}
         if missing_interface:
             details["missing_interface"] = missing_interface
         if validation_errors:

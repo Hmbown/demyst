@@ -525,7 +525,7 @@ class CSTTranspiler:
         self.transformations = transformer.transformations
         self._last_transformed = new_source
 
-        return new_source
+        return str(new_source)
 
     def transpile_file(
         self,

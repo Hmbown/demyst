@@ -9,7 +9,7 @@ Philosophy: "If test data touches training, your benchmark is a lie."
 
 import ast
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, cast
 from enum import Enum
 import re
 
@@ -68,18 +68,18 @@ class DataFlowTracker:
     3. Where it goes (sinks)
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.taint_map: Dict[str, TaintSource] = {}
         self.flow_paths: List[DataFlowPath] = []
 
     def add_source(self, name: str, level: TaintLevel, line: int, col: int,
-                   source_type: str):
+                   source_type: str) -> None:
         """Register a new taint source."""
         self.taint_map[name] = TaintSource(
             name=name, level=level, line=line, col=col, source_type=source_type
         )
 
-    def propagate(self, target: str, sources: List[str], line: int):
+    def propagate(self, target: str, sources: List[str], line: int) -> None:
         """Propagate taint from sources to target."""
         source_levels = []
         for src in sources:
@@ -235,14 +235,14 @@ class TaintAnalyzer(ast.NodeVisitor):
         'optuna', 'ray_tune', 'hyperopt', 'cross_val_score'
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.tracker = DataFlowTracker()
         self.violations: List[LeakageViolation] = []
         self.current_function: Optional[str] = None
         self.current_context: Optional[str] = None
         self.loop_vars: Set[str] = set()
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function context."""
         old_function = self.current_function
         old_context = self.current_context
@@ -263,7 +263,7 @@ class TaintAnalyzer(ast.NodeVisitor):
         self.current_function = old_function
         self.current_context = old_context
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Track data loading and splitting operations."""
         func_name = self._get_func_name(node)
 
@@ -286,7 +286,7 @@ class TaintAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_Assign(self, node: ast.Assign):
+    def visit_Assign(self, node: ast.Assign) -> None:
         """Track assignments for taint propagation."""
         # Collect source variables from the right side
         sources = self._extract_variables(node.value)
@@ -302,7 +302,7 @@ class TaintAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_For(self, node: ast.For):
+    def visit_For(self, node: ast.For) -> None:
         """Track for loop iteration variables."""
         if isinstance(node.target, ast.Name):
             self.loop_vars.add(node.target.id)
@@ -327,7 +327,7 @@ class TaintAnalyzer(ast.NodeVisitor):
             return node.func.attr
         return None
 
-    def _handle_data_load(self, node: ast.Call, func_name: str):
+    def _handle_data_load(self, node: ast.Call, func_name: str) -> None:
         """Handle data loading function calls."""
         # Check if this is a test/train split load
         for keyword in node.keywords:
@@ -339,7 +339,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                     elif 'train' in str(split_name).lower():
                         self._register_train_source(node, func_name)
 
-    def _handle_data_split(self, node: ast.Call, func_name: str):
+    def _handle_data_split(self, node: ast.Call, func_name: str) -> None:
         """Handle data splitting function calls."""
         # train_test_split typically returns (train, test) pairs
         parent = getattr(node, '_parent', None)
@@ -368,7 +368,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                                 name, TaintLevel.VALIDATION, node.lineno, 0, 'split'
                             )
 
-    def _check_training_call(self, node: ast.Call, func_name: str):
+    def _check_training_call(self, node: ast.Call, func_name: str) -> None:
         """Check if training call uses test data."""
         # Check all arguments
         for arg in node.args:
@@ -385,7 +385,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                 if violation:
                     self.violations.append(violation)
 
-    def _check_tuning_call(self, node: ast.Call, func_name: str):
+    def _check_tuning_call(self, node: ast.Call, func_name: str) -> None:
         """Check if hyperparameter tuning uses test data."""
         for arg in node.args:
             vars_used = self._extract_variables(arg)
@@ -394,7 +394,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                 if violation:
                     self.violations.append(violation)
 
-    def _register_test_source(self, node: ast.Call, func_name: str):
+    def _register_test_source(self, node: ast.Call, func_name: str) -> None:
         """Register a test data source."""
         parent = getattr(node, '_parent', None)
         if parent and isinstance(parent, ast.Assign):
@@ -404,7 +404,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                         target.id, TaintLevel.TEST, node.lineno, 0, 'load'
                     )
 
-    def _register_train_source(self, node: ast.Call, func_name: str):
+    def _register_train_source(self, node: ast.Call, func_name: str) -> None:
         """Register a train data source."""
         parent = getattr(node, '_parent', None)
         if parent and isinstance(parent, ast.Assign):
@@ -501,11 +501,12 @@ class LeakageHunter:
             'summary': summary
         }
 
-    def _add_parent_refs(self, tree: ast.AST):
+    def _add_parent_refs(self, tree: ast.AST) -> None:
         """Add parent references to all AST nodes."""
         for parent in ast.walk(tree):
             for child in ast.iter_child_nodes(parent):
-                child._parent = parent
+                child_any = cast(Any, child)
+                child_any._parent = parent
 
     def _pattern_based_detection(self, source: str) -> List[LeakageViolation]:
         """Detect common leakage patterns using regex."""
@@ -604,7 +605,7 @@ class LeakageHunter:
         critical = sum(1 for v in violations if v.severity == 'critical')
         warning = sum(1 for v in violations if v.severity == 'warning')
 
-        violation_types = {}
+        violation_types: Dict[str, int] = {}
         for v in violations:
             violation_types[v.violation_type] = violation_types.get(v.violation_type, 0) + 1
 

@@ -11,7 +11,7 @@ Philosophy: "If the gradient dies in silence, the model learns nothing."
 
 import ast
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Set, Tuple
+from typing import List, Dict, Any, Optional, Set, Tuple, cast
 from enum import Enum
 import warnings
 
@@ -77,7 +77,7 @@ class GradientDeathDetector(ast.NodeVisitor):
 
     GRADIENT_PRESERVING = {'ReLU', 'LeakyReLU', 'GELU', 'SiLU', 'Mish'}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.issues: List[GradientIssue] = []
         self.current_class: Optional[str] = None
         self.current_function: Optional[str] = None
@@ -86,7 +86,7 @@ class GradientDeathDetector(ast.NodeVisitor):
         self.layer_depth: int = 0
         self.detected_layers: List[Dict[str, Any]] = []
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Track neural network class definitions."""
         old_class = self.current_class
 
@@ -109,7 +109,7 @@ class GradientDeathDetector(ast.NodeVisitor):
         if is_nn_module:
             self._analyze_activation_chain()
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function definitions within modules."""
         old_function = self.current_function
         self.current_function = node.name
@@ -122,7 +122,7 @@ class GradientDeathDetector(ast.NodeVisitor):
         self.generic_visit(node)
         self.current_function = old_function
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Detect activation functions and layer operations."""
         layer_name = self._get_layer_name(node)
 
@@ -143,7 +143,7 @@ class GradientDeathDetector(ast.NodeVisitor):
 
         self.generic_visit(node)
 
-    def visit_BinOp(self, node: ast.BinOp):
+    def visit_BinOp(self, node: ast.BinOp) -> None:
         """Detect residual connections (addition operations)."""
         if isinstance(node.op, ast.Add):
             # Look for patterns like: x + layer(x) or layer(x) + x
@@ -176,7 +176,7 @@ class GradientDeathDetector(ast.NodeVisitor):
 
         return (left_is_name and right_is_call) or (right_is_name and left_is_call)
 
-    def _analyze_activation_chain(self):
+    def _analyze_activation_chain(self) -> None:
         """Analyze the accumulated activation chain for gradient death risks."""
         if not self.activation_chain:
             return
@@ -192,10 +192,10 @@ class GradientDeathDetector(ast.NodeVisitor):
 
                 risk_info = self.ACTIVATION_SATURATION_RISK[activation]
 
-                if saturating_count >= risk_info['depth_threshold'] and not self.has_residual:
+                if saturating_count >= cast(int, risk_info['depth_threshold']) and not self.has_residual:
                     self.issues.append(GradientIssue(
                         issue_type='gradient_death_chain',
-                        severity=risk_info['risk'],
+                        severity=cast(GradientRisk, risk_info['risk']),
                         line=line,
                         col=0,
                         description=(
@@ -242,13 +242,13 @@ class NormalizationAnalyzer(ast.NodeVisitor):
         'softmax', 'log_softmax'
     }
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.issues: List[NormalizationIssue] = []
         self.current_class: Optional[str] = None
         self.norm_layers: List[Dict[str, Any]] = []
-        self.layer_sequence: List[Tuple[str, int]] = []
+        self.layer_sequence: List[Tuple[str, str, int]] = []
 
-    def visit_ClassDef(self, node: ast.ClassDef):
+    def visit_ClassDef(self, node: ast.ClassDef) -> None:
         """Track class definitions."""
         old_class = self.current_class
         self.current_class = node.name
@@ -257,7 +257,7 @@ class NormalizationAnalyzer(ast.NodeVisitor):
         self._analyze_normalization_sequence()
         self.current_class = old_class
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Track normalization and distribution-sensitive layers."""
         layer_name = self._get_layer_name(node)
 
@@ -287,7 +287,7 @@ class NormalizationAnalyzer(ast.NodeVisitor):
             return node.func.id
         return None
 
-    def _check_batch_norm_config(self, node: ast.Call, layer_name: str):
+    def _check_batch_norm_config(self, node: ast.Call, layer_name: str) -> None:
         """Check BatchNorm configuration for potential issues."""
         # Check for track_running_stats=False (dangerous in eval mode)
         for keyword in node.keywords:
@@ -309,7 +309,7 @@ class NormalizationAnalyzer(ast.NodeVisitor):
                         )
                     ))
 
-    def _analyze_normalization_sequence(self):
+    def _analyze_normalization_sequence(self) -> None:
         """Analyze layer sequence for normalization blindness patterns."""
         for i, (layer_type, name, line) in enumerate(self.layer_sequence):
             if layer_type == 'norm':
@@ -347,13 +347,13 @@ class RewardHackingDetector(ast.NodeVisitor):
     AGGREGATION_OPS = {'mean', 'sum', 'average', 'reduce_mean', 'reduce_sum'}
     CLIPPING_OPS = {'clip', 'clamp', 'clip_by_value'}
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.issues: List[RewardIssue] = []
         self.current_function: Optional[str] = None
         self.in_reward_function: bool = False
         self.reward_operations: List[Dict[str, Any]] = []
 
-    def visit_FunctionDef(self, node: ast.FunctionDef):
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track reward-related functions."""
         old_function = self.current_function
         old_in_reward = self.in_reward_function
@@ -372,7 +372,7 @@ class RewardHackingDetector(ast.NodeVisitor):
         self.current_function = old_function
         self.in_reward_function = old_in_reward
 
-    def visit_Call(self, node: ast.Call):
+    def visit_Call(self, node: ast.Call) -> None:
         """Track operations within reward functions."""
         if self.in_reward_function:
             op_name = self._get_operation_name(node)
@@ -412,7 +412,7 @@ class RewardHackingDetector(ast.NodeVisitor):
             return 'clipping'
         return None
 
-    def _analyze_reward_function(self, node: ast.FunctionDef):
+    def _analyze_reward_function(self, node: ast.FunctionDef) -> None:
         """Analyze reward function for hacking vulnerabilities."""
         has_aggregation = False
         has_clipping = False
@@ -421,7 +421,7 @@ class RewardHackingDetector(ast.NodeVisitor):
             if op['type'] == 'aggregation':
                 has_aggregation = True
                 self.issues.append(RewardIssue(
-                    function_name=self.current_function,
+                    function_name=str(self.current_function),
                     line=op['line'],
                     issue_type='reward_aggregation_mirage',
                     description=(
@@ -444,7 +444,7 @@ class RewardHackingDetector(ast.NodeVisitor):
             elif op['type'] == 'clipping':
                 has_clipping = True
                 self.issues.append(RewardIssue(
-                    function_name=self.current_function,
+                    function_name=str(self.current_function),
                     line=op['line'],
                     issue_type='reward_clipping_blindness',
                     description=(

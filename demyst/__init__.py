@@ -33,7 +33,9 @@ __author__ = "Demyst Team"
 __description__ = "The Scientific Integrity Platform for AI Research"
 
 # Lazy imports to avoid circular dependencies
-def __getattr__(name: str):
+from typing import Any
+
+def __getattr__(name: str) -> Any:
     """Lazy loading of components to avoid import errors when dependencies aren't installed."""
     # Core Engine
     if name in ['MirageDetector']:

@@ -26,15 +26,15 @@ except ImportError:
         def model_dump(self) -> Dict[str, Any]:
             return self.__dict__.copy()
 
-    def Field(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+    def Field(*args: Any, **kwargs: Any) -> Any:  # type: ignore[no-redef]
         return kwargs.get('default')
 
-    def field_validator(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+    def field_validator(*args: Any, **kwargs: Any) -> Any:  # type: ignore[no-redef]
         def decorator(func: Any) -> Any:
             return func
         return decorator
 
-    def model_validator(*args: Any, **kwargs: Any) -> Any:  # type: ignore[misc]
+    def model_validator(*args: Any, **kwargs: Any) -> Any:  # type: ignore[no-redef]
         def decorator(func: Any) -> Any:
             return func
         return decorator

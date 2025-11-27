@@ -26,7 +26,7 @@ import importlib
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Type, Union, cast
 
 from demyst.exceptions import (
     PluginError,
@@ -395,7 +395,7 @@ class PluginRegistry:
                 raise PluginNotFoundError(name, GUARD_ENTRY_POINT)
 
         info = self._guards[name]
-        return self._get_instance(info, config or {})
+        return cast(GuardPlugin, self._get_instance(info, config or {}))
 
     def get_fixer(
         self,
@@ -410,7 +410,7 @@ class PluginRegistry:
                 raise PluginNotFoundError(name, FIXER_ENTRY_POINT)
 
         info = self._fixers[name]
-        return self._get_instance(info, config or {})
+        return cast(FixerPlugin, self._get_instance(info, config or {}))
 
     def get_reporter(
         self,
@@ -425,7 +425,7 @@ class PluginRegistry:
                 raise PluginNotFoundError(name, REPORTER_ENTRY_POINT)
 
         info = self._reporters[name]
-        return self._get_instance(info, config or {})
+        return cast(ReporterPlugin, self._get_instance(info, config or {}))
 
     def _get_instance(
         self,
@@ -618,6 +618,6 @@ def register_builtin_plugins() -> None:
         TensorGuardPlugin,
     ]:
         try:
-            registry.register(plugin)
+            registry.register(plugin)  # type: ignore[type-abstract]
         except Exception as e:
             logger.debug(f"Failed to register built-in plugin: {e}")

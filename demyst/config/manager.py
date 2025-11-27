@@ -9,7 +9,7 @@ Handles loading and merging of configuration from:
 
 import os
 import yaml
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List, cast
 from pathlib import Path
 
 class ConfigManager:
@@ -69,7 +69,7 @@ class ConfigManager:
                 print(f"Warning: Failed to load config file {self.config_path}: {e}")
 
         # Load profile if specified
-        profile_name = config.get("profile", "default")
+        profile_name = str(config.get("profile", "default"))
         if profile_name != "default":
              profile_config = self._load_profile(profile_name)
              if profile_config:
@@ -118,12 +118,15 @@ class ConfigManager:
 
     def get_rule_config(self, rule_name: str) -> Dict[str, Any]:
         """Get configuration for a specific rule."""
-        return self.config.get("rules", {}).get(rule_name, {})
+        rules = self.config.get("rules", {})
+        if isinstance(rules, dict):
+            return cast(Dict[str, Any], rules.get(rule_name, {}))
+        return {}
 
     def is_rule_enabled(self, rule_name: str) -> bool:
         """Check if a rule is enabled."""
-        return self.get_rule_config(rule_name).get("enabled", True)
+        return bool(self.get_rule_config(rule_name).get("enabled", True))
 
-    def get_ignore_patterns(self) -> list:
+    def get_ignore_patterns(self) -> List[Any]:
         """Get global ignore patterns."""
-        return self.config.get("ignore_patterns", [])
+        return list(self.config.get("ignore_patterns", []))

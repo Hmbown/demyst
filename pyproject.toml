@@ -125,8 +125,18 @@ module = [
     "mlflow.*",
     "scipy.*",
     "sklearn.*",
+    "pandas.*",
+    "libcst.*",
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "demyst.tests.*"
+disallow_untyped_defs = false
+check_untyped_defs = false
+disallow_untyped_decorators = false
+disallow_incomplete_defs = false
+allow_redefinition = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"

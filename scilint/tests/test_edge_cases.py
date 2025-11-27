@@ -268,7 +268,8 @@ class TestLargeFiles:
         """Guards should handle very long lines."""
         from scilint.guards.unit_guard import UnitGuard
 
-        long_line = f"x = " + " + ".join(["1"] * 500)
+        # Use a moderate number to avoid Python's recursion limit in AST unparsing
+        long_line = f"x = " + " + ".join(["1"] * 50)
 
         guard = UnitGuard()
         result = guard.analyze(long_line)

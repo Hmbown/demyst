@@ -1,39 +1,136 @@
-# Scilint: The Scientific Safety Net
+# Scilint: The Scientific Integrity Platform
 
 [![Scilint: Verified](https://img.shields.io/badge/Scilint-Verified-purple)](https://github.com/scilint/scilint)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > "Science is the belief in the ignorance of experts." - Richard Feynman
+>
+> "Correct answers don't guarantee correct reasoning." - DeepSeek-Math-V2
 
-**Scilint** is not just a linter; it is a **Scientific Companion**. It helps citizen scientists, AI agents, and researchers ensure their code lives up to the rigor of their ideas.
+**Scilint** is a **Scientific Integrity Platform** that helps researchers, AI agents, and data scientists ensure their code lives up to the rigor of their ideas.
 
-We believe that **good code is good science**. Scilint automates the discipline required to avoid "computational mirages"—statistical errors that look correct but hide the truth.
+## The Core Problem: Self-Verifiable Scientific Reasoning
 
-## The Mission
+In the age of AI and rapid prototyping, we face a fundamental epistemological challenge:
 
-In the age of AI and rapid prototyping, it is easy to lose track of the physical reality behind the data. Scilint acts as a **guardian**, gently guiding you away from destructive operations and towards information-preserving alternatives.
+**How do we know our computation is trustworthy, not just its output?**
 
-## The Core Insight
+This mirrors the insight from recent work on [self-verifiable mathematical reasoning](https://github.com/deepseek-ai/DeepSeek-Math-V2) (DeepSeek-Math-V2, 2025): correct answers don't guarantee correct reasoning. A model can produce the right numerical result through flawed logic, and a scientific computation can produce plausible metrics through statistically invalid processes.
 
-Scientific computing often trades truth for speed by collapsing distributions into single numbers. Scilint reverses this by:
-1.  **Detecting** destructive operations (e.g., `mean`, `sum`).
-2.  **Refactoring** them to use `VariationTensor`, which preserves the full distribution history.
-3.  **Validating** that the refactored code is physically more robust.
+Scilint attacks this problem from the code verification angle:
+
+| Problem | Mathematical Proofs | Scientific Code |
+|---------|---------------------|-----------------|
+| **The Mirage** | Right answer, wrong proof | Good metrics, invalid methodology |
+| **Solution** | Verify proof steps | Verify computation integrity |
+| **Approach** | Self-verifiable reasoning | Information-preserving transforms |
+
+## What Scilint Detects
+
+### 1. Computational Mirages
+Operations that destroy variance/distribution information:
+
+```python
+# DANGEROUS: Hides the rogue agent in a swarm of 1000
+mean_score = np.mean(agent_scores)  # Returns 0.999, but one agent is 0.0!
+
+# SAFE: Preserves distribution for inspection
+scores = VariationTensor(agent_scores).collapse('mean')  # Keeps variance metadata
+```
+
+### 2. Data Leakage
+The #1 error in machine learning that invalidates benchmarks:
+
+```python
+# WRONG: Fits scaler on ALL data before split
+scaler.fit_transform(X)  # Leaks test statistics into training!
+X_train, X_test = train_test_split(X_scaled)
+
+# CORRECT: Fit only on training data
+X_train, X_test = train_test_split(X)
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+```
+
+### 3. P-Hacking & Statistical Validity
+Uncorrected multiple comparisons that inflate false positives:
+
+```python
+# PROBLEMATIC: 20 tests at alpha=0.05 expects 1 false positive!
+for condition in conditions:
+    p = ttest(group_a[condition], group_b[condition])
+    if p < 0.05:  # No correction applied
+        print(f"{condition} is significant!")
+
+# Scilint recommends: Bonferroni, Holm-Bonferroni, or Benjamini-Hochberg correction
+```
+
+### 4. Deep Learning Integrity
+Gradient death, normalization blindness, and reward hacking:
+
+```python
+# PROBLEMATIC: Deep sigmoid chains cause vanishing gradients
+x = torch.sigmoid(fc1(x))
+x = torch.sigmoid(fc2(x))
+x = torch.sigmoid(fc3(x))  # Gradients approaching 0
+
+# PROBLEMATIC: BatchNorm hides distribution shift
+self.bn = nn.BatchNorm2d(64, track_running_stats=False)  # Masks drift!
+```
+
+### 5. Dimensional Analysis
+Unit mismatches that violate physical laws:
+
+```python
+# WRONG: Adding meters to seconds is physically meaningless
+result = distance_meters + time_seconds
+
+# Scilint detects: "Cannot add quantities with dimensions [L] and [T]"
+```
+
+## Installation
+
+```bash
+# From source
+git clone https://github.com/scilint/scilint.git
+cd scilint
+pip install -e .
+
+# With development dependencies
+pip install -e ".[dev]"
+```
 
 ## Quick Start
 
 ```bash
-# Install
-pip install .
+# Run all integrity checks
+scilint analyze your_code.py
+scilint analyze ./src/
 
-# Lint and refactor a file
-python -m scilint --target examples/climate_mirage.py
+# Individual checks
+scilint mirage model.py           # Detect variance-destroying operations
+scilint leakage train.py          # Detect train/test data leakage
+scilint hypothesis stats.py       # Check statistical validity
+scilint units physics.py          # Check dimensional consistency
+scilint tensor network.py         # Check deep learning integrity
+
+# Auto-fix mirages
+scilint mirage model.py --fix
+scilint mirage model.py --fix --dry-run  # Preview changes
+
+# CI/CD mode
+scilint ci . --strict
+
+# Generate LaTeX methodology
+scilint paper model.py -o methodology.tex
 ```
 
-## Example: The Swarm Collapse (Nov 2025)
+## The Swarm Collapse Problem (Nov 2025)
 
-Imagine a swarm of 1,000 AI agents.
--   **999 Agents**: Perfectly aligned (Score 1.0).
--   **1 Agent**: Rogue/Jailbroken (Score 0.0).
+Imagine a swarm of 1,000 AI agents:
+- **999 Agents**: Perfectly aligned (Score 1.0)
+- **1 Agent**: Rogue/Jailbroken (Score 0.0)
 
 Standard analysis using `np.mean()` gives a score of **0.999**. You deploy, and the rogue agent destroys the system.
 
@@ -44,47 +141,130 @@ Standard analysis using `np.mean()` gives a score of **0.999**. You deploy, and 
 ```
 scilint/
 ├── engine/
-│   ├── mirage_detector.py      # AST visitor that flags destructive ops
-│   ├── variation_tensor.py     # Replacement data structure
-│   └── transpiler.py           # Auto-rewrites code
-├── validators/
-│   └── physics_oracle.py       # Validates improvements
-└── examples/
-    └── climate_mirage.py       # Demo of the problem
+│   ├── mirage_detector.py        # AST visitor that flags destructive ops
+│   ├── variation_tensor.py       # Information-preserving data structure
+│   ├── variation_transformer.py  # AST transformer for auto-fix
+│   └── transpiler.py             # Auto-rewrites code
+├── guards/
+│   ├── tensor_guard.py           # Deep learning integrity
+│   ├── leakage_hunter.py         # Data leakage detection
+│   ├── hypothesis_guard.py       # Statistical validity (anti-p-hacking)
+│   └── unit_guard.py             # Dimensional analysis
+├── integrations/
+│   ├── ci_enforcer.py            # CI/CD integration
+│   ├── torch_hooks.py            # PyTorch integration
+│   ├── jax_hooks.py              # JAX integration
+│   └── experiment_trackers.py    # WandB/MLflow integration
+├── generators/
+│   ├── paper_generator.py        # LaTeX methodology generator
+│   └── report_generator.py       # Integrity reports
+└── config/
+    └── manager.py                # Configuration management
 ```
 
-## Adoption Kit: The Safety Net
+## Configuration
 
-Make scientific rigor automatic.
+Create `.scilintrc.yaml` in your project root:
 
-### 1. The Gatekeeper (GitHub Action)
-Add this to `.github/workflows/scilint.yml`:
 ```yaml
-uses: scilint/action@v1
-with:
-  target: "."
+profile: default  # Or: biology, physics, chemistry, neuroscience, climate, economics
+
+rules:
+  mirage:
+    enabled: true
+    severity: critical
+  leakage:
+    enabled: true
+    severity: critical
+  hypothesis:
+    enabled: true
+    severity: warning
+  unit:
+    enabled: true
+    severity: warning
+  tensor:
+    enabled: true
+    severity: critical
+
+ignore_patterns:
+  - "**/test_*"
+  - "**/tests/**"
 ```
 
-### 2. The Bodyguard (Pre-commit)
-Add this to `.pre-commit-config.yaml`:
+## CI/CD Integration
+
+### GitHub Actions
+
 ```yaml
-- repo: https://github.com/scilint/scilint
-  rev: v0.1.0
-  hooks:
-    - id: scilint
+name: Scilint
+on: [push, pull_request]
+
+jobs:
+  scilint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install scilint
+      - run: scilint ci . --strict
 ```
 
-## Future Roadmap: Beyond the Mean
+### Pre-commit
 
-Scilint is evolving to cover the full spectrum of scientific coding errors:
+```yaml
+repos:
+  - repo: https://github.com/scilint/scilint
+    rev: v1.0.0
+    hooks:
+      - id: scilint
+      # Or individual hooks:
+      # - id: scilint-mirage
+      # - id: scilint-leakage
+```
 
-*   **Silent NaNs**: Operations that produce `NaN` without warning.
-*   **Data Leakage**: Normalizing data before splitting train/test sets.
-*   **P-Hacking Detection**: Warning when multiple hypothesis tests are run on the same data.
-*   **Unit Mismatch**: Ensuring physical units (meters, seconds) are consistent.
+## Programmatic Usage
+
+```python
+from scilint import TensorGuard, LeakageHunter, HypothesisGuard, UnitGuard
+
+with open('model.py', 'r') as f:
+    source = f.read()
+
+# Run individual guards
+tensor_result = TensorGuard().analyze(source)
+leakage_result = LeakageHunter().analyze(source)
+hypothesis_result = HypothesisGuard().analyze_code(source)
+unit_result = UnitGuard().analyze(source)
+
+# Check for critical issues
+if leakage_result['summary']['critical_count'] > 0:
+    print("DATA LEAKAGE DETECTED - Results are invalid!")
+```
 
 ## The Philosophical Bet
 
-**Is a 10× slower but 1000× more correct computation acceptable?**
+**Is a 10x slower but 1000x more correct computation acceptable?**
 
-Scilint bets that the answer is yes. We are moving from "fast but wrong" to "principled and preserved."
+Scilint bets yes. We are moving from "fast but wrong" to "principled and preserved."
+
+This aligns with the broader movement toward **self-verifiable AI reasoning**—systems that can prove their outputs are trustworthy, not just plausible. Whether in mathematical proofs (DeepSeek-Math-V2) or scientific code (Scilint), the goal is the same: **process integrity over outcome accuracy**.
+
+## Related Work
+
+- [DeepSeek-Math-V2: Towards Self-Verifiable Mathematical Reasoning](https://github.com/deepseek-ai/DeepSeek-Math-V2) - Self-verification in mathematical proofs
+- [Uncertainty Quantification in ML](https://arxiv.org/abs/2107.03342) - Preserving uncertainty in predictions
+- [Reproducibility Crisis in Science](https://www.nature.com/articles/533452a) - Why methodology verification matters
+
+## License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+## Contributing
+
+We welcome contributions! See [docs/usage.md](docs/usage.md) for development setup.
+
+---
+
+*"The first principle is that you must not fool yourself—and you are the easiest person to fool."* - Richard Feynman

@@ -452,6 +452,20 @@ def report_command(args: argparse.Namespace) -> int:
         )
         # Add other sections similarly if needed (omitted for brevity in original, preserving behavior)
 
+    if getattr(args, "cert", False):
+        # Generate certificate
+        # For single file, we read content again or pass it if available.
+        # Ideally CIEnforcer returns content or we read it.
+        # Since analyze_file doesn't return content, we read it.
+        try:
+            content = safe_read_file(args.path)
+            cert = generator.generate_certificate({args.path: content})
+            print(json.dumps(cert, indent=2))
+            return 0
+        except Exception as e:
+            console.print_error(f"Failed to generate certificate: {e}")
+            return 1
+
     if args.format == "html":
         print(generator.to_html())
     elif args.format == "json":
@@ -584,7 +598,7 @@ def version_command(args: argparse.Namespace) -> int:
 def main() -> int:
     """Main CLI entry point."""
     parser = argparse.ArgumentParser(
-        description="Demyst: The Scientific Integrity Platform",
+        description="Demyst: Scientific Logic Linter",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -661,6 +675,9 @@ For more information: https://github.com/demyst/demyst
         choices=["markdown", "html", "json", "text"],
         default="text",
         help="Output format",
+    )
+    report_parser.add_argument(
+        "--cert", action="store_true", help="Generate Certificate of Integrity (JSON)"
     )
     report_parser.set_defaults(func=report_command)
 

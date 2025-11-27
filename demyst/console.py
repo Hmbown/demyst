@@ -436,9 +436,9 @@ def format_analysis_report(
 
     # Title
     if file_path:
-        console.print_rule(f"Analysis: {file_path}")
+        console.print_rule(f"Demyst Check: {file_path}")
     else:
-        console.print_rule("Analysis Report")
+        console.print_rule("Demyst Check")
 
     # Collect counts
     counts = {
@@ -489,6 +489,6 @@ def format_analysis_report(
     console.print_summary("Summary", counts, status)
 
     if total == 0:
-        console.print_success("\nAll checks passed!")
+        console.print_success("\nDemyst Check Passed!")
     else:
-        console.print_warning(f"\nFound {total} issue(s)")
+        console.print_warning(f"\nDemyst Check Failed: Found {total} issue(s)")

@@ -33,7 +33,7 @@ class IntegrityReportGenerator:
         html = generator.to_html()
     """
 
-    def __init__(self, title: str = "Scientific Integrity Report"):
+    def __init__(self, title: str = "Demyst Check Report"):
         """
         Initialize report generator.
 

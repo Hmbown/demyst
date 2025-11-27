@@ -1,32 +1,26 @@
-# Demyst: The Scientific Integrity Platform
+# Demyst
 
-[![Demyst: Verified](https://img.shields.io/badge/Demyst-Verified-purple)](https://github.com/demyst/demyst)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+> **de·mys·ti·fy** /dēˈmistəˌfī/ *transitive verb*
+> 1. To eliminate the mystifying features of.
+> 2. To make less obscure, unclear, or confusing.
+
+**Demyst** is a scientific linter that ensures your code means what you think it means. Just as `black` formats your code and `mypy` checks your types, `demyst` checks your **scientific logic**.
 
 > "Science is the belief in the ignorance of experts." - Richard Feynman
->
-> "Correct answers don't guarantee correct reasoning." - DeepSeek-Math-V2
 
-**Demyst** is a **Scientific Integrity Platform** that helps researchers, AI agents, and data scientists ensure their code lives up to the rigor of their ideas.
+## Why Demyst?
 
-## The Core Problem: Self-Verifiable Scientific Reasoning
-
-In the age of AI and rapid prototyping, we face a fundamental epistemological challenge:
+In the age of AI and rapid prototyping, we face a fundamental challenge:
 
 **How do we know our computation is trustworthy, not just its output?**
 
-This mirrors the insight from recent work on [self-verifiable mathematical reasoning](https://github.com/deepseek-ai/DeepSeek-Math-V2) (DeepSeek-Math-V2, 2025): correct answers don't guarantee correct reasoning. A model can produce the right numerical result through flawed logic, and a scientific computation can produce plausible metrics through statistically invalid processes.
+Standard linters catch syntax errors. Demyst catches **scientific logic errors**:
+- Using `mean()` on heavy-tailed distributions (hiding outliers).
+- Leaking test data into training sets.
+- P-hacking by running multiple tests without correction.
+- Adding meters to seconds.
 
-Demyst attacks this problem from the code verification angle:
-
-| Problem | Mathematical Proofs | Scientific Code |
-|---------|---------------------|-----------------|
-| **The Mirage** | Right answer, wrong proof | Good metrics, invalid methodology |
-| **Solution** | Verify proof steps | Verify computation integrity |
-| **Approach** | Self-verifiable reasoning | Information-preserving transforms |
-
-See the [Full Demonstration](docs/demonstration.md) for detailed examples of Demyst in action.
+Demyst is designed to be a ubiquitous part of your research workflow. Run a **Demyst Check** before you commit, before you publish, and before you trust the result.
 
 
 ## What Demyst Detects
@@ -121,7 +115,7 @@ pip install -e ".[dev]"
 ## Quick Start
 
 ```bash
-# Run all integrity checks
+# Run a Demyst Check
 demyst analyze your_code.py
 demyst analyze ./src/
 

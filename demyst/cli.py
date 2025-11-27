@@ -27,8 +27,10 @@ import logging
 from pathlib import Path
 from typing import Optional, List, Any, Dict
 
+from demyst.console import get_console, format_analysis_report
+
 # Version
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # Global logger
 logger = logging.getLogger("demyst")
@@ -72,6 +74,7 @@ def analyze_command(args: argparse.Namespace) -> int:
     """Run comprehensive analysis on a file or directory."""
     from demyst.integrations.ci_enforcer import CIEnforcer
 
+    console = get_console()
     logger.info(f"Analyzing {args.path}")
 
     # Load configuration
@@ -88,21 +91,49 @@ def analyze_command(args: argparse.Namespace) -> int:
     enforcer = CIEnforcer(config=config)
 
     if os.path.isdir(args.path):
-        report = enforcer.analyze_directory(args.path)
+        with console.status(f"Analyzing directory {args.path}..."):
+            report = enforcer.analyze_directory(args.path)
+
         if args.format == 'markdown':
             print(report.to_markdown())
         elif args.format == 'json':
             print(json.dumps(report.to_dict(), indent=2))
         else:
-            print(report.to_markdown())
+            # Use rich console for text output
+            console.print_rule(f"Analysis Report: {args.path}")
+            console.print_success(f"Analyzed {report.files_analyzed} files.")
+            
+            if report.total_issues > 0:
+                console.print_warning(f"Found {report.total_issues} issues.")
+                
+                for check in report.checks:
+                    if not check.passed:
+                        console.print_rule(check.name)
+                        for issue in check.issues:
+                            # Reconstruct dict for print_violations
+                            violation = {
+                                'type': check.name,
+                                'line': issue.get('line'),
+                                'description': issue.get('description'),
+                                'recommendation': None
+                            }
+                            console.print_violations([violation], file_path=issue.get('file'))
+            else:
+                console.print_success("No issues detected!")
+
         return 0 if report.badge_status == 'passing' else 1
     else:
-        result = enforcer.analyze_file(args.path)
+        with console.status(f"Analyzing file {args.path}..."):
+            result = enforcer.analyze_file(args.path)
+
         if args.format == 'json':
             print(json.dumps(result, indent=2, default=str))
+        elif args.format == 'markdown':
+             # Fallback to print for pure markdown if requested
+             print(json.dumps(result, indent=2, default=str)) # TODO: Implement markdown for single file
         else:
-            # Text/markdown format for single file
-            print(json.dumps(result, indent=2, default=str))
+            # Rich text format
+            format_analysis_report(result, file_path=args.path)
 
         has_issues = any(
             result.get(k, {}).get('issues', [])
@@ -116,47 +147,49 @@ def mirage_command(args: argparse.Namespace) -> int:
     from demyst.engine.mirage_detector import MirageDetector
     import ast
 
+    console = get_console()
     logger.info(f"Detecting mirages in {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     try:
         tree = ast.parse(source)
     except SyntaxError as e:
-        print(f"Syntax error in {args.path}: {e}")
+        console.print_error(f"Syntax error in {args.path}: {e}")
         return 1
 
     detector = MirageDetector()
     detector.visit(tree)
 
     if not detector.mirages:
-        print("No computational mirages detected.")
+        console.print_success("No computational mirages detected.")
         return 0
 
     # If --fix flag is set, use the transpiler to auto-fix
     if getattr(args, 'fix', False):
         return _apply_mirage_fix(args.path, source, detector.mirages, args)
 
-    # Just report the mirages
-    print(f"\n{'='*60}")
-    print("COMPUTATIONAL MIRAGES DETECTED")
-    print(f"{'='*60}\n")
-
+    # Report mirages
+    console.print_rule("Computational Mirages Detected")
+    
+    violations = []
     for m in detector.mirages:
-        print(f"Line {m['line']}: {m['type']}()")
-        print(f"  Function: {m['function'] or 'module level'}")
-        print(f"  Impact: Destroys variance/distribution information")
-        print(f"  Fix: Use VariationTensor({m['type']}).collapse('{m['type']}')")
-        print()
+        violations.append({
+            'type': m['type'],
+            'line': m['line'],
+            'description': f"Computational mirage: {m['type']} operation destroys variance information. (Function: {m['function'] or 'module level'})",
+            'recommendation': f"Use VariationTensor({m['type']}).collapse('{m['type']}')"
+        })
+    
+    console.print_violations(violations, file_path=args.path, source=source)
+    console.print_warning(f"Total mirages: {len(detector.mirages)}")
 
-    print(f"Total mirages: {len(detector.mirages)}")
-
-    if hasattr(args, 'fix'):
-        print("\nTip: Use --fix to automatically transform these operations")
+    if not hasattr(args, 'fix'):
+        console.print_info("\nTip: Use --fix to automatically transform these operations")
 
     return 1
 
@@ -165,6 +198,7 @@ def _apply_mirage_fix(path: str, source: str, mirages: List[Dict], args: argpars
     """Apply transpiler fixes to mirages."""
     from demyst.engine.transpiler import Transpiler
 
+    console = get_console()
     logger.info(f"Applying auto-fix to {path}")
 
     transpiler = Transpiler()
@@ -172,22 +206,21 @@ def _apply_mirage_fix(path: str, source: str, mirages: List[Dict], args: argpars
     try:
         transformed = transpiler.transpile_source(source)
     except Exception as e:
-        print(f"Error during transformation: {e}")
+        console.print_error(f"Error during transformation: {e}")
         logger.debug("Transformation error", exc_info=True)
         return 1
 
     if not transpiler.transformations:
-        print("No transformations applied.")
+        console.print_info("No transformations applied.")
         return 0
 
     # Show diff if requested
     if getattr(args, 'diff', False) or getattr(args, 'dry_run', False):
         diff = transpiler.get_diff(source, transformed)
-        print("Proposed changes:")
-        print(diff)
+        console.print_diff(diff, title="Proposed changes")
 
         if getattr(args, 'dry_run', False):
-            print("\n[DRY RUN] No changes written to disk.")
+            console.print_warning("\n[DRY RUN] No changes written to disk.")
             return 0
 
     # Write the transformed code
@@ -199,11 +232,11 @@ def _apply_mirage_fix(path: str, source: str, mirages: List[Dict], args: argpars
     try:
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(transformed)
-        print(f"\nTransformed code written to {output_path}")
-        transpiler.print_summary()
+        console.print_success(f"\nTransformed code written to {output_path}")
+        # Summary could be printed here if needed
         return 0
     except Exception as e:
-        print(f"Error writing file: {e}")
+        console.print_error(f"Error writing file: {e}")
         return 1
 
 
@@ -211,41 +244,33 @@ def leakage_command(args: argparse.Namespace) -> int:
     """Detect data leakage issues."""
     from demyst.guards.leakage_hunter import LeakageHunter
 
+    console = get_console()
     logger.info(f"Detecting data leakage in {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     hunter = LeakageHunter()
     result = hunter.analyze(source)
 
     if result.get('error'):
-        print(f"Error: {result['error']}")
+        console.print_error(result['error'])
         return 1
 
     violations = result.get('violations', [])
 
     if not violations:
-        print("No data leakage detected.")
+        console.print_success("No data leakage detected.")
         return 0
 
-    print(f"\n{'='*60}")
-    print("DATA LEAKAGE DETECTED")
-    print(f"{'='*60}\n")
-
-    for v in violations:
-        severity_icon = "CRITICAL" if v['severity'] == 'critical' else "WARNING"
-        print(f"[{severity_icon}] Line {v['line']}: {v['type']}")
-        print(f"  {v['description']}")
-        print(f"  Impact: {v['scientific_impact']}")
-        print(f"  Fix: {v['recommendation']}")
-        print()
+    console.print_rule("Data Leakage Detected")
+    console.print_violations(violations, file_path=args.path, source=source)
 
     summary = result.get('summary', {})
-    print(f"Verdict: {summary.get('verdict', 'Unknown')}")
+    console.print_warning(f"Verdict: {summary.get('verdict', 'Unknown')}")
 
     return 1 if any(v['severity'] == 'critical' for v in violations) else 0
 
@@ -254,50 +279,42 @@ def hypothesis_command(args: argparse.Namespace) -> int:
     """Check statistical validity (anti-p-hacking)."""
     from demyst.guards.hypothesis_guard import HypothesisGuard
 
+    console = get_console()
     logger.info(f"Checking statistical validity in {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     guard = HypothesisGuard()
     result = guard.analyze_code(source)
 
     if result.get('error'):
-        print(f"Error: {result['error']}")
+        console.print_error(result['error'])
         return 1
 
     violations = result.get('violations', [])
 
     if not violations:
-        print("No statistical validity issues detected.")
+        console.print_success("No statistical validity issues detected.")
         if result.get('correction_info'):
             info = result['correction_info']
-            print(f"\nNote: {info['recommendation']}")
+            console.print_info(f"\nNote: {info['recommendation']}")
         return 0
 
-    print(f"\n{'='*60}")
-    print("STATISTICAL VALIDITY ISSUES")
-    print(f"{'='*60}\n")
-
-    for v in violations:
-        print(f"Line {v['line']}: {v['type']}")
-        print(f"  {v['description']}")
-        print(f"  Impact: {v['statistical_impact']}")
-        print(f"  Correct interpretation: {v['corrected_interpretation']}")
-        print(f"  Fix: {v['recommendation']}")
-        print()
+    console.print_rule("Statistical Validity Issues")
+    console.print_violations(violations, file_path=args.path, source=source)
 
     if result.get('correction_info'):
         info = result['correction_info']
-        print(f"\nMultiple Comparisons Correction:")
-        print(f"  Tests detected: {info['num_tests_detected']}")
-        print(f"  Corrected alpha: {info['bonferroni_alpha']:.4f}")
+        console.print_info("\nMultiple Comparisons Correction:")
+        console.print_info(f"  Tests detected: {info['num_tests_detected']}")
+        console.print_info(f"  Corrected alpha: {info['bonferroni_alpha']:.4f}")
 
     summary = result.get('summary', {})
-    print(f"\nVerdict: {summary.get('verdict', 'Unknown')}")
+    console.print_warning(f"\nVerdict: {summary.get('verdict', 'Unknown')}")
 
     return 1 if any(v['severity'] == 'invalid' for v in violations) else 0
 
@@ -306,47 +323,37 @@ def units_command(args: argparse.Namespace) -> int:
     """Check dimensional consistency."""
     from demyst.guards.unit_guard import UnitGuard
 
+    console = get_console()
     logger.info(f"Checking dimensional consistency in {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     guard = UnitGuard()
     result = guard.analyze(source)
 
     if result.get('error'):
-        print(f"Error: {result['error']}")
+        console.print_error(result['error'])
         return 1
 
     violations = result.get('violations', [])
 
     if not violations:
-        print("No dimensional consistency issues detected.")
+        console.print_success("No dimensional consistency issues detected.")
         if result.get('inferred_dimensions'):
-            print("\nInferred dimensions:")
+            console.print_info("\nInferred dimensions:")
             for var, dim in result['inferred_dimensions'].items():
-                print(f"  {var}: {dim}")
+                console.print_info(f"  {var}: {dim}")
         return 0
 
-    print(f"\n{'='*60}")
-    print("DIMENSIONAL ANALYSIS ISSUES")
-    print(f"{'='*60}\n")
-
-    for v in violations:
-        print(f"Line {v['line']}: {v['type']}")
-        print(f"  Expression: {v['expression']}")
-        if v.get('left_dimension') and v.get('right_dimension'):
-            print(f"  Left: {v['left_dimension']}, Right: {v['right_dimension']}")
-        print(f"  {v['description']}")
-        print(f"  Physical meaning: {v['physical_meaning']}")
-        print(f"  Fix: {v['recommendation']}")
-        print()
+    console.print_rule("Dimensional Analysis Issues")
+    console.print_violations(violations, file_path=args.path, source=source)
 
     summary = result.get('summary', {})
-    print(f"Verdict: {summary.get('verdict', 'Unknown')}")
+    console.print_warning(f"Verdict: {summary.get('verdict', 'Unknown')}")
 
     return 1 if any(v['severity'] == 'critical' for v in violations) else 0
 
@@ -355,71 +362,45 @@ def tensor_command(args: argparse.Namespace) -> int:
     """Check deep learning integrity."""
     from demyst.guards.tensor_guard import TensorGuard
 
+    console = get_console()
     logger.info(f"Checking deep learning integrity in {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     guard = TensorGuard()
     result = guard.analyze(source)
 
     if result.get('error'):
-        print(f"Error: {result['error']}")
+        console.print_error(result['error'])
         return 1
 
     has_issues = False
 
     if result.get('gradient_issues'):
         has_issues = True
-        print(f"\n{'='*60}")
-        print("GRADIENT FLOW ISSUES")
-        print(f"{'='*60}\n")
-
-        for issue in result['gradient_issues']:
-            print(f"Line {issue['line']}: {issue['type']}")
-            print(f"  Severity: {issue['severity']}")
-            print(f"  {issue['description']}")
-            print(f"  Scientific impact: {issue['scientific_impact']}")
-            print(f"  Fix: {issue['recommendation']}")
-            print()
+        console.print_rule("Gradient Flow Issues")
+        console.print_violations(result['gradient_issues'], file_path=args.path, source=source)
 
     if result.get('normalization_issues'):
         has_issues = True
-        print(f"\n{'='*60}")
-        print("NORMALIZATION ISSUES")
-        print(f"{'='*60}\n")
-
-        for issue in result['normalization_issues']:
-            print(f"Line {issue['line']}: {issue['type']}")
-            print(f"  Layer: {issue['layer']}")
-            print(f"  {issue['description']}")
-            print(f"  Masked statistics: {', '.join(issue['masked_statistics'])}")
-            print(f"  Fix: {issue['recommendation']}")
-            print()
+        console.print_rule("Normalization Issues")
+        console.print_violations(result['normalization_issues'], file_path=args.path, source=source)
 
     if result.get('reward_issues'):
         has_issues = True
-        print(f"\n{'='*60}")
-        print("REWARD HACKING VULNERABILITIES")
-        print(f"{'='*60}\n")
-
-        for issue in result['reward_issues']:
-            print(f"Line {issue['line']}: {issue['type']}")
-            print(f"  Function: {issue['function']}")
-            print(f"  {issue['description']}")
-            print(f"  Exploit vector: {issue['exploit_vector']}")
-            print(f"  Fix: {issue['recommendation']}")
-            print()
+        console.print_rule("Reward Hacking Vulnerabilities")
+        console.print_violations(result['reward_issues'], file_path=args.path, source=source)
 
     if not has_issues:
-        print("No deep learning integrity issues detected.")
+        console.print_success("No deep learning integrity issues detected.")
         return 0
 
     summary = result.get('summary', {})
-    print(f"\nVerdict: {summary.get('verdict', 'Unknown')}")
+    console.print_warning(f"\nVerdict: {summary.get('verdict', 'Unknown')}")
 
     return 1 if summary.get('critical_issues', 0) > 0 else 0
 
@@ -429,6 +410,7 @@ def report_command(args: argparse.Namespace) -> int:
     from demyst.generators.report_generator import IntegrityReportGenerator
     from demyst.integrations.ci_enforcer import CIEnforcer
 
+    console = get_console()
     logger.info(f"Generating report for {args.path}")
 
     enforcer = CIEnforcer()
@@ -458,13 +440,15 @@ def report_command(args: argparse.Namespace) -> int:
             issues,
             ["Use VariationTensor to preserve statistical metadata"] if issues else []
         )
+        # Add other sections similarly if needed (omitted for brevity in original, preserving behavior)
 
     if args.format == 'html':
         print(generator.to_html())
     elif args.format == 'json':
         print(generator.to_json())
     else:
-        print(generator.to_markdown())
+        # Render markdown using Rich
+        console.print(generator.to_markdown())
 
     return 0
 
@@ -473,12 +457,13 @@ def paper_command(args: argparse.Namespace) -> int:
     """Generate LaTeX methodology section from code."""
     from demyst.generators.paper_generator import PaperGenerator
 
+    console = get_console()
     logger.info(f"Generating LaTeX for {args.path}")
 
     try:
         source = safe_read_file(args.path)
     except Exception as e:
-        print(f"Error: {e}")
+        console.print_error(str(e))
         return 1
 
     generator = PaperGenerator(style=args.style)
@@ -492,9 +477,9 @@ def paper_command(args: argparse.Namespace) -> int:
         try:
             with open(args.output, 'w') as f:
                 f.write(latex)
-            print(f"LaTeX written to {args.output}")
+            console.print_success(f"LaTeX written to {args.output}")
         except Exception as e:
-            print(f"Error writing file: {e}")
+            console.print_error(f"Error writing file: {e}")
             return 1
     else:
         print(latex)
@@ -506,6 +491,7 @@ def ci_command(args: argparse.Namespace) -> int:
     """Run in CI/CD enforcement mode."""
     from demyst.integrations.ci_enforcer import CIEnforcer
 
+    console = get_console()
     logger.info(f"Running CI enforcement on {args.path}")
 
     # Load configuration
@@ -519,6 +505,11 @@ def ci_command(args: argparse.Namespace) -> int:
             logger.warning(f"Failed to load config: {e}")
 
     enforcer = CIEnforcer(config=config)
+    
+    # CI command likely prints its own output, but let's ensure it uses the console if possible
+    # or we capture the result. CIEnforcer.enforce returns exit code.
+    # It seems CIEnforcer methods print to stdout. Ideally refactor CIEnforcer too, 
+    # but for now we just run it.
     exit_code = enforcer.enforce(
         directory=args.path,
         fail_on_warning=args.strict
@@ -532,20 +523,20 @@ def fix_command(args: argparse.Namespace) -> int:
     from demyst.integrations.ci_enforcer import CIEnforcer
     from demyst.fixer import DemystFixer
 
+    console = get_console()
     logger.info(f"Running auto-fix on {args.path}")
-    print(f"Running auto-fix on {args.path}...")
+    console.print_info(f"Running auto-fix on {args.path}...")
 
     # First analyze to find issues
     enforcer = CIEnforcer()
 
     if os.path.isdir(args.path):
-        report = enforcer.analyze_directory(args.path)
+        # Directory logic
         fixer = DemystFixer(dry_run=args.dry_run, interactive=args.interactive)
-
-        # For now, show message about directory fix being in beta
-        print("Directory auto-fix is currently in beta.")
+        console.print_warning("Directory auto-fix is currently in beta.")
+        
         if args.dry_run:
-            print("[DRY RUN] Would process files in directory.")
+            console.print_info("[DRY RUN] Would process files in directory.")
         return 0
     else:
         result = enforcer.analyze_file(args.path)
@@ -557,7 +548,7 @@ def fix_command(args: argparse.Namespace) -> int:
             violations.extend(result['mirage'].get('issues', []))
 
         if not violations:
-            print("No issues found to fix.")
+            console.print_success("No issues found to fix.")
             return 0
 
         fixer.fix_file(args.path, violations)
@@ -567,15 +558,18 @@ def fix_command(args: argparse.Namespace) -> int:
 
 def version_command(args: argparse.Namespace) -> int:
     """Print version information."""
-    print(f"Demyst v{__version__}")
-    print("Demystify Your Scientific Code")
-    print("\nComponents:")
-    print("  - MirageDetector: Computational mirage detection")
-    print("  - TensorGuard: Deep learning integrity")
-    print("  - LeakageHunter: Data leakage detection")
-    print("  - HypothesisGuard: Statistical validity")
-    print("  - UnitGuard: Dimensional analysis")
-    print("  - PaperGenerator: LaTeX methodology")
+    console = get_console()
+    
+    title = f"Demyst v{__version__}"
+    console.print_rule(title)
+    console.print("Demystify Your Scientific Code")
+    console.print("\nComponents:")
+    console.print("  - [mirage]MirageDetector[/mirage]: Computational mirage detection")
+    console.print("  - [tensor]TensorGuard[/tensor]: Deep learning integrity")
+    console.print("  - [leakage]LeakageHunter[/leakage]: Data leakage detection")
+    console.print("  - [hypothesis]HypothesisGuard[/hypothesis]: Statistical validity")
+    console.print("  - [unit]UnitGuard[/unit]: Dimensional analysis")
+    console.print("  - PaperGenerator: LaTeX methodology")
     return 0
 
 
@@ -613,7 +607,7 @@ For more information: https://github.com/demyst/demyst
     analyze_parser = subparsers.add_parser('analyze', help='Run all integrity checks')
     analyze_parser.add_argument('path', help='File or directory to analyze')
     analyze_parser.add_argument('--format', '-f', choices=['markdown', 'json', 'text'],
-                               default='markdown', help='Output format')
+                               default='text', help='Output format')
     analyze_parser.add_argument('--config', '-c', help='Path to configuration file')
     analyze_parser.set_defaults(func=analyze_command)
 
@@ -652,8 +646,8 @@ For more information: https://github.com/demyst/demyst
     # Report command
     report_parser = subparsers.add_parser('report', help='Generate integrity report')
     report_parser.add_argument('path', help='File or directory to analyze')
-    report_parser.add_argument('--format', '-f', choices=['markdown', 'html', 'json'],
-                              default='markdown', help='Output format')
+    report_parser.add_argument('--format', '-f', choices=['markdown', 'html', 'json', 'text'],
+                              default='text', help='Output format')
     report_parser.set_defaults(func=report_command)
 
     # Paper command

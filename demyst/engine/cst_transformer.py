@@ -249,14 +249,26 @@ class VariationTensorTransformer(cst.CSTTransformer):
         - np.mean(array) -> VariationTensor(array).collapse('mean')
         - array.mean() -> VariationTensor(array).collapse('mean')
         """
+        # Determine if this is a library call (np.mean) or method call (x.mean)
+        is_library_call = False
+        if isinstance(node.func, cst.Attribute) and isinstance(node.func.value, cst.Name):
+            if node.func.value.value in ('np', 'numpy', 'torch', 'jax', 'tf', 'tensorflow'):
+                is_library_call = True
+
         # Extract the data argument
-        if isinstance(node.func, cst.Attribute):
+        if is_library_call:
+            # np.mean(array) - first positional arg
+            if not node.args:
+                raise CSTTransformError("No arguments to transform", node_type="Call")
+            data_arg = node.args[0].value
+            keywords = list(node.args[1:]) if len(node.args) > 1 else []
+        elif isinstance(node.func, cst.Attribute):
             # array.mean() - the array is the value
             data_arg = node.func.value
             # Filter out axis keyword for method calls
             keywords = [kw for kw in node.args if isinstance(kw, cst.Arg) and kw.keyword is not None]
         else:
-            # np.mean(array) - first positional arg
+            # mean(array) - first positional arg
             if not node.args:
                 raise CSTTransformError("No arguments to transform", node_type="Call")
             data_arg = node.args[0].value
@@ -283,8 +295,19 @@ class VariationTensorTransformer(cst.CSTTransformer):
         """
         Create VariationTensor(x).ensemble_sum(axis) from np.sum(x, axis=0).
         """
+        # Determine if this is a library call (np.sum) or method call (x.sum)
+        is_library_call = False
+        if isinstance(node.func, cst.Attribute) and isinstance(node.func.value, cst.Name):
+            if node.func.value.value in ('np', 'numpy', 'torch', 'jax', 'tf', 'tensorflow'):
+                is_library_call = True
+
         # Extract data and axis arguments
-        if isinstance(node.func, cst.Attribute):
+        if is_library_call:
+             if not node.args:
+                raise CSTTransformError("No arguments to transform", node_type="Call")
+             data_arg = node.args[0].value
+             axis_arg = self._extract_axis_arg(node.args[1:])
+        elif isinstance(node.func, cst.Attribute):
             data_arg = node.func.value
             axis_arg = self._extract_axis_arg(node.args)
         else:
@@ -509,7 +532,8 @@ class CSTTranspiler:
         transformer = VariationTensorTransformer(mirages, target_line)
         try:
             # Transform the tree
-            new_tree = tree.visit(transformer)
+            # Use wrapper.module to ensure we transform the same nodes that were visited
+            new_tree = wrapper.module.visit(transformer)
         except Exception as e:
             raise TransformationError(
                 f"Failed to transform code: {e}",

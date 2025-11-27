@@ -228,6 +228,14 @@ class DemystConsole:
             self.print_success("No violations detected.")
             return
 
+        # Read source if not provided
+        if not source and file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    source = f.read()
+            except Exception:
+                pass
+
         source_lines = source.splitlines() if source else []
 
         for v in violations:

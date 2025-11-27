@@ -26,6 +26,9 @@ Scilint attacks this problem from the code verification angle:
 | **Solution** | Verify proof steps | Verify computation integrity |
 | **Approach** | Self-verifiable reasoning | Information-preserving transforms |
 
+See the [Full Demonstration](docs/demonstration.md) for detailed examples of Scilint in action.
+
+
 ## What Scilint Detects
 
 ### 1. Computational Mirages
@@ -88,6 +91,20 @@ result = distance_meters + time_seconds
 
 # Scilint detects: "Cannot add quantities with dimensions [L] and [T]"
 ```
+
+## What Scilint Catches
+
+Scilint is designed to catch **scientific logic errors** that standard linters miss.
+
+| Domain | Error Type | Example |
+|--------|------------|---------|
+| **General Science** | **Computational Mirages** | Calculating `mean()` on a swarm where variance is critical (e.g., 1 rogue agent). |
+| **Physics** | **Dimensional Analysis** | Adding `time` to `distance` or assigning `energy` to `force`. |
+| **Biology** | **P-Hacking** | Running 1,000 t-tests in a loop without Bonferroni correction. |
+| **Chemistry** | **Stoichiometry** | Adding `mass` (grams) to `moles` directly. |
+| **Machine Learning** | **Data Leakage** | Scaling data before splitting into train/test sets. |
+| **Statistics** | **Cherry Picking** | Reporting only the "significant" result from multiple uncorrected trials. |
+
 
 ## Installation
 

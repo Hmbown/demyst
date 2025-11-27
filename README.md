@@ -155,28 +155,56 @@ Standard analysis using `np.mean()` gives a score of **0.999**. You deploy, and 
 
 ## Architecture
 
+
+
+Demyst leverages **Abstract Syntax Tree (AST) parsing** for deep, semantic code analysis, ensuring it operates as a sophisticated code analysis tool rather than a "dumb" linter relying solely on regex.
+
+
+
 ```
+
 demyst/
+
 ├── engine/
-│   ├── mirage_detector.py        # AST visitor that flags destructive ops
+
+│   ├── mirage_detector.py        # **AST visitor** that flags destructive ops (critical for semantic analysis)
+
 │   ├── variation_tensor.py       # Information-preserving data structure
+
 │   ├── variation_transformer.py  # AST transformer for auto-fix
+
 │   └── transpiler.py             # Auto-rewrites code
+
 ├── guards/
+
 │   ├── tensor_guard.py           # Deep learning integrity
+
 │   ├── leakage_hunter.py         # Data leakage detection
+
 │   ├── hypothesis_guard.py       # Statistical validity (anti-p-hacking)
+
 │   └── unit_guard.py             # Dimensional analysis
+
 ├── integrations/
+
 │   ├── ci_enforcer.py            # CI/CD integration
+
 │   ├── torch_hooks.py            # PyTorch integration
-│   ├── jax_hooks.py              # JAX integration
+
+│   ├── jax_hooks.py            # JAX integration
+
 │   └── experiment_trackers.py    # WandB/MLflow integration
+
 ├── generators/
+
 │   ├── paper_generator.py        # LaTeX methodology generator
+
 │   └── report_generator.py       # Integrity reports
+
 └── config/
+
     └── manager.py                # Configuration management
+
 ```
 
 ## Configuration

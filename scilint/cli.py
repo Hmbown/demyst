@@ -15,6 +15,7 @@ Usage:
     scilint report <path>           # Generate full integrity report
     scilint paper <path>            # Generate LaTeX methodology
     scilint ci <path>               # CI/CD enforcement mode
+    scilint fix <path>              # Auto-fix issues
 """
 
 import argparse
@@ -32,7 +33,14 @@ def analyze_command(args):
     """Run comprehensive analysis on a file or directory."""
     from scilint.integrations.ci_enforcer import CIEnforcer
 
-    enforcer = CIEnforcer()
+    # Load configuration
+    config = {}
+    if args.config:
+        import yaml
+        with open(args.config, 'r') as f:
+            config = yaml.safe_load(f)
+
+    enforcer = CIEnforcer(config=config)
 
     if os.path.isdir(args.path):
         report = enforcer.analyze_directory(args.path)
@@ -356,13 +364,58 @@ def ci_command(args):
     """Run in CI/CD enforcement mode."""
     from scilint.integrations.ci_enforcer import CIEnforcer
 
-    enforcer = CIEnforcer()
+    # Load configuration
+    config = {}
+    if args.config:
+        import yaml
+        with open(args.config, 'r') as f:
+            config = yaml.safe_load(f)
+
+    enforcer = CIEnforcer(config=config)
     exit_code = enforcer.enforce(
         directory=args.path,
         fail_on_warning=args.strict
     )
 
     return exit_code
+
+
+def fix_command(args):
+    """Auto-fix command."""
+    from scilint.integrations.ci_enforcer import CIEnforcer
+    from scilint.fixer import ScilintFixer
+
+    print(f"Running auto-fix on {args.path}...")
+
+    # First analyze to find issues
+    enforcer = CIEnforcer()
+    if os.path.isdir(args.path):
+        report = enforcer.analyze_directory(args.path)
+        # Flatten issues from checks
+        # This part needs better integration, for now iterating files again or using report structure
+        # Since fix_file takes violations per file, we should probably iterate files
+
+        fixer = ScilintFixer(dry_run=args.dry_run, interactive=args.interactive)
+
+        # Simple iteration for now (CIEnforcer doesn't easily expose per-file violation list in report structure neatly mapped)
+        # But analyze_directory does internal iteration.
+        # For the stub, we will just instantiate the fixer.
+
+        print("Auto-fix is currently in beta. No changes will be made to files yet.")
+
+    else:
+        result = enforcer.analyze_file(args.path)
+        fixer = ScilintFixer(dry_run=args.dry_run, interactive=args.interactive)
+
+        # Collect all violations
+        violations = []
+        if result.get('mirage') and not result['mirage'].get('error'):
+            violations.extend(result['mirage'].get('issues', []))
+        # ... collect others ...
+
+        fixer.fix_file(args.path, violations)
+
+    return 0
 
 
 def version_command(args):
@@ -409,6 +462,7 @@ For more information: https://github.com/scilint/scilint
     analyze_parser.add_argument('path', help='File or directory to analyze')
     analyze_parser.add_argument('--format', '-f', choices=['markdown', 'json', 'text'],
                                default='markdown', help='Output format')
+    analyze_parser.add_argument('--config', '-c', help='Path to configuration file')
     analyze_parser.set_defaults(func=analyze_command)
 
     # Mirage command
@@ -460,7 +514,15 @@ For more information: https://github.com/scilint/scilint
     ci_parser.add_argument('path', nargs='?', default='.', help='Directory to analyze')
     ci_parser.add_argument('--strict', action='store_true',
                           help='Fail on warnings (not just critical issues)')
+    ci_parser.add_argument('--config', '-c', help='Path to configuration file')
     ci_parser.set_defaults(func=ci_command)
+
+    # Fix command
+    fix_parser = subparsers.add_parser('fix', help='Auto-fix issues')
+    fix_parser.add_argument('path', help='File or directory to fix')
+    fix_parser.add_argument('--dry-run', action='store_true', help='Show what would be done')
+    fix_parser.add_argument('--interactive', '-i', action='store_true', help='Ask before applying fix')
+    fix_parser.set_defaults(func=fix_command)
 
     args = parser.parse_args()
 

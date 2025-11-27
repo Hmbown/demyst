@@ -162,7 +162,15 @@ class CIEnforcer:
         Args:
             config: Optional configuration dictionary
         """
-        self.config = config or {}
+        from scilint.config.manager import ConfigManager
+
+        self.config_manager = ConfigManager()
+        if config:
+             self.config_manager.config = self.config_manager._merge_configs(
+                 self.config_manager.config, config
+             )
+
+        self.config = self.config_manager.config
         self._import_guards()
 
     def _import_guards(self):
@@ -213,52 +221,67 @@ class CIEnforcer:
         }
 
         # Run mirage detection
-        try:
-            import ast
-            tree = ast.parse(source)
-            detector = self.MirageDetector()
-            detector.visit(tree)
-            results['mirage'] = {
-                'issues': [
-                    {
-                        'type': m['type'],
-                        'line': m['line'],
-                        'function': m.get('function'),
-                        'description': f"Computational mirage: {m['type']} operation destroys variance information"
-                    }
-                    for m in detector.mirages
-                ]
-            }
-        except Exception as e:
-            results['mirage'] = {'error': str(e)}
+        if self.config_manager.is_rule_enabled("mirage"):
+            try:
+                import ast
+                tree = ast.parse(source)
+                detector = self.MirageDetector(config=self.config_manager.get_rule_config("mirage"))
+                detector.visit(tree)
+                results['mirage'] = {
+                    'issues': [
+                        {
+                            'type': m['type'],
+                            'line': m['line'],
+                            'function': m.get('function'),
+                            'description': f"Computational mirage: {m['type']} operation destroys variance information"
+                        }
+                        for m in detector.mirages
+                    ]
+                }
+            except Exception as e:
+                results['mirage'] = {'error': str(e)}
+        else:
+             results['mirage'] = {'skipped': True}
 
         # Run tensor guard (deep learning checks)
-        try:
-            tensor_guard = self.TensorGuard()
-            results['tensor'] = tensor_guard.analyze(source)
-        except Exception as e:
-            results['tensor'] = {'error': str(e)}
+        if self.config_manager.is_rule_enabled("tensor"):
+            try:
+                tensor_guard = self.TensorGuard(config=self.config_manager.get_rule_config("tensor"))
+                results['tensor'] = tensor_guard.analyze(source)
+            except Exception as e:
+                results['tensor'] = {'error': str(e)}
+        else:
+            results['tensor'] = {'skipped': True}
 
         # Run leakage hunter
-        try:
-            leakage_hunter = self.LeakageHunter()
-            results['leakage'] = leakage_hunter.analyze(source)
-        except Exception as e:
-            results['leakage'] = {'error': str(e)}
+        if self.config_manager.is_rule_enabled("leakage"):
+            try:
+                leakage_hunter = self.LeakageHunter(config=self.config_manager.get_rule_config("leakage"))
+                results['leakage'] = leakage_hunter.analyze(source)
+            except Exception as e:
+                results['leakage'] = {'error': str(e)}
+        else:
+            results['leakage'] = {'skipped': True}
 
         # Run hypothesis guard
-        try:
-            hypothesis_guard = self.HypothesisGuard()
-            results['hypothesis'] = hypothesis_guard.analyze_code(source)
-        except Exception as e:
-            results['hypothesis'] = {'error': str(e)}
+        if self.config_manager.is_rule_enabled("hypothesis"):
+            try:
+                hypothesis_guard = self.HypothesisGuard(config=self.config_manager.get_rule_config("hypothesis"))
+                results['hypothesis'] = hypothesis_guard.analyze_code(source)
+            except Exception as e:
+                results['hypothesis'] = {'error': str(e)}
+        else:
+            results['hypothesis'] = {'skipped': True}
 
         # Run unit guard
-        try:
-            unit_guard = self.UnitGuard()
-            results['unit'] = unit_guard.analyze(source)
-        except Exception as e:
-            results['unit'] = {'error': str(e)}
+        if self.config_manager.is_rule_enabled("unit"):
+            try:
+                unit_guard = self.UnitGuard(config=self.config_manager.get_rule_config("unit"))
+                results['unit'] = unit_guard.analyze(source)
+            except Exception as e:
+                results['unit'] = {'error': str(e)}
+        else:
+            results['unit'] = {'skipped': True}
 
         return results
 
@@ -276,10 +299,7 @@ class CIEnforcer:
         Returns:
             Complete integrity report
         """
-        exclude_patterns = exclude_patterns or [
-            '**/test_*', '**/*_test.py', '**/tests/**',
-            '**/.git/**', '**/venv/**', '**/__pycache__/**'
-        ]
+        exclude_patterns = exclude_patterns or self.config_manager.get_ignore_patterns()
         include_patterns = include_patterns or ['**/*.py']
 
         # Collect files

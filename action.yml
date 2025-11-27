@@ -1,17 +1,136 @@
-name: "Scilint: Scientific Safety Net"
-description: "Automatically detects computational mirages and scientific errors in your code."
+name: "Scilint: Scientific Integrity Platform"
+description: "The automated peer reviewer for AI research. Detects computational mirages, data leakage, p-hacking, and more."
+author: "Scilint Team"
+
 inputs:
-  target:
-    description: "File or directory to scan"
-    required: true
+  path:
+    description: "File or directory to analyze"
+    required: false
     default: "."
+  mode:
+    description: "Analysis mode: full, mirage, leakage, hypothesis, units, tensor"
+    required: false
+    default: "full"
+  strict:
+    description: "Fail on warnings (not just critical issues)"
+    required: false
+    default: "false"
+  format:
+    description: "Output format: markdown, json"
+    required: false
+    default: "markdown"
+  python-version:
+    description: "Python version to use"
+    required: false
+    default: "3.10"
+
+outputs:
+  status:
+    description: "Analysis status: passing, warning, failing"
+    value: ${{ steps.analyze.outputs.status }}
+  report:
+    description: "Path to the generated report file"
+    value: ${{ steps.analyze.outputs.report }}
+  issues-found:
+    description: "Number of issues found"
+    value: ${{ steps.analyze.outputs.issues }}
+
 runs:
   using: "composite"
   steps:
-    - run: pip install scilint
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install Scilint
       shell: bash
-    - run: python -m scilint --target ${{ inputs.target }}
+      run: |
+        pip install --upgrade pip
+        pip install scilint
+
+    - name: Run Scilint Analysis
+      id: analyze
       shell: bash
+      run: |
+        set +e  # Don't exit on error
+
+        # Build command based on mode
+        if [ "${{ inputs.mode }}" == "full" ]; then
+          CMD="scilint ci ${{ inputs.path }}"
+        else
+          CMD="scilint ${{ inputs.mode }} ${{ inputs.path }}"
+        fi
+
+        # Add strict flag if enabled
+        if [ "${{ inputs.strict }}" == "true" ]; then
+          CMD="$CMD --strict"
+        fi
+
+        # Run analysis and capture output
+        OUTPUT=$(eval $CMD 2>&1)
+        EXIT_CODE=$?
+
+        # Save report
+        echo "$OUTPUT" > .scilint_report.md
+
+        # Set outputs
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "status=passing" >> $GITHUB_OUTPUT
+        elif [ $EXIT_CODE -eq 1 ]; then
+          echo "status=failing" >> $GITHUB_OUTPUT
+        else
+          echo "status=warning" >> $GITHUB_OUTPUT
+        fi
+
+        echo "report=.scilint_report.md" >> $GITHUB_OUTPUT
+
+        # Count issues (rough estimate from report)
+        ISSUES=$(echo "$OUTPUT" | grep -c "Line [0-9]*:" || echo "0")
+        echo "issues=$ISSUES" >> $GITHUB_OUTPUT
+
+        # Output the report
+        echo "$OUTPUT"
+
+        # Exit with appropriate code
+        if [ "${{ inputs.strict }}" == "true" ]; then
+          exit $EXIT_CODE
+        else
+          # Only fail on critical issues (exit code 1)
+          if [ $EXIT_CODE -eq 1 ]; then
+            exit 1
+          fi
+          exit 0
+        fi
+
+    - name: Upload Report Artifact
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: scilint-report
+        path: .scilint_report.md
+
+    - name: Post PR Comment
+      if: github.event_name == 'pull_request' && always()
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = fs.readFileSync('.scilint_report.md', 'utf8');
+
+          // Truncate if too long
+          const maxLength = 65000;
+          const truncatedReport = report.length > maxLength
+            ? report.substring(0, maxLength) + '\n\n... (truncated)'
+            : report;
+
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: truncatedReport
+          });
+
 branding:
-  icon: "activity"
+  icon: "shield"
   color: "purple"

@@ -5,9 +5,10 @@ class MirageDetector(ast.NodeVisitor):
     AST visitor that detects destructive operations that collapse physical information
     """
     
-    def __init__(self):
+    def __init__(self, config=None):
         self.mirages = []
         self.current_function = None
+        self.config = config or {}
         
     def visit_Call(self, node):
         """Detect destructive numpy operations"""

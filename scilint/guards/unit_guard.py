@@ -483,7 +483,8 @@ class UnitGuard:
             print(f"Line {v['line']}: {v['description']}")
     """
 
-    def __init__(self):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
         self.analyzer: Optional[DimensionalAnalyzer] = None
 
     def analyze(self, source: str) -> Dict[str, Any]:

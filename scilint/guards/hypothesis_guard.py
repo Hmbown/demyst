@@ -479,7 +479,8 @@ class HypothesisGuard:
         4. Generates corrected statistical interpretations
     """
 
-    def __init__(self, experiment_storage: Optional[str] = None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None, experiment_storage: Optional[str] = None):
+        self.config = config or {}
         self.corrector = BonferroniCorrector()
         self.tracker = ExperimentTracker(experiment_storage)
         self.analyzer: Optional[HypothesisAnalyzer] = None

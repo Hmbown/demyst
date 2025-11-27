@@ -474,7 +474,8 @@ class TensorGuard:
         - RewardHackingDetector: RL reward function vulnerability detection
     """
 
-    def __init__(self):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
         self.gradient_detector = GradientDeathDetector()
         self.norm_analyzer = NormalizationAnalyzer()
         self.reward_detector = RewardHackingDetector()

@@ -34,6 +34,7 @@ setup(
     python_requires=">=3.8",
     install_requires=[
         "numpy>=1.20.0",
+        "PyYAML>=6.0",
     ],
     extras_require={
         "torch": ["torch>=1.9.0"],

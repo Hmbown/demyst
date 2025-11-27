@@ -136,6 +136,12 @@ demyst tensor network.py         # Check deep learning integrity
 demyst mirage model.py --fix
 demyst mirage model.py --fix --dry-run  # Preview changes
 
+# Generate Integrity Certificate (New in v1.2.0)
+demyst report model.py --cert    # Creates signed integrity_certificate.json
+
+# Run Red Team Benchmark
+demyst red-team                  # Prove Demyst catches 100% of synthetic bugs
+
 # CI/CD mode
 demyst ci . --strict
 
@@ -191,9 +197,13 @@ demyst/
 
 │   ├── torch_hooks.py            # PyTorch integration
 
-│   ├── jax_hooks.py            # JAX integration
+│   ├── jax_hooks.py              # JAX integration
 
 │   └── experiment_trackers.py    # WandB/MLflow integration
+
+├── mcp.py                        # **MCP Server** for AI Agents (Cursor, Claude)
+
+├── red_team.py                   # **Red Team Benchmark** suite
 
 ├── generators/
 

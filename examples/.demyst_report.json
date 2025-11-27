@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-11-27T11:32:01.482074",
-  "repository": "scilint",
-  "branch": "main",
-  "commit": "daca68603668f14025dd95b4b6f2e62105e0f158",
+  "timestamp": "2025-11-27T19:21:41.882408",
+  "repository": "demyst",
+  "branch": "claude/demyst-professional-upgrade-01BZGVgSUXihZBnYStqvD4Vw",
+  "commit": "9f9927613a70bfc78dc12362ea8abe9d33e2cd32",
   "files_analyzed": 5,
   "total_issues": 12,
   "critical_issues": 12,
@@ -15,24 +15,24 @@
       "issues": [
         {
           "type": "mean",
-          "line": 24,
-          "function": "analyze_swarm_safety",
-          "description": "Computational mirage: mean operation destroys variance information",
-          "file": "/Volumes/VIXinSSD/demyst/examples/swarm_collapse.py"
-        },
-        {
-          "type": "mean",
           "line": 12,
           "function": "analyze_random_walk",
           "description": "Computational mirage: mean operation destroys variance information",
-          "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
+          "file": "/home/user/demyst/examples/random_walk.py"
         },
         {
           "type": "premature_discretization",
           "line": 17,
           "function": "analyze_random_walk",
           "description": "Computational mirage: premature_discretization operation destroys variance information",
-          "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
+          "file": "/home/user/demyst/examples/random_walk.py"
+        },
+        {
+          "type": "mean",
+          "line": 24,
+          "function": "analyze_swarm_safety",
+          "description": "Computational mirage: mean operation destroys variance information",
+          "file": "/home/user/demyst/examples/swarm_collapse.py"
         }
       ],
       "recommendations": [
@@ -67,7 +67,7 @@
           "statistical_impact": "Running multiple statistical tests inflates the false positive rate. With 20 tests at alpha=0.05, you have a 64% chance of at least one false positive (1 - 0.95^20).",
           "corrected_interpretation": "Apply Bonferroni correction: divide alpha by number of tests, or use Benjamini-Hochberg for FDR control.",
           "recommendation": "from statsmodels.stats.multitest import multipletests\nrejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')",
-          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
+          "file": "/home/user/demyst/examples/biology_gene_expression.py"
         },
         {
           "type": "conditional_reporting",
@@ -77,7 +77,7 @@
           "statistical_impact": "Conditioning on significance leads to publication bias. Non-significant results are equally important for science.",
           "corrected_interpretation": "Report ALL results regardless of significance. Use pre-registration to prevent outcome-dependent analysis.",
           "recommendation": "Remove conditional branching on p-values. Report effect sizes and confidence intervals instead of just significance.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
+          "file": "/home/user/demyst/examples/biology_gene_expression.py"
         }
       ],
       "recommendations": [
@@ -91,71 +91,6 @@
       "severity": "critical",
       "issues": [
         {
-          "type": "dimension_mismatch",
-          "severity": "warning",
-          "line": 6,
-          "col": 4,
-          "expression": "g = 9.81",
-          "left_dimension": "[M]",
-          "right_dimension": "[1]",
-          "description": "Variable 'g' suggests dimension [M] but is assigned value with dimension [1].",
-          "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
-          "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
-        },
-        {
-          "type": "incompatible_addition",
-          "severity": "critical",
-          "line": 13,
-          "col": 17,
-          "expression": "0.5 * g * time_seconds ** 2 + 5.0",
-          "left_dimension": "[T]",
-          "right_dimension": "[1]",
-          "description": "Cannot add quantities with dimensions [T] and [1].",
-          "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
-          "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
-        },
-        {
-          "type": "incompatible_addition",
-          "severity": "critical",
-          "line": 17,
-          "col": 19,
-          "expression": "distance_x + time_seconds",
-          "left_dimension": "[L]",
-          "right_dimension": "[T]",
-          "description": "Cannot add quantities with dimensions [L] and [T].",
-          "physical_meaning": "This is like adding meters to seconds. The result has no physical meaning.",
-          "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
-        },
-        {
-          "type": "dimension_mismatch",
-          "severity": "warning",
-          "line": 23,
-          "col": 4,
-          "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
-          "left_dimension": "[L M T^-2]",
-          "right_dimension": "[L M T^-1]",
-          "description": "Variable 'force_impact' suggests dimension [L M T^-2] but is assigned value with dimension [L M T^-1].",
-          "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
-          "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
-        },
-        {
-          "type": "incompatible_comparison",
-          "severity": "critical",
-          "line": 24,
-          "col": 11,
-          "expression": "p_val < 0.05",
-          "left_dimension": "[L^2 M T^-3]",
-          "right_dimension": "[1]",
-          "description": "Comparing quantities with incompatible dimensions: [L^2 M T^-3] vs [1].",
-          "physical_meaning": "Comparing physically incompatible quantities. The comparison result is meaningless.",
-          "recommendation": "Convert to same units before comparing, or verify this comparison makes physical sense.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
-        },
-        {
           "type": "incompatible_addition",
           "severity": "critical",
           "line": 11,
@@ -166,7 +101,7 @@
           "description": "Cannot add quantities with dimensions [M] and [1].",
           "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/chemistry_stoichiometry.py"
+          "file": "/home/user/demyst/examples/chemistry_stoichiometry.py"
         },
         {
           "type": "dimension_mismatch",
@@ -179,7 +114,72 @@
           "description": "Variable 'mass_limit' suggests dimension [M] but is assigned value with dimension [1].",
           "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
           "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/chemistry_stoichiometry.py"
+          "file": "/home/user/demyst/examples/chemistry_stoichiometry.py"
+        },
+        {
+          "type": "dimension_mismatch",
+          "severity": "warning",
+          "line": 6,
+          "col": 4,
+          "expression": "g = 9.81",
+          "left_dimension": "[M]",
+          "right_dimension": "[1]",
+          "description": "Variable 'g' suggests dimension [M] but is assigned value with dimension [1].",
+          "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
+          "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
+          "file": "/home/user/demyst/examples/physics_kinematics.py"
+        },
+        {
+          "type": "incompatible_addition",
+          "severity": "critical",
+          "line": 13,
+          "col": 17,
+          "expression": "0.5 * g * time_seconds ** 2 + 5.0",
+          "left_dimension": "[T]",
+          "right_dimension": "[1]",
+          "description": "Cannot add quantities with dimensions [T] and [1].",
+          "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
+          "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
+          "file": "/home/user/demyst/examples/physics_kinematics.py"
+        },
+        {
+          "type": "incompatible_addition",
+          "severity": "critical",
+          "line": 17,
+          "col": 19,
+          "expression": "distance_x + time_seconds",
+          "left_dimension": "[L]",
+          "right_dimension": "[T]",
+          "description": "Cannot add quantities with dimensions [L] and [T].",
+          "physical_meaning": "This is like adding meters to seconds. The result has no physical meaning.",
+          "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
+          "file": "/home/user/demyst/examples/physics_kinematics.py"
+        },
+        {
+          "type": "dimension_mismatch",
+          "severity": "warning",
+          "line": 23,
+          "col": 4,
+          "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
+          "left_dimension": "[L M T^-2]",
+          "right_dimension": "[L M T^-1]",
+          "description": "Variable 'force_impact' suggests dimension [L M T^-2] but is assigned value with dimension [L M T^-1].",
+          "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
+          "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
+          "file": "/home/user/demyst/examples/physics_kinematics.py"
+        },
+        {
+          "type": "incompatible_comparison",
+          "severity": "critical",
+          "line": 24,
+          "col": 11,
+          "expression": "p_val < 0.05",
+          "left_dimension": "[L^2 M T^-3]",
+          "right_dimension": "[1]",
+          "description": "Comparing quantities with incompatible dimensions: [L^2 M T^-3] vs [1].",
+          "physical_meaning": "Comparing physically incompatible quantities. The comparison result is meaningless.",
+          "recommendation": "Convert to same units before comparing, or verify this comparison makes physical sense.",
+          "file": "/home/user/demyst/examples/biology_gene_expression.py"
         }
       ],
       "recommendations": [

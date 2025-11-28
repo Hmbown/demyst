@@ -251,13 +251,17 @@ ML_PATTERNS = {
     r"^X$": Dimension.dimensionless(),
     # Common ML variable patterns
     r"(?:^|_)(logits?|probs?|scores?|weights?|bias|loss|grad|gradient)(?:_|$)": Dimension.dimensionless(),
-    r"(?:^|_)(hidden|embedding|feature|input|output|activation)(?:_|s|$)": Dimension.dimensionless(),
-    r"(?:^|_)(batch|epoch|layer|channel|kernel|stride|padding)(?:_|s|$)": Dimension.dimensionless(),
+    r"(?:^|_)(hidden|embedding|feature|input|output|activation|mask|attention)(?:_|s|$)": Dimension.dimensionless(),
+    r"(?:^|_)(batch|epoch|layer|channel|kernel|stride|padding|token|vocab)(?:_|s|$)": Dimension.dimensionless(),
     r"(?:^|_)(lr|learning_rate|momentum|dropout|epsilon|delta|gamma|alpha|beta)(?:_|$)": Dimension.dimensionless(),
-    r"(?:^|_)(smooth|clip|threshold|margin|scale)(?:_|$)": Dimension.dimensionless(),
+    r"(?:^|_)(smooth|clip|threshold|margin|scale|fold)(?:_|$)": Dimension.dimensionless(),
     # Loss function variables
     r"(?:^|_)(tp|fp|tn|fn|precision|recall|f1|accuracy|auc|dice|iou|jaccard)(?:_|$)": Dimension.dimensionless(),
-    r"(?:^|_)(tversky|focal|cross_entropy|mse|mae|rmse|bce)(?:_|$)": Dimension.dimensionless(),
+    r"(?:^|_)(tversky|focal|cross_entropy|mse|mae|rmse|bce|ground_truth|gt|target|label)(?:_|$)": Dimension.dimensionless(),
+    # Validation/Test splits
+    r"(?:^|_)(val|validation|test|train)(?:_|$)": Dimension.dimensionless(),
+    # Computer Vision
+    r"(?:^|_)(roi|bbox|box|rect|pixel)(?:_|$)": Dimension.dimensionless(),
     # Index/count variables (steps_x, x_start, num_x, etc.) - NOT coordinates
     r"(?:^|_)steps?_": Dimension.dimensionless(),
     r"_(?:start|end|min|max|size|len|count|num|idx|index)$": Dimension.dimensionless(),

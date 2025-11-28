@@ -185,7 +185,28 @@ UNIT_PATTERNS = {
     r"(?:^|_)(probability|prob|p_value|fraction|percent)(?:_|$)": Dimension.dimensionless(),
 }
 
-# Physical constants with known dimensions
+# GR/Tensor convention patterns (enabled via tensor_conventions config)
+TENSOR_CONVENTION_PATTERNS = {
+    # Metric tensor components (g_tt, g_rr, g_θθ, g_φφ, g_tr, etc.)
+    r"^g_[a-zA-Z]{2}$": Dimension.dimensionless(),
+    r"^g[a-zA-Z]{2}$": Dimension.dimensionless(),  # Also gtt, grr without underscore
+    # Riemann tensor components (R_abcd)
+    r"^R_[a-zA-Z]{4}$": Dimension.dimensionless(),
+    # Ricci tensor (R_ab)
+    r"^R_[a-zA-Z]{2}$": Dimension.dimensionless(),
+    # Stress-energy tensor (T_μν)
+    r"^T_[a-zA-Z]{2}$": Dimension.dimensionless(),
+    # Christoffel symbols (Gamma_abc, Γ_abc)
+    r"^[Gg]amma_[a-zA-Z]{3}$": Dimension.dimensionless(),
+    # Einstein tensor (G_ab)
+    r"^G_[a-zA-Z]{2}$": Dimension.dimensionless(),
+    # Weyl tensor (C_abcd)
+    r"^C_[a-zA-Z]{4}$": Dimension.dimensionless(),
+    # Generic indexed tensors (A_i, B_ij, etc.)
+    r"^[A-Z]_[a-zA-Z]{1,4}$": Dimension.dimensionless(),
+}
+
+# Physical constants with known dimensions (SI units)
 PHYSICAL_CONSTANTS = {
     "c": Dimension.velocity(),  # Speed of light
     "G": Dimension((3, -1, -2, 0, 0, 0, 0)),  # Gravitational constant L^3 M^-1 T^-2
@@ -195,6 +216,14 @@ PHYSICAL_CONSTANTS = {
     "e": Dimension((0, 0, 1, 1, 0, 0, 0)),  # Elementary charge
     "pi": Dimension.dimensionless(),
     "tau": Dimension.dimensionless(),
+}
+
+# Constants that become dimensionless in natural units (c=hbar=G=kB=1)
+NATURAL_UNIT_CONSTANTS = {
+    "c", "speed_of_light",
+    "hbar", "h", "h_bar", "planck",
+    "G", "gravitational_constant",
+    "k_B", "kB", "k_b", "boltzmann",
 }
 
 
@@ -207,17 +236,37 @@ class UnitInferenceEngine:
         2. Physical constants
         3. Function signatures
         4. Type annotations
+
+    Config options:
+        natural_units: bool - Treat c, hbar, G, kB as dimensionless
+        tensor_conventions: bool - Recognize GR tensor index notation
     """
 
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self.config = config or {}
         self.type_environment: Dict[str, Dimension] = {}
+
+        # Build pattern list based on config
+        patterns = dict(UNIT_PATTERNS)
+
+        # Add tensor convention patterns if enabled
+        if self.config.get("tensor_conventions", False):
+            patterns.update(TENSOR_CONVENTION_PATTERNS)
+
         self.compiled_patterns = [
-            (re.compile(pattern, re.IGNORECASE), dim) for pattern, dim in UNIT_PATTERNS.items()
+            (re.compile(pattern, re.IGNORECASE), dim) for pattern, dim in patterns.items()
         ]
+
+        # Track natural units mode
+        self.natural_units = self.config.get("natural_units", False)
 
     def infer_from_name(self, name: str) -> Optional[Dimension]:
         """Infer dimension from variable name."""
-        # Check physical constants
+        # In natural units mode, treat fundamental constants as dimensionless
+        if self.natural_units and name in NATURAL_UNIT_CONSTANTS:
+            return Dimension.dimensionless()
+
+        # Check physical constants (with their actual dimensions)
         if name in PHYSICAL_CONSTANTS:
             return PHYSICAL_CONSTANTS[name]
 
@@ -277,8 +326,9 @@ class DimensionalAnalyzer(ast.NodeVisitor):
         3. Function parameters and returns
     """
 
-    def __init__(self) -> None:
-        self.engine = UnitInferenceEngine()
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self.config = config or {}
+        self.engine = UnitInferenceEngine(config)
         self.violations: List[UnitViolation] = []
         self.current_function: Optional[str] = None
         self.assignments: Dict[str, Dimension] = {}
@@ -310,6 +360,10 @@ class DimensionalAnalyzer(ast.NodeVisitor):
                 # Check if name suggests a dimension
                 expected_dim = self.engine.infer_from_name(name)
 
+                # If RHS is dimensionless (e.g. literal number), allow it to take the LHS dimension
+                if expected_dim and right_dim and right_dim.is_dimensionless():
+                    right_dim = expected_dim
+                
                 if expected_dim and right_dim and expected_dim != right_dim:
                     self.violations.append(
                         UnitViolation(
@@ -520,7 +574,7 @@ class UnitGuard:
                 "summary": None,
             }
 
-        self.analyzer = DimensionalAnalyzer()
+        self.analyzer = DimensionalAnalyzer(self.config)
         self.analyzer.visit(tree)
 
         # Compile inferred dimensions

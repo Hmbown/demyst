@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "demyst"
-version = "1.1.0"
-description = "The Academic Integrity Platform for Scientific Code"
+version = "1.2.0"
+description = "Scientific integrity linter for academic code"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}

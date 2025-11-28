@@ -138,6 +138,10 @@ class MirageRuleConfig(RuleConfig):
     threshold_operations: int = Field(
         default=1, ge=1, description="Minimum number of operations before flagging as critical"
     )
+    check_variance_context: bool = Field(
+        default=True,
+        description="Suppress mean/sum warning if std/var is computed on same data nearby",
+    )
 
 
 class LeakageRuleConfig(RuleConfig):
@@ -170,6 +174,24 @@ class HypothesisRuleConfig(RuleConfig):
         description="Default correction method (bonferroni, holm, benjamini_hochberg)",
     )
 
+    # Physics-specific options
+    physics_mode: bool = Field(
+        default=False,
+        description="Use physics sigma thresholds instead of standard p<0.05",
+    )
+    discovery_sigma: float = Field(
+        default=5.0,
+        ge=1.0,
+        le=10.0,
+        description="Sigma threshold for discovery claim (5 sigma = p~3e-7)",
+    )
+    evidence_sigma: float = Field(
+        default=3.0,
+        ge=1.0,
+        le=10.0,
+        description="Sigma threshold for evidence claim (3 sigma = p~0.0027)",
+    )
+
     if PYDANTIC_AVAILABLE:
 
         @field_validator("correction_method")
@@ -197,6 +219,16 @@ class UnitRuleConfig(RuleConfig):
     custom_dimensions: Dict[str, str] = Field(
         default_factory=dict,
         description="Custom dimension mappings (variable_pattern -> dimension)",
+    )
+
+    # Physics-specific options
+    natural_units: bool = Field(
+        default=False,
+        description="Treat c, hbar, G, kB as dimensionless (natural units: c=hbar=G=kB=1)",
+    )
+    tensor_conventions: bool = Field(
+        default=False,
+        description="Recognize GR/tensor index notation (g_tt, R_abcd, Gamma_abc)",
     )
 
 

@@ -235,7 +235,8 @@ class CIEnforcer:
 
                 tree = ast.parse(source)
                 detector = self.MirageDetector(config=self.config_manager.get_rule_config("mirage"))
-                detector.visit(tree)
+                # Use analyze() for variance context-aware detection
+                mirages = detector.analyze(tree)
                 results["mirage"] = {
                     "issues": [
                         {
@@ -244,7 +245,7 @@ class CIEnforcer:
                             "function": m.get("function"),
                             "description": f"Computational mirage: {m['type']} operation destroys variance information",
                         }
-                        for m in detector.mirages
+                        for m in mirages
                     ]
                 }
             except Exception as e:

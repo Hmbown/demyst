@@ -29,8 +29,24 @@ from typing import Any, Dict, List, Optional
 
 from demyst.console import format_analysis_report, get_console
 
-# Version
-__version__ = "1.1.0"
+
+def _merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, Any]:
+    """Deep merge two configurations, with override taking precedence."""
+    merged = base.copy()
+    for key, value in override.items():
+        if key in merged and isinstance(merged[key], dict) and isinstance(value, dict):
+            merged[key] = _merge_configs(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+# Version - use single source of truth from pyproject.toml
+try:
+    from importlib.metadata import version
+    __version__ = version("demyst")
+except Exception:
+    __version__ = "1.2.0"  # Fallback for development
 
 # Global logger
 logger = logging.getLogger("demyst")
@@ -88,6 +104,21 @@ def analyze_command(args: argparse.Namespace) -> int:
             logger.debug(f"Loaded config from {args.config}")
         except Exception as e:
             logger.warning(f"Failed to load config: {e}")
+
+    # Apply profile if specified (profile settings merge into config)
+    if hasattr(args, "profile") and args.profile:
+        try:
+            import importlib
+
+            profile_module = importlib.import_module(f"demyst.profiles.{args.profile}")
+            profile_config = getattr(profile_module, "PROFILE", {})
+            # Merge profile into config (profile provides defaults, config overrides)
+            config = _merge_configs(profile_config, config)
+            logger.info(f"Using {args.profile} profile")
+        except ImportError:
+            logger.warning(f"Profile '{args.profile}' not found")
+        except Exception as e:
+            logger.warning(f"Failed to load profile: {e}")
 
     enforcer = CIEnforcer(config=config)
 
@@ -578,6 +609,29 @@ def fix_command(args: argparse.Namespace) -> int:
     return 0
 
 
+def red_team_command(args: argparse.Namespace) -> int:
+    """Run red team benchmark to stress-test Demyst detectors."""
+    from demyst.red_team import RedTeamBenchmark
+
+    console = get_console()
+    console.print_rule("Demyst Red Team Benchmark")
+    console.print_info("Stress-testing detectors with 50 adversarial scenarios...")
+    console.print_info("Categories: Mirage, Leakage, Units, Hypothesis, Tensor,")
+    console.print_info("            Reproducibility, Numerical, API, Logic, Statistical")
+    console.print("")
+
+    benchmark = RedTeamBenchmark()
+    benchmark.generate_dataset()
+    success = benchmark.run_attack()
+
+    if success:
+        console.print_success("\nBenchmark PASSED: All detectors operational.")
+        return 0
+    else:
+        console.print_error("\nBenchmark FAILED: Some attacks evaded detection.")
+        return 1
+
+
 def version_command(args: argparse.Namespace) -> int:
     """Print version information."""
     console = get_console()
@@ -631,6 +685,12 @@ For more information: https://github.com/demyst/demyst
         "--format", "-f", choices=["markdown", "json", "text"], default="text", help="Output format"
     )
     analyze_parser.add_argument("--config", "-c", help="Path to configuration file")
+    analyze_parser.add_argument(
+        "--profile",
+        "-p",
+        choices=["physics", "biology", "chemistry", "neuroscience", "climate", "economics"],
+        help="Domain-specific profile (physics enables natural units, 5σ thresholds, etc.)",
+    )
     analyze_parser.set_defaults(func=analyze_command)
 
     # Mirage command
@@ -713,6 +773,15 @@ For more information: https://github.com/demyst/demyst
         "--interactive", "-i", action="store_true", help="Ask before applying fix"
     )
     fix_parser.set_defaults(func=fix_command)
+
+    # Red Team command
+    red_team_parser = subparsers.add_parser(
+        "red-team", help="Run adversarial benchmark against Demyst detectors"
+    )
+    red_team_parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Show detailed results for each test case"
+    )
+    red_team_parser.set_defaults(func=red_team_command)
 
     args = parser.parse_args()
 

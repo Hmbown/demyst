@@ -328,6 +328,17 @@ class ExperimentTracker:
         }
 
 
+# Physics sigma thresholds (sigma -> p-value, two-tailed)
+# In particle physics, 5-sigma is standard for discovery, 3-sigma for evidence
+SIGMA_TO_PVALUE = {
+    5.0: 2.87e-7,   # 5-sigma discovery threshold
+    4.0: 3.17e-5,   # 4-sigma
+    3.0: 0.00135,   # 3-sigma evidence threshold (one-sided: 0.00135)
+    2.0: 0.0228,    # 2-sigma (one-sided: 0.0228)
+    1.0: 0.159,     # 1-sigma
+}
+
+
 class HypothesisAnalyzer(ast.NodeVisitor):
     """
     AST analyzer for detecting p-hacking patterns in code.
@@ -336,6 +347,11 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         1. Multiple t-tests without correction
         2. Loops over different parameters with significance testing
         3. Conditional reporting based on p-values
+
+    Config options:
+        physics_mode: bool - Use physics sigma thresholds instead of p<0.05
+        discovery_sigma: float - Sigma threshold for discovery (default 5.0)
+        evidence_sigma: float - Sigma threshold for evidence (default 3.0)
     """
 
     P_VALUE_FUNCTIONS = {
@@ -355,12 +371,18 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         "anova_lm",
     }
 
-    def __init__(self) -> None:
+    def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
+        self.config = config or {}
         self.violations: List[StatisticalViolation] = []
         self.statistical_tests: List[Dict[str, Any]] = []
         self.current_function: Optional[str] = None
         self.in_loop: bool = False
         self.loop_depth: int = 0
+
+        # Physics mode settings
+        self.physics_mode = self.config.get("physics_mode", False)
+        self.discovery_sigma = self.config.get("discovery_sigma", 5.0)
+        self.evidence_sigma = self.config.get("evidence_sigma", 3.0)
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function context."""
@@ -468,19 +490,42 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         return None
 
     def _is_p_value_check(self, node: ast.AST) -> bool:
-        """Check if node is a p-value comparison."""
+        """Check if node is a p-value comparison.
+
+        In physics_mode, we don't flag comparisons against sigma thresholds
+        (e.g., p < 2.87e-7 for 5-sigma) since these are legitimate rigorous
+        standards, not p-hacking.
+        """
         if isinstance(node, ast.Compare):
             # Look for patterns like: p < 0.05, pvalue < 0.05
+            is_p_variable = False
             if isinstance(node.left, ast.Name):
                 name = node.left.id.lower()
                 if "p" in name or "pval" in name or "significance" in name:
-                    return True
+                    is_p_variable = True
 
             for comparator in node.comparators:
                 if isinstance(comparator, ast.Constant):
-                    # Common alpha values
-                    if comparator.value in [0.05, 0.01, 0.001, 0.1]:
+                    threshold = comparator.value
+
+                    # In physics mode, allow sigma-based thresholds
+                    if self.physics_mode and isinstance(threshold, (int, float)):
+                        # Check if threshold matches a physics sigma level
+                        # Allow thresholds <= 3-sigma p-value (rigorous physics standards)
+                        discovery_p = SIGMA_TO_PVALUE.get(self.discovery_sigma, 2.87e-7)
+                        evidence_p = SIGMA_TO_PVALUE.get(self.evidence_sigma, 0.00135)
+
+                        # If using a threshold at or below 3-sigma, it's rigorous physics
+                        if threshold <= evidence_p:
+                            return False  # Don't flag - this is valid physics rigor
+
+                    # Common alpha values that indicate potential p-hacking
+                    if threshold in [0.05, 0.01, 0.001, 0.1]:
                         return True
+
+            # If it's a p-value variable comparison, flag it
+            if is_p_variable:
+                return True
 
         return False
 
@@ -519,7 +564,8 @@ class HypothesisGuard:
         except SyntaxError as e:
             return {"error": f"Syntax error: {e}", "violations": [], "summary": None}
 
-        self.analyzer = HypothesisAnalyzer()
+        # Pass config to analyzer for physics mode support
+        self.analyzer = HypothesisAnalyzer(config=self.config)
         self.analyzer.visit(tree)
 
         # Calculate required corrections

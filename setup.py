@@ -39,6 +39,8 @@ setup(
         "pydantic>=2.0.0",
         "libcst>=1.0.0",
         "rich>=13.0.0",
+        "langchain-core>=0.1.0",
+        "mcp>=1.0.0",
     ],
     extras_require={
         "torch": ["torch>=1.9.0"],

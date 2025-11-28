@@ -45,6 +45,7 @@ def _get_secret_key() -> bytes:
     _SECRET_KEY_CACHE = key.encode()
     return _SECRET_KEY_CACHE
 
+
 def sign_code(code: str, verdict: str) -> Dict[str, str]:
     """
     Generates a cryptographic certificate of integrity for verified code.
@@ -69,17 +70,13 @@ def sign_code(code: str, verdict: str) -> Dict[str, str]:
     payload = f"{code_hash}|{verdict}|{timestamp}"
 
     # Generate HMAC signature
-    signature = hmac.new(
-        secret_key,
-        payload.encode(),
-        hashlib.sha256
-    ).hexdigest()
+    signature = hmac.new(secret_key, payload.encode(), hashlib.sha256).hexdigest()
 
     return {
         "code_hash": code_hash,
         "verdict": verdict,
         "timestamp": timestamp,
-        "signature": signature
+        "signature": signature,
     }
 
 
@@ -114,11 +111,7 @@ def verify_certificate(certificate: Dict[str, str]) -> bool:
     payload = f"{code_hash}|{verdict}|{timestamp}"
 
     # Generate expected signature
-    expected_signature = hmac.new(
-        secret_key,
-        payload.encode(),
-        hashlib.sha256
-    ).hexdigest()
+    expected_signature = hmac.new(secret_key, payload.encode(), hashlib.sha256).hexdigest()
 
     # Verify signature using constant-time comparison
     return hmac.compare_digest(signature, expected_signature)

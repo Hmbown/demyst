@@ -287,7 +287,7 @@ class PluginRegistry:
 
             except ImportError:
                 # Fallback to pkg_resources
-                import pkg_resources
+                import pkg_resources  # type: ignore
 
                 for group in entry_point_groups:
                     for ep in pkg_resources.iter_entry_points(group):

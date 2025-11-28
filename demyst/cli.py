@@ -44,6 +44,7 @@ def _merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, 
 # Version - use single source of truth from pyproject.toml
 try:
     from importlib.metadata import version
+
     __version__ = version("demyst")
 except Exception:
     __version__ = "1.2.0"  # Fallback for development

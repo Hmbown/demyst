@@ -1,7 +1,9 @@
 import json
 import os
-import pytest
 from unittest.mock import MagicMock
+
+import pytest
+
 from demyst.agents.langchain import DemystVerifier
 
 # Test secret key for certificate signing tests
@@ -66,7 +68,7 @@ result = np.median(data)
 
     def test_leakage_detection(self):
         verifier = DemystVerifier()
-        
+
         leakage_code = """
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -76,8 +78,8 @@ scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y)
         """
-        
+
         feedback = verifier._run(leakage_code)
-        
+
         assert "VERIFICATION FAILED" in feedback
         assert "Leakage" in feedback

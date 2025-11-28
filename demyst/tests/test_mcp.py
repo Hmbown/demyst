@@ -1,7 +1,9 @@
 import json
 import os
+
 import pytest
-from demyst.mcp import detect_mirage, check_units, sign_verification
+
+from demyst.mcp import check_units, detect_mirage, sign_verification
 
 # Test secret key for certificate signing tests
 TEST_SECRET_KEY = "test_secret_key_for_demyst_tests_32chars!"
@@ -16,7 +18,7 @@ m = np.mean(x)
         """
         result_json = detect_mirage(code)
         result = json.loads(result_json)
-        
+
         assert result["has_mirages"] is True
         assert len(result["mirages"]) > 0
         assert result["mirages"][0]["type"] == "mean"
@@ -25,7 +27,7 @@ m = np.mean(x)
         code = "x = 1 + 1"
         result_json = detect_mirage(code)
         result = json.loads(result_json)
-        
+
         assert result["has_mirages"] is False
         assert len(result["mirages"]) == 0
 
@@ -37,7 +39,7 @@ result = mass + time
         """
         result_json = check_units(code)
         result = json.loads(result_json)
-        
+
         assert result["consistent"] is False
         assert len(result["violations"]) > 0
         # Updated expectation: UnitGuard returns 'incompatible_addition' for this case
@@ -51,7 +53,7 @@ force = mass * accel
         """
         result_json = check_units(code)
         result = json.loads(result_json)
-        
+
         if not result["consistent"]:
             print(f"Violations found: {result['violations']}")
 

@@ -47,8 +47,8 @@ class TestSwarmCollapseDetection:
 
         mean_mirage = next(m for m in mirage_detector.mirages if m["type"] == "mean")
 
-        # Line 24 in swarm_collapse.py: mean_alignment = np.mean(swarm_alignment)
-        assert mean_mirage["line"] == 24, f"Expected line 24, got {mean_mirage['line']}"
+        # Line 25 in swarm_collapse.py: mean_alignment = np.mean(swarm_alignment)
+        assert mean_mirage["line"] == 25, f"Expected line 25, got {mean_mirage['line']}"
 
     def test_mirage_has_required_fields(self, swarm_collapse_source, mirage_detector):
         """Each detected mirage should have all required metadata."""
@@ -178,7 +178,7 @@ class TestSwarmCollapseCLI:
         )
 
         assert "mean" in result.stdout.lower()
-        assert "Line 24" in result.stdout or "line 24" in result.stdout.lower()
+        assert "Line 25" in result.stdout or "line 25" in result.stdout.lower()
 
     def test_cli_output_mentions_variance(self, swarm_collapse_path):
         """CLI output should explain variance destruction."""

@@ -501,7 +501,20 @@ class HypothesisAnalyzer(ast.NodeVisitor):
             is_p_variable = False
             if isinstance(node.left, ast.Name):
                 name = node.left.id.lower()
-                if "p" in name or "pval" in name or "significance" in name:
+                # Match actual p-value variable names, not just any word containing "p"
+                # Valid patterns: p, p_value, pvalue, p_val, pval, p_values, significance
+                p_value_patterns = (
+                    name == "p" or
+                    name.startswith("p_") or
+                    name.startswith("pval") or
+                    name.endswith("_p") or
+                    name.endswith("_pvalue") or
+                    name.endswith("_pval") or
+                    "p_value" in name or
+                    "pvalue" in name or
+                    "significance" in name
+                )
+                if p_value_patterns:
                     is_p_variable = True
 
             for comparator in node.comparators:

@@ -424,8 +424,7 @@ def hypothesis_command(args: argparse.Namespace, config_path: Optional[str] = No
         info = result["correction_info"]
         console.print_info("\nMultiple Comparisons Correction:")
         console.print_info(f"  Tests detected: {info['num_tests_detected']}")
-        console.print_info(f"  Corrected alpha: {
-                           info['bonferroni_alpha']:.4f}")
+        console.print_info(f"  Corrected alpha: {info['bonferroni_alpha']:.4f}")
 
     summary = result.get("summary", {})
     console.print_warning(f"\nVerdict: {summary.get('verdict', 'Unknown')}")

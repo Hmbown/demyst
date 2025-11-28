@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-11-28T01:37:27.601683",
-  "repository": "demyst",
-  "branch": "HEAD",
-  "commit": "d21a1f2cef3cbabde61d0d05a204f7acc80826ba",
+  "timestamp": "2025-11-27T15:37:13.103854",
+  "repository": "scilint",
+  "branch": "main",
+  "commit": "35e906c6ec52ba23083dac3a73a0f33c22f08377",
   "files_analyzed": 5,
   "total_issues": 10,
   "critical_issues": 10,
@@ -15,24 +15,24 @@
       "issues": [
         {
           "type": "mean",
-          "line": 25,
+          "line": 24,
           "function": "analyze_swarm_safety",
           "description": "Computational mirage: mean operation destroys variance information",
-          "file": "/app/examples/swarm_collapse.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/swarm_collapse.py"
         },
         {
           "type": "mean",
-          "line": 13,
+          "line": 12,
           "function": "analyze_random_walk",
           "description": "Computational mirage: mean operation destroys variance information",
-          "file": "/app/examples/random_walk.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
         },
         {
           "type": "premature_discretization",
-          "line": 18,
+          "line": 17,
           "function": "analyze_random_walk",
           "description": "Computational mirage: premature_discretization operation destroys variance information",
-          "file": "/app/examples/random_walk.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
         }
       ],
       "recommendations": [
@@ -62,22 +62,22 @@
         {
           "type": "uncorrected_multiple_tests",
           "severity": "invalid",
-          "line": 22,
+          "line": 21,
           "description": "Statistical test ttest_ind() called inside a loop. Multiple comparisons require p-value correction.",
           "statistical_impact": "Running multiple statistical tests inflates the false positive rate. With 20 tests at alpha=0.05, you have a 64% chance of at least one false positive (1 - 0.95^20).",
           "corrected_interpretation": "Apply Bonferroni correction: divide alpha by number of tests, or use Benjamini-Hochberg for FDR control.",
           "recommendation": "from statsmodels.stats.multitest import multipletests\nrejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')",
-          "file": "/app/examples/biology_gene_expression.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
         },
         {
           "type": "conditional_reporting",
           "severity": "questionable",
-          "line": 25,
+          "line": 24,
           "description": "Conditional logic based on p-value detected. This pattern enables selective reporting.",
           "statistical_impact": "Conditioning on significance leads to publication bias. Non-significant results are equally important for science.",
           "corrected_interpretation": "Report ALL results regardless of significance. Use pre-registration to prevent outcome-dependent analysis.",
           "recommendation": "Remove conditional branching on p-values. Report effect sizes and confidence intervals instead of just significance.",
-          "file": "/app/examples/biology_gene_expression.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
         }
       ],
       "recommendations": [
@@ -91,19 +91,6 @@
       "severity": "critical",
       "issues": [
         {
-          "type": "incompatible_comparison",
-          "severity": "critical",
-          "line": 25,
-          "col": 11,
-          "expression": "p_val < 0.05",
-          "left_dimension": "[L^2 M T^-3]",
-          "right_dimension": "[1]",
-          "description": "Comparing quantities with incompatible dimensions: [L^2 M T^-3] vs [1].",
-          "physical_meaning": "Comparing physically incompatible quantities. The comparison result is meaningless.",
-          "recommendation": "Convert to same units before comparing, or verify this comparison makes physical sense.",
-          "file": "/app/examples/biology_gene_expression.py"
-        },
-        {
           "type": "incompatible_addition",
           "severity": "critical",
           "line": 13,
@@ -114,7 +101,7 @@
           "description": "Cannot add quantities with dimensions [M T] and [1].",
           "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/app/examples/physics_kinematics.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
         },
         {
           "type": "incompatible_addition",
@@ -127,12 +114,12 @@
           "description": "Cannot add quantities with dimensions [L] and [T].",
           "physical_meaning": "This is like adding meters to seconds. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/app/examples/physics_kinematics.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
         },
         {
           "type": "dimension_mismatch",
           "severity": "warning",
-          "line": 24,
+          "line": 23,
           "col": 4,
           "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
           "left_dimension": "[L M T^-2]",
@@ -140,7 +127,20 @@
           "description": "Variable 'force_impact' suggests dimension [L M T^-2] but is assigned value with dimension [L M T^-1].",
           "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
           "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
-          "file": "/app/examples/physics_kinematics.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
+        },
+        {
+          "type": "incompatible_comparison",
+          "severity": "critical",
+          "line": 24,
+          "col": 11,
+          "expression": "p_val < 0.05",
+          "left_dimension": "[L^2 M T^-3]",
+          "right_dimension": "[1]",
+          "description": "Comparing quantities with incompatible dimensions: [L^2 M T^-3] vs [1].",
+          "physical_meaning": "Comparing physically incompatible quantities. The comparison result is meaningless.",
+          "recommendation": "Convert to same units before comparing, or verify this comparison makes physical sense.",
+          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
         },
         {
           "type": "incompatible_addition",
@@ -153,7 +153,7 @@
           "description": "Cannot add quantities with dimensions [M] and [1].",
           "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
-          "file": "/app/examples/chemistry_stoichiometry.py"
+          "file": "/Volumes/VIXinSSD/demyst/examples/chemistry_stoichiometry.py"
         }
       ],
       "recommendations": [

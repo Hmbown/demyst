@@ -336,24 +336,31 @@ class IntegrityReportGenerator:
 
         Returns:
             Dictionary containing the certificate data.
+
+        Raises:
+            ValueError: If DEMYST_SECRET_KEY environment variable is not configured.
         """
         import hashlib
 
         from demyst.security import sign_code
 
-        # Calculate file hashes
+        # Calculate file hashes with proper hash chaining (prevents collision attacks)
         file_hashes = {}
-        combined_hash_input = ""
+        combined_hash = hashlib.sha256()
         for filename, content in sorted(code_map.items()):
             file_hash = hashlib.sha256(content.encode()).hexdigest()
             file_hashes[filename] = file_hash
-            combined_hash_input += file_hash
+            # Include filename in hash to prevent ordering attacks
+            combined_hash.update(f"{filename}:{file_hash}".encode())
+
+        combined_hash_input = combined_hash.hexdigest()
 
         # Sign the combined hash and verdict
         verdict = self.get_overall_status().upper()
         signature_data = sign_code(combined_hash_input, verdict)
 
         return {
+            "certificate_version": "1.0",
             "certificate_id": signature_data["signature"][:16],
             "verdict": verdict,
             "timestamp": signature_data["timestamp"],

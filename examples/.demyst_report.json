@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-11-28T00:42:09.491969",
+  "timestamp": "2025-11-28T01:37:27.601683",
   "repository": "demyst",
   "branch": "HEAD",
-  "commit": "235a1a6d95c4ff712d9857a5f2a164975068a4c8",
+  "commit": "d21a1f2cef3cbabde61d0d05a204f7acc80826ba",
   "files_analyzed": 5,
   "total_issues": 10,
   "critical_issues": 10,
@@ -15,21 +15,21 @@
       "issues": [
         {
           "type": "mean",
-          "line": 24,
+          "line": 25,
           "function": "analyze_swarm_safety",
           "description": "Computational mirage: mean operation destroys variance information",
           "file": "/app/examples/swarm_collapse.py"
         },
         {
           "type": "mean",
-          "line": 12,
+          "line": 13,
           "function": "analyze_random_walk",
           "description": "Computational mirage: mean operation destroys variance information",
           "file": "/app/examples/random_walk.py"
         },
         {
           "type": "premature_discretization",
-          "line": 17,
+          "line": 18,
           "function": "analyze_random_walk",
           "description": "Computational mirage: premature_discretization operation destroys variance information",
           "file": "/app/examples/random_walk.py"
@@ -62,7 +62,7 @@
         {
           "type": "uncorrected_multiple_tests",
           "severity": "invalid",
-          "line": 21,
+          "line": 22,
           "description": "Statistical test ttest_ind() called inside a loop. Multiple comparisons require p-value correction.",
           "statistical_impact": "Running multiple statistical tests inflates the false positive rate. With 20 tests at alpha=0.05, you have a 64% chance of at least one false positive (1 - 0.95^20).",
           "corrected_interpretation": "Apply Bonferroni correction: divide alpha by number of tests, or use Benjamini-Hochberg for FDR control.",
@@ -72,7 +72,7 @@
         {
           "type": "conditional_reporting",
           "severity": "questionable",
-          "line": 24,
+          "line": 25,
           "description": "Conditional logic based on p-value detected. This pattern enables selective reporting.",
           "statistical_impact": "Conditioning on significance leads to publication bias. Non-significant results are equally important for science.",
           "corrected_interpretation": "Report ALL results regardless of significance. Use pre-registration to prevent outcome-dependent analysis.",
@@ -93,7 +93,7 @@
         {
           "type": "incompatible_comparison",
           "severity": "critical",
-          "line": 24,
+          "line": 25,
           "col": 11,
           "expression": "p_val < 0.05",
           "left_dimension": "[L^2 M T^-3]",
@@ -132,7 +132,7 @@
         {
           "type": "dimension_mismatch",
           "severity": "warning",
-          "line": 23,
+          "line": 24,
           "col": 4,
           "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
           "left_dimension": "[L M T^-2]",

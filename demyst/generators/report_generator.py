@@ -330,16 +330,17 @@ class IntegrityReportGenerator:
     def generate_certificate(self, code_map: Dict[str, str]) -> Dict[str, Any]:
         """
         Generate a Certificate of Integrity.
-        
+
         Args:
             code_map: Dictionary mapping filenames to their content (for hashing).
-            
+
         Returns:
             Dictionary containing the certificate data.
         """
-        from demyst.security import sign_code
         import hashlib
-        
+
+        from demyst.security import sign_code
+
         # Calculate file hashes
         file_hashes = {}
         combined_hash_input = ""
@@ -347,11 +348,11 @@ class IntegrityReportGenerator:
             file_hash = hashlib.sha256(content.encode()).hexdigest()
             file_hashes[filename] = file_hash
             combined_hash_input += file_hash
-            
+
         # Sign the combined hash and verdict
         verdict = self.get_overall_status().upper()
         signature_data = sign_code(combined_hash_input, verdict)
-        
+
         return {
             "certificate_id": signature_data["signature"][:16],
             "verdict": verdict,
@@ -360,5 +361,5 @@ class IntegrityReportGenerator:
             "files": file_hashes,
             "signature": signature_data["signature"],
             "verification_method": "HMAC-SHA256",
-            "issuer": "Demystified Integrity Platform"
+            "issuer": "Demystified Integrity Platform",
         }

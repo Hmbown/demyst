@@ -1,6 +1,8 @@
-import unittest
 import os
+import unittest
+
 import demyst.security as security
+
 
 class TestSecurityFeatures(unittest.TestCase):
     def setUp(self):
@@ -34,5 +36,6 @@ class TestSecurityFeatures(unittest.TestCase):
         cert_bad_sig["signature"] = "a" * 64
         self.assertFalse(security.verify_certificate(cert_bad_sig))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

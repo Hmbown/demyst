@@ -1,10 +1,12 @@
 import ast
 import os
 import unittest
-from demyst.guards.unit_guard import UnitGuard, UnitInferenceEngine, Dimension
-from demyst.guards.hypothesis_guard import HypothesisGuard, SIGMA_TO_PVALUE
-from demyst.engine.mirage_detector import MirageDetector
+
 from demyst.config.manager import ConfigManager
+from demyst.engine.mirage_detector import MirageDetector
+from demyst.guards.hypothesis_guard import SIGMA_TO_PVALUE, HypothesisGuard
+from demyst.guards.unit_guard import Dimension, UnitGuard, UnitInferenceEngine
+
 
 class TestCommitReview(unittest.TestCase):
     """
@@ -23,7 +25,11 @@ class TestCommitReview(unittest.TestCase):
 
         # Should be no violations
         violations = result["violations"]
-        self.assertEqual(len(violations), 0, f"Expected 0 violations for natural units, got {len(violations)}: {violations}")
+        self.assertEqual(
+            len(violations),
+            0,
+            f"Expected 0 violations for natural units, got {len(violations)}: {violations}",
+        )
 
         # Test without natural units
         guard_si = UnitGuard(config={"natural_units": False})
@@ -46,7 +52,11 @@ if p_value < 3e-7:
         violations = result["violations"]
 
         # Should be no violations because 3e-7 is <= 5-sigma threshold roughly
-        self.assertEqual(len(violations), 0, f"Expected 0 violations for physics sigma, got {len(violations)}: {violations}")
+        self.assertEqual(
+            len(violations),
+            0,
+            f"Expected 0 violations for physics sigma, got {len(violations)}: {violations}",
+        )
 
         # Test standard p-hacking check
         code_bad = "if p_value < 0.05: print('Significant')"
@@ -98,5 +108,6 @@ def analyze(x, y):
         val = SIGMA_TO_PVALUE[5.0]
         self.assertAlmostEqual(val, 2.87e-7, delta=0.1e-7)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

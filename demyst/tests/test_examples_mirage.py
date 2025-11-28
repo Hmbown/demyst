@@ -22,7 +22,7 @@ class TestSwarmCollapseMirage:
 
         mean_mirages = [m for m in mirage_detector.mirages if m["type"] == "mean"]
         assert len(mean_mirages) == 1
-        assert mean_mirages[0]["line"] == 24
+        assert mean_mirages[0]["line"] == 25
         assert mean_mirages[0]["function"] == "analyze_swarm_safety"
 
     def test_total_mirages_count(self, swarm_collapse_source, mirage_detector):

@@ -220,10 +220,18 @@ PHYSICAL_CONSTANTS = {
 
 # Constants that become dimensionless in natural units (c=hbar=G=kB=1)
 NATURAL_UNIT_CONSTANTS = {
-    "c", "speed_of_light",
-    "hbar", "h", "h_bar", "planck",
-    "G", "gravitational_constant",
-    "k_B", "kB", "k_b", "boltzmann",
+    "c",
+    "speed_of_light",
+    "hbar",
+    "h",
+    "h_bar",
+    "planck",
+    "G",
+    "gravitational_constant",
+    "k_B",
+    "kB",
+    "k_b",
+    "boltzmann",
 }
 
 
@@ -363,7 +371,7 @@ class DimensionalAnalyzer(ast.NodeVisitor):
                 # If RHS is dimensionless (e.g. literal number), allow it to take the LHS dimension
                 if expected_dim and right_dim and right_dim.is_dimensionless():
                     right_dim = expected_dim
-                
+
                 if expected_dim and right_dim and expected_dim != right_dim:
                     self.violations.append(
                         UnitViolation(

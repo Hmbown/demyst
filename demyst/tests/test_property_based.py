@@ -14,6 +14,10 @@ from typing import List, Optional
 import pytest
 
 # Try to import hypothesis, skip tests if not available
+if False:  # TYPE_CHECKING
+    from hypothesis import HealthCheck, assume, example, given, settings
+    from hypothesis import strategies as st
+
 try:
     from hypothesis import HealthCheck, assume, example, given, settings
     from hypothesis import strategies as st
@@ -21,32 +25,31 @@ try:
     HYPOTHESIS_AVAILABLE = True
 except ImportError:
     HYPOTHESIS_AVAILABLE = False
-    # Create dummy decorators
     from typing import Any, Callable
 
     # Create dummy decorators
-    def given(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+    def given(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:  # type: ignore
         def decorator(f: Callable) -> Callable:
             return pytest.mark.skip(reason="hypothesis not installed")(f)
 
         return decorator
 
-    def settings(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+    def settings(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:  # type: ignore
         def decorator(f: Callable) -> Callable:
             return f
 
         return decorator
 
-    def example(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:
+    def example(*args: Any, **kwargs: Any) -> Callable[[Callable], Callable]:  # type: ignore
         def decorator(f: Callable) -> Callable:
             return f
 
         return decorator
 
-    def assume(x: Any) -> None:
+    def assume(x: Any) -> None:  # type: ignore
         pass
 
-    class st:
+    class st:  # type: ignore
         @staticmethod
         def text(*args: Any, **kwargs: Any) -> Any:
             return None
@@ -79,7 +82,7 @@ except ImportError:
         def binary(*args: Any, **kwargs: Any) -> Any:
             return None
 
-    class HealthCheck:
+    class HealthCheck:  # type: ignore
         too_slow = None
 
 
@@ -140,13 +143,13 @@ if HYPOTHESIS_AVAILABLE:
     )
 else:
     # Dummy strategies to prevent NameError
-    def mirage_code_snippet():
+    def mirage_code_snippet(*args: Any, **kwargs: Any) -> Any:
         return None
 
-    def safe_code_snippet():
+    def safe_code_snippet(*args: Any, **kwargs: Any) -> Any:
         return None
 
-    def valid_python_code():
+    def valid_python_code(*args: Any, **kwargs: Any) -> Any:
         return None
 
 
@@ -157,7 +160,7 @@ else:
 if HYPOTHESIS_AVAILABLE:
 
     @st.composite
-    def mirage_code_snippet(draw) -> str:
+    def mirage_code_snippet(draw: Any) -> Any:  # type: ignore
         """Generate code that contains a computational mirage."""
         var_name = draw(ARRAY_NAMES)
         func = draw(DESTRUCTIVE_FUNCS)
@@ -193,7 +196,7 @@ if HYPOTHESIS_AVAILABLE:
         return import_stmt + init + pattern
 
     @st.composite
-    def safe_code_snippet(draw) -> str:
+    def safe_code_snippet(draw: Any) -> Any:  # type: ignore
         """Generate code that should NOT trigger mirage detection."""
         var_name = draw(ARRAY_NAMES)
 
@@ -219,7 +222,7 @@ if HYPOTHESIS_AVAILABLE:
         return pattern
 
     @st.composite
-    def valid_python_code(draw) -> str:
+    def valid_python_code(draw: Any) -> Any:  # type: ignore
         """Generate random valid Python code."""
         statements = draw(
             st.lists(

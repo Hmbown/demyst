@@ -1,0 +1,85 @@
+# .github/workflows/scientific-integrity.yaml
+# Add this to your GitHub repo for CI/CD scientific integrity checking
+
+name: Scientific Integrity
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - '**.py'
+  pull_request:
+    branches: [main]
+    paths:
+      - '**.py'
+
+jobs:
+  demyst-check:
+    runs-on: ubuntu-latest
+    name: Demyst Scientific Integrity
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install demyst
+        run: pip install demyst
+
+      - name: Run scientific integrity checks
+        run: |
+          echo "🔬 Running Demyst Scientific Integrity Checks..."
+          demyst ci . --strict --format markdown > demyst-report.md
+
+          # Show summary in logs
+          cat demyst-report.md
+
+          # Check exit code
+          demyst ci . --strict
+        continue-on-error: false
+
+      - name: Upload Demyst Report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: demyst-report
+          path: demyst-report.md
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('demyst-report.md', 'utf8');
+
+            // Only comment if there are issues
+            if (report.includes('FAIL') || report.includes('WARNING')) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `## 🔬 Demyst Scientific Integrity Report\n\n${report}`
+              });
+            }
+
+# Usage:
+# 1. Create .github/workflows/ directory in your repo
+# 2. Copy this file there
+# 3. Push to GitHub
+#
+# The workflow will:
+# - Run on every push to main/develop with Python changes
+# - Run on every PR to main with Python changes
+# - Fail the build if CRITICAL issues are found
+# - Comment on PRs with the report (if issues found)
+# - Upload full report as artifact
+#
+# Strictness levels:
+# --strict: Fail on any CRITICAL issue
+# --warning: Fail on WARNING or CRITICAL
+# (default): Just report, don't fail

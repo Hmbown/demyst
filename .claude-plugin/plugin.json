@@ -1,0 +1,19 @@
+{
+  "name": "demyst",
+  "version": "1.2.0",
+  "description": "Scientific integrity linter for ML/data science code - detects computational mirages, data leakage, p-hacking, unit errors, and deep learning issues",
+  "author": "Demyst Team",
+  "repository": "https://github.com/Hmbown/demyst",
+  "keywords": [
+    "scientific-integrity",
+    "machine-learning",
+    "data-science",
+    "linting",
+    "mirage",
+    "leakage",
+    "p-hacking",
+    "units",
+    "deep-learning"
+  ],
+  "license": "MIT"
+}

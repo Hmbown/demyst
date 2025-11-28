@@ -1,0 +1,53 @@
+# .pre-commit-config.yaml
+# Add this to your project root for automatic scientific integrity checking
+
+# First, install pre-commit: pip install pre-commit
+# Then run: pre-commit install
+
+repos:
+  # Standard hooks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+
+  # Python formatting
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+
+  # Scientific integrity (demyst)
+  - repo: local
+    hooks:
+      - id: demyst
+        name: demyst scientific integrity
+        entry: demyst ci
+        language: system
+        types: [python]
+        args: [--strict]
+        # Only check files with ML/data science patterns
+        files: (model|train|pipeline|preprocess|analysis)\.py$
+        pass_filenames: true
+
+      # Alternative: check all Python files (more thorough but slower)
+      # - id: demyst-all
+      #   name: demyst (all files)
+      #   entry: demyst analyze
+      #   language: system
+      #   types: [python]
+      #   args: [--format, text]
+
+# Usage:
+# 1. Copy this file to your project root as .pre-commit-config.yaml
+# 2. Run: pre-commit install
+# 3. Now demyst runs automatically before every commit!
+#
+# To run manually on all files:
+#   pre-commit run demyst --all-files
+#
+# To skip (not recommended):
+#   git commit --no-verify

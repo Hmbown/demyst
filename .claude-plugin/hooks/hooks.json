@@ -1,0 +1,18 @@
+{
+  "hooks": [
+    {
+      "event": "PostToolUse",
+      "matcher": {
+        "toolName": "^(Write|Edit)$",
+        "inputContains": "\\.py"
+      },
+      "hooks": [
+        {
+          "type": "prompt",
+          "prompt": "You just wrote or edited a Python file. Briefly check if it contains ML/data science code that could have scientific integrity issues.\n\nLook for these CRITICAL patterns only:\n\n1. **Mirages**: `np.mean()`, `np.sum()`, `argmax()` on potentially high-variance data without variance tracking\n2. **Leakage**: `fit_transform()` before `train_test_split()`, preprocessing before data splitting\n3. **P-hacking**: Multiple statistical tests without Bonferroni/FDR correction\n4. **Units**: Adding/comparing variables with incompatible physical dimensions\n5. **Gradients**: Deep sigmoid/tanh chains without residual connections\n\nIf no ML/data science code or no CRITICAL issues found, respond exactly:\n`No scientific integrity issues detected.`\n\nIf issues found, respond with:\n`**Demyst Warning** (line N): [Brief issue description]`\n`Suggestion: [One-line fix suggestion]`\n\nKeep response under 100 words. Only report CRITICAL issues to avoid noise.",
+          "timeout": 15000
+        }
+      ]
+    }
+  ]
+}

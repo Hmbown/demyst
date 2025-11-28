@@ -81,3 +81,44 @@ def sign_code(code: str, verdict: str) -> Dict[str, str]:
         "timestamp": timestamp,
         "signature": signature
     }
+
+
+def verify_certificate(certificate: Dict[str, str]) -> bool:
+    """
+    Verifies a cryptographic certificate of integrity.
+
+    Args:
+        certificate: The certificate dictionary returned by sign_code.
+
+    Returns:
+        True if the certificate is valid, False otherwise.
+
+    Raises:
+        ValueError: If DEMYST_SECRET_KEY environment variable is not set or invalid.
+    """
+    try:
+        secret_key = _get_secret_key()
+    except ValueError:
+        return False
+
+    required_fields = ["code_hash", "verdict", "timestamp", "signature"]
+    if not all(field in certificate for field in required_fields):
+        return False
+
+    code_hash = certificate["code_hash"]
+    verdict = certificate["verdict"]
+    timestamp = certificate["timestamp"]
+    signature = certificate["signature"]
+
+    # Reconstruct payload
+    payload = f"{code_hash}|{verdict}|{timestamp}"
+
+    # Generate expected signature
+    expected_signature = hmac.new(
+        secret_key,
+        payload.encode(),
+        hashlib.sha256
+    ).hexdigest()
+
+    # Verify signature using constant-time comparison
+    return hmac.compare_digest(signature, expected_signature)

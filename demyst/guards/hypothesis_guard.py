@@ -328,7 +328,7 @@ class ExperimentTracker:
         }
 
 
-# Physics sigma thresholds (sigma -> p-value, two-tailed)
+# Physics sigma thresholds (sigma -> p-value, one-sided)
 # In particle physics, 5-sigma is standard for discovery, 3-sigma for evidence
 SIGMA_TO_PVALUE = {
     5.0: 2.87e-7,   # 5-sigma discovery threshold

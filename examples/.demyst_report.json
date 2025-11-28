@@ -1,12 +1,12 @@
 {
-  "timestamp": "2025-11-27T15:37:13.103854",
+  "timestamp": "2025-11-28T10:07:03.850914",
   "repository": "scilint",
   "branch": "main",
-  "commit": "35e906c6ec52ba23083dac3a73a0f33c22f08377",
-  "files_analyzed": 5,
-  "total_issues": 10,
-  "critical_issues": 10,
-  "warning_issues": 0,
+  "commit": "e3bd0712691ba25940936ea55cef8b018faf911e",
+  "files_analyzed": 7,
+  "total_issues": 14,
+  "critical_issues": 13,
+  "warning_issues": 1,
   "checks": [
     {
       "name": "Computational Mirages",
@@ -15,23 +15,26 @@
       "issues": [
         {
           "type": "mean",
-          "line": 24,
+          "line": 25,
           "function": "analyze_swarm_safety",
-          "description": "Computational mirage: mean operation destroys variance information",
+          "description": "Computational mirage: mean operation destroys variance information.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
           "file": "/Volumes/VIXinSSD/demyst/examples/swarm_collapse.py"
         },
         {
           "type": "mean",
-          "line": 12,
+          "line": 13,
           "function": "analyze_random_walk",
-          "description": "Computational mirage: mean operation destroys variance information",
+          "description": "Computational mirage: mean operation destroys variance information.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
           "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
         },
         {
           "type": "premature_discretization",
-          "line": 17,
+          "line": 18,
           "function": "analyze_random_walk",
-          "description": "Computational mirage: premature_discretization operation destroys variance information",
+          "description": "Computational mirage: premature_discretization operation destroys variance information.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
           "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
         }
       ],
@@ -42,17 +45,76 @@
     },
     {
       "name": "Deep Learning Integrity",
-      "passed": true,
-      "severity": "info",
-      "issues": [],
-      "recommendations": []
+      "passed": false,
+      "severity": "warning",
+      "issues": [
+        {
+          "layer": "BatchNorm1d",
+          "line": 110,
+          "type": "unstable_batch_stats",
+          "description": "BatchNorm1d with track_running_stats=False will use batch statistics during evaluation, causing non-deterministic behavior.",
+          "masked_statistics": [
+            "running_mean",
+            "running_var"
+          ],
+          "recommendation": "Keep track_running_stats=True for production models. Batch statistics during eval hide distribution shifts between training and deployment data.",
+          "file": "/Volumes/VIXinSSD/demyst/examples/deep_learning_gradient_death.py"
+        }
+      ],
+      "recommendations": [
+        "Add residual connections to prevent gradient death",
+        "Monitor gradient flow during training with TorchModuleWrapper"
+      ]
     },
     {
       "name": "Data Leakage",
-      "passed": true,
-      "severity": "info",
-      "issues": [],
-      "recommendations": []
+      "passed": false,
+      "severity": "critical",
+      "issues": [
+        {
+          "type": "test_in_training",
+          "severity": "critical",
+          "line": 112,
+          "col": 0,
+          "variable": "X_test",
+          "source": "Line 105",
+          "context": "train",
+          "description": "Test data 'X_test' is being used in training context 'train'. This completely invalidates your benchmark results.",
+          "scientific_impact": "Your model has seen the test data during training. Any reported accuracy/performance metrics are meaningless. This is the most common form of scientific fraud in ML (often unintentional).",
+          "recommendation": "Ensure complete separation of test data. Use sklearn's train_test_split or similar and verify test indices never appear in training loops.",
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
+        },
+        {
+          "type": "test_in_training",
+          "severity": "critical",
+          "line": 112,
+          "col": 0,
+          "variable": "y_test",
+          "source": "Line 105",
+          "context": "train",
+          "description": "Test data 'y_test' is being used in training context 'train'. This completely invalidates your benchmark results.",
+          "scientific_impact": "Your model has seen the test data during training. Any reported accuracy/performance metrics are meaningless. This is the most common form of scientific fraud in ML (often unintentional).",
+          "recommendation": "Ensure complete separation of test data. Use sklearn's train_test_split or similar and verify test indices never appear in training loops.",
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
+        },
+        {
+          "type": "preprocessing_leakage",
+          "severity": "critical",
+          "line": 45,
+          "col": 0,
+          "variable": "X",
+          "source": "fit_transform",
+          "context": "preprocessing",
+          "description": "fit_transform() called on line 45 BEFORE train_test_split on line 48. Preprocessing statistics (mean, std, etc.) are computed using test data.",
+          "scientific_impact": "Preprocessing learns from test data. Features are scaled/normalized using information that should be held out. This is subtle but causes overestimation of model performance.",
+          "recommendation": "Split data FIRST, then fit preprocessing on train only:\n  X_train, X_test = train_test_split(X)\n  scaler.fit(X_train)\n  X_train = scaler.transform(X_train)\n  X_test = scaler.transform(X_test)",
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
+        }
+      ],
+      "recommendations": [
+        "Split data BEFORE any preprocessing or feature engineering",
+        "Use sklearn Pipeline to ensure proper cross-validation"
+      ]
     },
     {
       "name": "Statistical Validity",
@@ -62,7 +124,7 @@
         {
           "type": "uncorrected_multiple_tests",
           "severity": "invalid",
-          "line": 21,
+          "line": 22,
           "description": "Statistical test ttest_ind() called inside a loop. Multiple comparisons require p-value correction.",
           "statistical_impact": "Running multiple statistical tests inflates the false positive rate. With 20 tests at alpha=0.05, you have a 64% chance of at least one false positive (1 - 0.95^20).",
           "corrected_interpretation": "Apply Bonferroni correction: divide alpha by number of tests, or use Benjamini-Hochberg for FDR control.",
@@ -72,7 +134,7 @@
         {
           "type": "conditional_reporting",
           "severity": "questionable",
-          "line": 24,
+          "line": 25,
           "description": "Conditional logic based on p-value detected. This pattern enables selective reporting.",
           "statistical_impact": "Conditioning on significance leads to publication bias. Non-significant results are equally important for science.",
           "corrected_interpretation": "Report ALL results regardless of significance. Use pre-registration to prevent outcome-dependent analysis.",
@@ -119,7 +181,7 @@
         {
           "type": "dimension_mismatch",
           "severity": "warning",
-          "line": 23,
+          "line": 24,
           "col": 4,
           "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
           "left_dimension": "[L M T^-2]",
@@ -132,7 +194,7 @@
         {
           "type": "incompatible_comparison",
           "severity": "critical",
-          "line": 24,
+          "line": 25,
           "col": 11,
           "expression": "p_val < 0.05",
           "left_dimension": "[L^2 M T^-3]",

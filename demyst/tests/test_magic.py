@@ -2,34 +2,40 @@ import sys
 from unittest.mock import MagicMock, patch
 
 import pytest
+from IPython.core.interactiveshell import InteractiveShell
+from IPython.core.magic import Magics, line_magic, magics_class
+from IPython.display import HTML, Markdown, display
 
 # Mock IPython modules BEFORE importing demyst.magic
-if "IPython" not in sys.modules:
-    sys.modules["IPython"] = MagicMock()
-    sys.modules["IPython.core"] = MagicMock()
-    sys.modules["IPython.core.magic"] = MagicMock()
-    sys.modules["IPython.display"] = MagicMock()
-    sys.modules["IPython.core.interactiveshell"] = MagicMock()
+# Force mock even if IPython is already loaded
+sys.modules["IPython"] = MagicMock()
+sys.modules["IPython.core"] = MagicMock()
+sys.modules["IPython.core.magic"] = MagicMock()
+sys.modules["IPython.display"] = MagicMock()
+sys.modules["IPython.core.interactiveshell"] = MagicMock()
 
-    # Setup necessary attributes for inheritance and decorators
-    class MockMagics:
-        def __init__(self, shell):
-            self.shell = shell
+# Setup necessary attributes for inheritance and decorators
+class MockMagics:
+    def __init__(self, shell):
+        self.shell = shell
 
-    sys.modules["IPython.core.magic"].Magics = MockMagics
+sys.modules["IPython.core.magic"].Magics = MockMagics  # type: ignore
 
-    def magics_class(cls):
-        return cls
+def magics_class(cls):
+    return cls
 
-    sys.modules["IPython.core.magic"].magics_class = magics_class
-    sys.modules["IPython.core.magic"].line_magic = lambda f: f
+sys.modules["IPython.core.magic"].magics_class = magics_class  # type: ignore
+sys.modules["IPython.core.magic"].line_magic = lambda f: f  # type: ignore
 
-    # Setup display
-    sys.modules["IPython.display"].display = MagicMock()
-    sys.modules["IPython.display"].HTML = MagicMock()
+# Setup display
+sys.modules["IPython.display"].display = MagicMock()  # type: ignore
+sys.modules["IPython.display"].HTML = MagicMock()  # type: ignore
 
 # Now we can import
+import demyst.magic
 from demyst.magic import DemystMagics, load_ipython_extension
+import importlib
+importlib.reload(demyst.magic)
 
 
 class TestDemystMagic:

@@ -118,6 +118,11 @@ warn_unused_ignores = true
 warn_no_return = true
 strict_equality = true
 show_error_codes = true
+exclude = [
+    "examples/",
+    "build/",
+    "dist/",
+]
 
 [[tool.mypy.overrides]]
 module = [

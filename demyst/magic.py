@@ -115,10 +115,10 @@ class DemystMagics(Magics):
         # 3. Hypothesis Guard
         if self.enforcer.config_manager.is_rule_enabled("hypothesis"):
             try:
-                guard = self.enforcer.HypothesisGuard(
+                h_guard = self.enforcer.HypothesisGuard(
                     config=self.enforcer.config_manager.get_rule_config("hypothesis")
                 )
-                res = guard.analyze_code(source)
+                res = h_guard.analyze_code(source)
                 for v in res.get("violations", []):
                     all_issues.append(
                         {
@@ -138,10 +138,10 @@ class DemystMagics(Magics):
         # 4. Unit Guard
         if self.enforcer.config_manager.is_rule_enabled("unit"):
             try:
-                guard = self.enforcer.UnitGuard(
+                u_guard = self.enforcer.UnitGuard(
                     config=self.enforcer.config_manager.get_rule_config("unit")
                 )
-                res = guard.analyze(source)
+                res = u_guard.analyze(source)
                 for v in res.get("violations", []):
                     all_issues.append(
                         {
@@ -159,10 +159,10 @@ class DemystMagics(Magics):
         # 5. Tensor Guard
         if self.enforcer.config_manager.is_rule_enabled("tensor"):
             try:
-                guard = self.enforcer.TensorGuard(
+                t_guard = self.enforcer.TensorGuard(
                     config=self.enforcer.config_manager.get_rule_config("tensor")
                 )
-                res = guard.analyze(source)
+                res = t_guard.analyze(source)
 
                 for issue in res.get("gradient_issues", []):
                     all_issues.append(
@@ -234,7 +234,7 @@ class DemystMagics(Magics):
         display(HTML(html_content))
 
 
-def load_ipython_extension(ipython):
+def load_ipython_extension(ipython: Any) -> None:
     """
     Entry point for %load_ext demyst
     """

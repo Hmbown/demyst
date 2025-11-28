@@ -26,18 +26,18 @@ logger = logging.getLogger("demyst.watchdog")
 class DemystEventHandler(FileSystemEventHandler):
     """Handles file system events."""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.enforcer = CIEnforcer()
 
     def on_modified(self, event: FileSystemEvent) -> None:
         if event.is_directory:
             return
 
-        filename = event.src_path
+        filename = str(event.src_path)
         if not filename.endswith(".py"):
             return
 
-        self._analyze_file(filename)
+        self._analyze_file(str(filename))
 
     def _analyze_file(self, filepath: str) -> None:
         """Run Demyst analysis on the modified file."""

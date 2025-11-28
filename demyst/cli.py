@@ -51,7 +51,7 @@ def _format_analysis_result_to_markdown(
     markdown_output.append(f"# Demyst Analysis Report: `{file_path}`\n")
 
     # Collect all issues for summary
-    all_issues = []
+    all_issues: List[Dict[str, Any]] = []
     issue_counts = {
         "Mirage": 0,
         "Leakage": 0,
@@ -176,14 +176,14 @@ def setup_logging(verbose: bool = False, debug: bool = False, force_terminal: bo
 def _get_issues_from_result(data: Dict[str, Any], check_name: str) -> List[Dict[str, Any]]:
     """Helper to extract issues from different result structures."""
     if check_name == "mirage":
-        return data.get("issues", [])
+        return list(data.get("issues", []))
     elif check_name in ["leakage", "hypothesis", "unit"]:
-        return data.get("violations", [])
+        return list(data.get("violations", []))
     elif check_name == "tensor":
         gradient_issues = data.get("gradient_issues", [])
         normalization_issues = data.get("normalization_issues", [])
         reward_issues = data.get("reward_issues", [])
-        return gradient_issues + normalization_issues + reward_issues
+        return list(gradient_issues + normalization_issues + reward_issues)
     return []
 
 def analyze_command(args: argparse.Namespace, config_path: Optional[str] = None) -> int:
@@ -544,13 +544,13 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
                 "pass" if check_result.passed else "fail",
                 f"Found {len(check_result.issues)} issues",
                 check_result.issues,
-                [issue.get("recommendation")
+                [str(issue.get("recommendation"))
                  for issue in check_result.issues if issue.get("recommendation")],
             )
             if not check_result.passed:
                 has_issues = True
 
-                return 1 if has_issues else 0
+        return 1 if has_issues else 0
 
     # Single file - run all checks
     result = enforcer.analyze_file(args.path)
@@ -972,7 +972,7 @@ For more information: https://github.com/demyst/demyst
         parser.print_help()
         return 0
 
-    return args.func(args, config_path=args.config)
+    return int(args.func(args, config_path=args.config))
 
 
 if __name__ == "__main__":

@@ -404,7 +404,7 @@ class _NullContext:
 # Global Console Instance
 # =============================================================================
 
-_console: Optional["Console"] = None
+_console: Optional["DemystConsole"] = None
 
 
 

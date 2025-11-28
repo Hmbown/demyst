@@ -32,7 +32,7 @@ class VariationTensor:
             sum_val = np.add.reduce(self.data, axis=self.axis, keepdims=self.keepdims)
             count = self.data.shape[self.axis] if self.axis is not None else self.data.size
             result = sum_val / count
-            
+
             # Ensure 'history' key exists in metadata
             if "history" not in self.metadata:
                 self.metadata["history"] = []
@@ -43,12 +43,21 @@ class VariationTensor:
                     "timestamp": "now",
                 }
             )
+            # Also track in _variation_history for backwards compatibility
+            self._variation_history.append(
+                {
+                    "operation": "mean",
+                    "original_variance": np.var(self.data),
+                }
+            )
             return result
         elif operation == "sum":
             result = np.add.reduce(self.data, axis=self.axis, keepdims=self.keepdims)
             if "history" not in self.metadata:
                 self.metadata["history"] = []
             self.metadata["history"].append({"operation": "sum", "timestamp": "now"})
+            # Also track in _variation_history for backwards compatibility
+            self._variation_history.append({"operation": "sum"})
             return result
         raise ValueError(f"Unknown operation: {operation}")
 

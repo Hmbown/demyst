@@ -94,6 +94,9 @@ class WandBIntegration:
         except ImportError:
             warnings.warn("wandb not installed. Running in local-only mode.")
             self._run = None
+        except Exception as e:
+            warnings.warn(f"wandb initialization failed: {e}. Running in local-only mode.")
+            self._run = None
 
     def log(self, metrics: Dict[str, float], step: Optional[int] = None) -> None:
         """
@@ -232,9 +235,9 @@ class WandBIntegration:
                 f"{mean_val:.4f} +/- {std_val:.4f}"
             )
         else:
-            report["verdict"] = (
-                "WARNING: Only 1 experiment. Run multiple seeds for statistical validity."
-            )
+            report[
+                "verdict"
+            ] = "WARNING: Only 1 experiment. Run multiple seeds for statistical validity."
 
         return report
 

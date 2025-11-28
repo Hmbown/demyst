@@ -115,7 +115,6 @@ class MirageDetector(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             # Detect np.mean(), np.sum(), etc.
             if isinstance(node.func.value, ast.Name) and node.func.value.id in ["np", "numpy"]:
-
                 if node.func.attr in ["mean", "sum", "argmax", "argmin"]:
                     # Get the variable being operated on
                     var_name = None

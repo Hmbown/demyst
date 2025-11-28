@@ -1023,9 +1023,7 @@ group_correlation = np.corrcoef(state_avg_income, state_avg_education)[0, 1]
 
         return False
 
-    def generate_attack(
-        self, target_guard: str, strategy: str = "adversarial"
-    ) -> Dict[str, Any]:
+    def generate_attack(self, target_guard: str, strategy: str = "adversarial") -> Dict[str, Any]:
         """
         Generate a red-teaming attack against a specific guard.
 

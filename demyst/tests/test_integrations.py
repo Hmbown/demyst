@@ -13,6 +13,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+# Check if wandb is available (handles circular import issues)
+try:
+    import wandb
+
+    WANDB_AVAILABLE = True
+except (ImportError, AttributeError):
+    WANDB_AVAILABLE = False
+
 
 class TestTorchVariation:
     """Tests for TorchVariation wrapper."""
@@ -91,6 +99,7 @@ class TestExperimentTrackers:
         assert len(experiments) == 1
         assert experiments[0].seed == 42
 
+    @pytest.mark.skipif(not WANDB_AVAILABLE, reason="wandb not available or import error")
     def test_wandb_integrity_report(self):
         """Test integrity report generation."""
         from demyst.integrations.experiment_trackers import WandBIntegration
@@ -125,6 +134,7 @@ class TestExperimentTrackers:
         experiments = tracker.get_all_experiments()
         assert len(experiments) == 1
 
+    @pytest.mark.skipif(not WANDB_AVAILABLE, reason="wandb not available or import error")
     def test_cherry_picking_detection(self):
         """Test cherry-picking detection in experiment tracker."""
         from demyst.integrations.experiment_trackers import WandBIntegration

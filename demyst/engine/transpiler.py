@@ -28,10 +28,7 @@ from demyst.exceptions import (
 
 # Try to import LibCST-based transformer, fall back to AST if not available
 try:
-    from demyst.engine.cst_transformer import (
-        CSTTranspiler,
-        TransformationRecord,
-    )
+    from demyst.engine.cst_transformer import CSTTranspiler, TransformationRecord
     from demyst.engine.cst_transformer import detect_mirages as cst_detect_mirages
 
     CST_AVAILABLE = True

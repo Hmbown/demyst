@@ -1,0 +1,13 @@
+# Minimal Demyst Pre-commit Setup
+# Copy to your project root as .pre-commit-config.yaml
+#
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/demyst/demyst
+    rev: v1.2.0  # Use latest version
+    hooks:
+      - id: demyst
+        # Runs all integrity checks on changed Python files
+        # Add args to customize: args: ['--format', 'text', '--strict']

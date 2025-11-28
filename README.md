@@ -103,14 +103,22 @@ Demyst is designed to catch **scientific logic errors** that standard linters mi
 ## Installation
 
 ```bash
-# From source
+pip install demyst
+
+# Or from source
 git clone https://github.com/demyst/demyst.git
 cd demyst
 pip install -e .
-
-# With development dependencies
-pip install -e ".[dev]"
 ```
+
+## 5-Minute Setup
+
+1. **Install**: `pip install demyst`
+2. **Check your code**: `demyst analyze ./src`
+3. **Add pre-commit**: Copy [`examples/configs/.pre-commit-config.minimal.yaml`](examples/configs/.pre-commit-config.minimal.yaml)
+4. **Add CI**: Copy [`examples/configs/demyst-ci.yml`](examples/configs/demyst-ci.yml) to `.github/workflows/`
+
+See the [**Quick Start Guide**](docs/quickstart.md) for the full walkthrough, or try the [**Interactive Notebook**](notebooks/quickstart.ipynb).
 
 ## Quick Start
 
@@ -265,13 +273,18 @@ jobs:
 ```yaml
 repos:
   - repo: https://github.com/demyst/demyst
-    rev: v1.0.0
+    rev: v1.2.0
     hooks:
       - id: demyst
       # Or individual hooks:
       # - id: demyst-mirage
       # - id: demyst-leakage
+      # - id: demyst-hypothesis
+      # - id: demyst-tensor
+      # - id: demyst-units
 ```
+
+See [`examples/configs/`](examples/configs/) for ready-made configuration templates.
 
 ## Programmatic Usage
 
@@ -309,6 +322,14 @@ This aligns with the broader movement toward **self-verifiable AI reasoning**—
 ## License
 
 MIT License - See [LICENSE](LICENSE) for details.
+
+## Resources
+
+- [**Quick Start Guide**](docs/quickstart.md) - Get started in 5 minutes
+- [**Interactive Notebook**](notebooks/quickstart.ipynb) - Explore Demyst interactively
+- [**Configuration Templates**](examples/configs/) - Ready-to-use configs for pre-commit, CI, and more
+- [**Example Files**](examples/) - See what Demyst catches
+- [**Full Documentation**](docs/usage.md) - Complete reference
 
 ## Contributing
 

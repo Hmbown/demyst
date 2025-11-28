@@ -1,0 +1,55 @@
+# Strict Demyst CI Workflow with PR Comments
+# Copy to .github/workflows/demyst.yml
+#
+# Uses the official Demyst GitHub Action for:
+# - Automatic PR comments with analysis results
+# - Strict mode (fails on any issue)
+# - Report artifacts
+
+name: Demyst Scientific Integrity (Strict)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  demyst:
+    name: Scientific Integrity Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Option 1: Use the official Demyst Action (recommended)
+      - name: Run Demyst (via Action)
+        uses: demyst/demyst@v1.2.0
+        with:
+          path: '.'
+          mode: 'full'
+          strict: 'true'
+          format: 'markdown'
+
+  # Alternative: Matrix testing by check type
+  demyst-matrix:
+    name: ${{ matrix.check }} Check
+    runs-on: ubuntu-latest
+    if: false  # Enable by changing to 'true'
+    strategy:
+      fail-fast: false  # Run all checks even if one fails
+      matrix:
+        check: [mirage, leakage, hypothesis, tensor, units]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install demyst
+
+      - name: Run ${{ matrix.check }} check
+        run: demyst ${{ matrix.check }} . --format markdown

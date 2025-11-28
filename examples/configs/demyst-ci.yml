@@ -1,0 +1,41 @@
+# Basic Demyst CI Workflow
+# Copy to .github/workflows/demyst.yml
+#
+# Runs Demyst checks on every push and pull request.
+
+name: Demyst Scientific Integrity
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  demyst:
+    name: Scientific Integrity Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Demyst
+        run: pip install demyst
+
+      - name: Run Demyst Analysis
+        run: demyst ci . --format markdown
+
+      # Optional: Upload report as artifact
+      - name: Upload Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: demyst-report
+          path: .demyst_report.json
+          if-no-files-found: ignore

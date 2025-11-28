@@ -169,6 +169,46 @@ demyst ci [path] [--strict] [--config CONFIG]
 - `--strict`: Fail on warnings (not just critical issues)
 - `--config, -c`: Path to configuration file
 
+### `demyst fix`
+
+Automatically fix issues detected by Demyst.
+
+```bash
+demyst fix <path> [--dry-run] [--interactive]
+```
+
+**Options:**
+- `--dry-run`: Show what would be done without making changes
+- `--interactive, -i`: Ask before applying each fix
+
+**Note:** Fixing issues in a directory is currently in beta.
+
+## Configuration
+
+### `demyst report`
+
+Generate a full scientific integrity report.
+
+```bash
+demyst report <path> [--format markdown|html|json|text] [--cert]
+```
+
+**Options:**
+- `--format, -f`: Output format (markdown, html, json, text)
+- `--cert`: Generate a Certificate of Integrity (JSON output)
+
+**Example:**
+```bash
+# Generate a text report for a file
+demyst report my_model.py
+
+# Generate an HTML report for a directory
+demyst report ./src/ --format html
+
+# Generate a JSON Certificate of Integrity
+demyst report my_model.py --cert
+```
+
 ## Configuration
 
 Create a `.demystrc.yaml` file in your project root:
@@ -216,7 +256,7 @@ Add to your `.pre-commit-config.yaml`:
 ```yaml
 repos:
   - repo: https://github.com/demyst/demyst
-    rev: v1.0.0
+    rev: main
     hooks:
       - id: demyst
         # Or use individual hooks:

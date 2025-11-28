@@ -1,0 +1,36 @@
+# Demyst Configuration - Default Setup
+# Copy to your project root as .demystrc.yaml
+#
+# For more options, see: https://github.com/demyst/demyst/docs/usage.md
+
+# Domain profile (optional)
+# Options: default, physics, biology, chemistry, neuroscience, climate, economics
+profile: default
+
+# Rule configuration
+rules:
+  mirage:
+    enabled: true
+    severity: critical    # Variance-destroying operations are critical
+  leakage:
+    enabled: true
+    severity: critical    # Data leakage invalidates all results
+  hypothesis:
+    enabled: true
+    severity: warning     # Statistical issues warrant review
+  unit:
+    enabled: true
+    severity: warning     # Unit mismatches warrant review
+  tensor:
+    enabled: true
+    severity: warning     # DL integrity issues warrant review
+
+# Files and directories to ignore
+ignore_patterns:
+  - "**/test_*"
+  - "**/*_test.py"
+  - "**/tests/**"
+  - "**/venv/**"
+  - "**/.venv/**"
+  - "**/__pycache__/**"
+  - "**/node_modules/**"

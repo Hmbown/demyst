@@ -404,21 +404,34 @@ class _NullContext:
 # Global Console Instance
 # =============================================================================
 
-_console: Optional[DemystConsole] = None
+_console: Optional["Console"] = None
+
 
 
 def get_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
+
     """Get the global console instance."""
+
     global _console
+
     if _console is None:
+
         _console = DemystConsole(force_terminal=force_terminal, no_color=no_color)
+
     return _console
 
 
+
+
+
 def configure_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
+
     """Configure and return a new console instance."""
+
     global _console
+
     _console = DemystConsole(force_terminal=force_terminal, no_color=no_color)
+
     return _console
 
 

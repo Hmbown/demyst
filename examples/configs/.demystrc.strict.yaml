@@ -1,0 +1,31 @@
+# Demyst Configuration - Strict Mode
+# Use for CI/CD pipelines or before publishing research
+#
+# All issues are treated as critical - any violation fails the check.
+# This ensures maximum scientific integrity for production code.
+
+profile: default
+
+# Strict: All rules at critical severity
+rules:
+  mirage:
+    enabled: true
+    severity: critical
+  leakage:
+    enabled: true
+    severity: critical
+  hypothesis:
+    enabled: true
+    severity: critical    # Strict: p-hacking is critical
+  unit:
+    enabled: true
+    severity: critical    # Strict: unit mismatches are critical
+  tensor:
+    enabled: true
+    severity: critical    # Strict: DL integrity is critical
+
+# Minimal ignores for strict mode
+ignore_patterns:
+  - "**/venv/**"
+  - "**/.venv/**"
+  - "**/__pycache__/**"

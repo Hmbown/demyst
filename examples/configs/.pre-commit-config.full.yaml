@@ -1,0 +1,45 @@
+# Full Demyst Pre-commit Setup with All Hooks
+# Copy to your project root as .pre-commit-config.yaml
+#
+# This configuration runs each guard separately for clearer error messages.
+# Individual hooks can be disabled by removing them from the list.
+
+repos:
+  # Code formatting (run before integrity checks)
+  - repo: https://github.com/psf/black
+    rev: 24.3.0
+    hooks:
+      - id: black
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args: ["--profile", "black"]
+
+  # Scientific integrity checks
+  - repo: https://github.com/demyst/demyst
+    rev: v1.2.0
+    hooks:
+      # Critical checks (run on every commit)
+      - id: demyst-leakage
+        name: "Demyst: Data Leakage Detection"
+        stages: [commit]
+
+      - id: demyst-mirage
+        name: "Demyst: Computational Mirage Detection"
+        stages: [commit]
+
+      - id: demyst-tensor
+        name: "Demyst: Deep Learning Integrity"
+        stages: [commit]
+
+      # Statistical checks (run on commit)
+      - id: demyst-hypothesis
+        name: "Demyst: P-Hacking Detection"
+        stages: [commit]
+
+      # Unit checks (run on push - can be slower)
+      - id: demyst-units
+        name: "Demyst: Dimensional Analysis"
+        stages: [push]

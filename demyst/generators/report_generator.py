@@ -143,7 +143,7 @@ class IntegrityReportGenerator:
                 line = issue.get("line", "?")
                 desc = issue.get("description", str(issue))
                 severity = issue.get("severity", "info")
-                lines.append(f"- **Line {line}** [{severity}]: {desc}")
+                lines.append(f"- **Line {line}**: {desc}")
             if len(section.issues) > 20:
                 lines.append(f"- *...and {len(section.issues) - 20} more issues*")
             lines.append("")

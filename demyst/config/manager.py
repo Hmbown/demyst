@@ -10,9 +10,11 @@ Handles loading and merging of configuration from:
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
+import logging # Import logging
 
 import yaml
 
+logger = logging.getLogger(__name__) # Initialize logger
 
 class ConfigManager:
     """Manages Demyst configuration."""
@@ -52,7 +54,7 @@ class ConfigManager:
                     if user_config:
                         config = self._merge_configs(config, user_config)
             except Exception as e:
-                print(f"Warning: Failed to load config file {self.config_path}: {e}")
+                logger.warning(f"Failed to load config file {self.config_path}: {e}")
 
         # Load profile if specified
         profile_name = str(config.get("profile", "default"))
@@ -117,3 +119,7 @@ class ConfigManager:
     def get_ignore_patterns(self) -> List[Any]:
         """Get global ignore patterns."""
         return list(self.config.get("ignore_patterns", []))
+
+    def set_ignore_patterns(self, patterns: List[str]) -> None:
+        """Set global ignore patterns."""
+        self.config["ignore_patterns"] = patterns

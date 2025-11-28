@@ -11,10 +11,15 @@ Generates comprehensive reports for CI/CD pipelines that check:
 
 import json
 import os
+import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
+
+from demyst.config.manager import ConfigManager
+
+logger = logging.getLogger(__name__) # Add this line
 
 
 @dataclass
@@ -163,21 +168,14 @@ class CIEnforcer:
         sys.exit(0 if report.badge_status == 'passing' else 1)  # For CI
     """
 
-    def __init__(self, config: Optional[Dict[str, Any]] = None):
+    def __init__(self, config_path: Optional[str] = None):
         """
         Initialize the CI enforcer.
 
         Args:
-            config: Optional configuration dictionary
+            config_path: Optional path to a configuration file
         """
-        from demyst.config.manager import ConfigManager
-
-        self.config_manager = ConfigManager()
-        if config:
-            self.config_manager.config = self.config_manager._merge_configs(
-                self.config_manager.config, config
-            )
-
+        self.config_manager = ConfigManager(config_path=config_path)
         self.config = self.config_manager.config
         self._import_guards()
 
@@ -243,7 +241,10 @@ class CIEnforcer:
                             "type": m["type"],
                             "line": m["line"],
                             "function": m.get("function"),
-                            "description": f"Computational mirage: {m['type']} operation destroys variance information",
+                            "description": f"Computational mirage: {m['type']} operation destroys variance information.",
+                            "recommendation": self._generate_recommendations("Computational Mirages", [m])[0]
+                            if self._generate_recommendations("Computational Mirages", [m])
+                            else None,
                         }
                         for m in mirages
                     ]
@@ -331,7 +332,6 @@ class CIEnforcer:
         for pattern in include_patterns:
             for filepath in base_path.glob(pattern):
                 if filepath.is_file():
-                    # Check exclusions
                     rel_path = str(filepath.relative_to(base_path))
                     excluded = any(
                         fnmatch.fnmatch(rel_path, exc) or fnmatch.fnmatch(str(filepath), exc)

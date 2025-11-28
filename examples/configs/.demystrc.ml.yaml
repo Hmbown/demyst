@@ -1,0 +1,36 @@
+# Demyst Configuration - Machine Learning Projects
+# Optimized for ML pipelines, training scripts, and model development
+#
+# Prioritizes data leakage and tensor integrity over unit analysis.
+
+profile: default
+
+rules:
+  mirage:
+    enabled: true
+    severity: warning     # ML often requires aggregations (mean metrics)
+    exclude:
+      - "**/evaluation/**"    # Metrics computations require mean/max
+      - "**/metrics/**"
+  leakage:
+    enabled: true
+    severity: critical    # DATA LEAKAGE IS ALWAYS CRITICAL IN ML
+  hypothesis:
+    enabled: true
+    severity: warning     # Statistical tests in ML are common
+  unit:
+    enabled: false        # Often not relevant for pure ML code
+  tensor:
+    enabled: true
+    severity: critical    # Gradient death, batch norm issues are critical
+
+# Common ML project ignores
+ignore_patterns:
+  - "**/test_*"
+  - "**/*_test.py"
+  - "**/tests/**"
+  - "**/notebooks/**"     # Exploration notebooks
+  - "**/experiments/**"   # Quick experiments
+  - "**/scripts/**"       # One-off scripts
+  - "**/venv/**"
+  - "**/.venv/**"

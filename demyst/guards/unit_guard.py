@@ -234,6 +234,39 @@ NATURAL_UNIT_CONSTANTS = {
     "boltzmann",
 }
 
+# ML-specific patterns (checked BEFORE physics patterns to avoid false positives)
+# These override single-letter patterns like x, y, z which mean coordinates in physics
+# but mean features/targets in ML
+ML_PATTERNS = {
+    # Target/prediction variables (y_true, y_pred, y_hat, etc.)
+    r"^y_": Dimension.dimensionless(),
+    r"^y$": Dimension.dimensionless(),  # bare y in ML context
+    r"_pred$": Dimension.dimensionless(),
+    r"_true$": Dimension.dimensionless(),
+    r"_hat$": Dimension.dimensionless(),
+    r"_label": Dimension.dimensionless(),
+    r"_target": Dimension.dimensionless(),
+    # Feature matrices (X_train, X_test, etc.)
+    r"^X_": Dimension.dimensionless(),
+    r"^X$": Dimension.dimensionless(),
+    # Common ML variable patterns
+    r"(?:^|_)(logits?|probs?|scores?|weights?|bias|loss|grad|gradient)(?:_|$)": Dimension.dimensionless(),
+    r"(?:^|_)(hidden|embedding|feature|input|output|activation)(?:_|s|$)": Dimension.dimensionless(),
+    r"(?:^|_)(batch|epoch|layer|channel|kernel|stride|padding)(?:_|s|$)": Dimension.dimensionless(),
+    r"(?:^|_)(lr|learning_rate|momentum|dropout|epsilon|delta|gamma|alpha|beta)(?:_|$)": Dimension.dimensionless(),
+    r"(?:^|_)(smooth|clip|threshold|margin|scale)(?:_|$)": Dimension.dimensionless(),
+    # Loss function variables
+    r"(?:^|_)(tp|fp|tn|fn|precision|recall|f1|accuracy|auc|dice|iou|jaccard)(?:_|$)": Dimension.dimensionless(),
+    r"(?:^|_)(tversky|focal|cross_entropy|mse|mae|rmse|bce)(?:_|$)": Dimension.dimensionless(),
+    # Index/count variables (steps_x, x_start, num_x, etc.) - NOT coordinates
+    r"(?:^|_)steps?_": Dimension.dimensionless(),
+    r"_(?:start|end|min|max|size|len|count|num|idx|index)$": Dimension.dimensionless(),
+    r"^(?:n|num|len|size|count|idx|index|step|offset|pointer)_": Dimension.dimensionless(),
+    r"^(?:i|j|k|n|m)$": Dimension.dimensionless(),  # Common loop variables
+    r"(?:^|_)(length|width|height|depth|shape|dim|axis)(?:_|$)": Dimension.dimensionless(),  # Array dimensions, not physical
+    r"(?:^|_)(shared|global|local)_": Dimension.dimensionless(),  # Shared/global variables
+}
+
 
 class UnitInferenceEngine:
     """
@@ -255,7 +288,15 @@ class UnitInferenceEngine:
         self.type_environment: Dict[str, Dimension] = {}
 
         # Build pattern list based on config
-        patterns = dict(UNIT_PATTERNS)
+        # ML patterns are checked FIRST to avoid false positives on y_pred, X_train, etc.
+        patterns: Dict[str, Dimension] = {}
+
+        # Add ML patterns first (highest priority) unless explicitly disabled
+        if self.config.get("ml_patterns", True):
+            patterns.update(ML_PATTERNS)
+
+        # Add physics unit patterns
+        patterns.update(UNIT_PATTERNS)
 
         # Add tensor convention patterns if enabled
         if self.config.get("tensor_conventions", False):

@@ -8,6 +8,8 @@
 
 > "Science is the belief in the ignorance of experts." - Richard Feynman
 
+![Demyst Demo](demo.gif)
+
 ## Why Demyst?
 
 In the age of AI and rapid prototyping, we face a fundamental challenge:

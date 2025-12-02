@@ -17,7 +17,7 @@ Sleep 1s
 Type "# Let's check this AI safety code for hidden issues..." Sleep 500ms Enter
 Sleep 500ms
 Type "cat examples/swarm_collapse.py | head -25" Sleep 300ms Enter
-Sleep 3s
+Sleep 5s
 
 # Clear and run demyst
 Type "clear" Enter
@@ -25,12 +25,14 @@ Sleep 500ms
 
 # Run demyst mirage detection
 Type "# Running Demyst to detect Computational Mirages..." Sleep 500ms Enter
-Sleep 500ms
+Sleep 2s
 Type "demyst mirage examples/swarm_collapse.py" Sleep 300ms Enter
-Sleep 4s
+Sleep 7s
 
 # Explain the finding
 Type "" Enter
 Type "# Found! np.mean() hides the rogue agent (0.0 alignment)" Sleep 500ms Enter
 Type "# Average = 0.999 looks safe, but 1 agent will cause cascade failure" Sleep 500ms Enter
-Sleep 3s
+Type "# Demyst flags this mirage because variance-free averages lie." Sleep 500ms Enter
+Type "# Fix it by tracking agent distributions with VariationTensor." Sleep 500ms Enter
+Sleep 4s

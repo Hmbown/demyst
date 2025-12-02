@@ -1,9 +1,10 @@
 import json
 import os
-import pytest
 import sys
 from io import StringIO
 from unittest.mock import patch
+
+import pytest
 
 from demyst import cli
 

@@ -504,7 +504,9 @@ class TestFuzzing:
             return
 
         try:
-            tree = ast.parse(code)
+            # Sanitize code by removing null bytes before parsing
+            sanitized_code = code.replace('\x00', '')
+            tree = ast.parse(sanitized_code)
             detector = MirageDetector()
             detector.visit(tree)
             # If we get here without crashing, that's good

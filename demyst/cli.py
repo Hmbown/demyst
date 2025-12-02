@@ -27,7 +27,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from demyst.console import format_analysis_report, get_console, DemystConsole
+from demyst.console import DemystConsole, format_analysis_report, get_console
 from demyst.utils import safe_read_file
 
 

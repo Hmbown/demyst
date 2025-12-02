@@ -28,10 +28,10 @@ from pydantic import BaseModel, Field
 
 from demyst.config.manager import ConfigManager
 from demyst.engine.mirage_detector import MirageDetector
-from demyst.guards.unit_guard import UnitGuard
-from demyst.guards.leakage_hunter import LeakageHunter
 from demyst.guards.hypothesis_guard import HypothesisGuard
+from demyst.guards.leakage_hunter import LeakageHunter
 from demyst.guards.tensor_guard import TensorGuard
+from demyst.guards.unit_guard import UnitGuard
 
 # Initialize FastMCP server
 mcp = FastMCP("demyst")
@@ -512,6 +512,7 @@ def fix_mirages(code: str, dry_run: bool = True) -> str:
         JSON string containing fixed code, diff, and applied actions.
     """
     import difflib
+
     from demyst.fixer import fix_source
 
     # First detect mirages to get violations

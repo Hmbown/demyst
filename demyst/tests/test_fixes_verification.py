@@ -1,7 +1,9 @@
-import pytest
 import ast
-from demyst.guards.hypothesis_guard import HypothesisGuard, HypothesisAnalyzer
-from demyst.guards.unit_guard import UnitGuard, UnitInferenceEngine, Dimension
+
+import pytest
+
+from demyst.guards.hypothesis_guard import HypothesisAnalyzer, HypothesisGuard
+from demyst.guards.unit_guard import Dimension, UnitGuard, UnitInferenceEngine
 
 
 class TestBugFixVerification:

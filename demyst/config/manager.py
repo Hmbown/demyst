@@ -7,10 +7,10 @@ Handles loading and merging of configuration from:
 3. User .demystrc.yaml file
 """
 
+import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
-import logging  # Import logging
 
 import yaml
 

@@ -1,7 +1,9 @@
-import pytest
 import json
-from demyst.generators.report_generator import IntegrityReportGenerator
+
+import pytest
+
 from demyst.generators.paper_generator import PaperGenerator
+from demyst.generators.report_generator import IntegrityReportGenerator
 
 
 def test_integrity_report_generator_empty_report():

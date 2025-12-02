@@ -519,7 +519,9 @@ class TensorGuard:
             Dictionary containing all detected issues and recommendations
         """
         try:
-            tree = ast.parse(source)
+            # Sanitize source by removing null bytes before parsing
+            sanitized_source = source.replace('\x00', '')
+            tree = ast.parse(sanitized_source)
         except SyntaxError as e:
             return {
                 "error": f"Syntax error in source: {e}",

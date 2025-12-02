@@ -35,10 +35,11 @@ sys.modules["IPython.core.magic"].line_magic = lambda f: f  # type: ignore
 sys.modules["IPython.display"].display = MagicMock()  # type: ignore
 sys.modules["IPython.display"].HTML = MagicMock()  # type: ignore
 
+import importlib
+
 # Now we can import
 import demyst.magic
 from demyst.magic import DemystMagics, load_ipython_extension
-import importlib
 
 importlib.reload(demyst.magic)
 

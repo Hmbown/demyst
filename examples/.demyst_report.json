@@ -1,11 +1,11 @@
 {
-  "timestamp": "2025-11-28T10:07:03.850914",
-  "repository": "scilint",
+  "timestamp": "2025-11-30T13:07:15.903408",
+  "repository": "demyst",
   "branch": "main",
-  "commit": "e3bd0712691ba25940936ea55cef8b018faf911e",
+  "commit": "d406af3703ea28303c3a0a53a250f3beb0f84b7a",
   "files_analyzed": 7,
-  "total_issues": 14,
-  "critical_issues": 13,
+  "total_issues": 13,
+  "critical_issues": 12,
   "warning_issues": 1,
   "checks": [
     {
@@ -190,19 +190,6 @@
           "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
           "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
           "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
-        },
-        {
-          "type": "incompatible_comparison",
-          "severity": "critical",
-          "line": 25,
-          "col": 11,
-          "expression": "p_val < 0.05",
-          "left_dimension": "[L^2 M T^-3]",
-          "right_dimension": "[1]",
-          "description": "Comparing quantities with incompatible dimensions: [L^2 M T^-3] vs [1].",
-          "physical_meaning": "Comparing physically incompatible quantities. The comparison result is meaningless.",
-          "recommendation": "Convert to same units before comparing, or verify this comparison makes physical sense.",
-          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
         },
         {
           "type": "incompatible_addition",

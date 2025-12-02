@@ -12,6 +12,7 @@ try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -21,6 +22,7 @@ except ImportError:
 # ==============================================================================
 # ERROR 1: Deep Sigmoid Chain (Vanishing Gradients)
 # ==============================================================================
+
 
 class DeepSigmoidNetwork(nn.Module):
     """
@@ -58,6 +60,7 @@ class DeepSigmoidNetwork(nn.Module):
 # ERROR 2: Deep Tanh Network (Less Severe but Still Problematic)
 # ==============================================================================
 
+
 class DeepTanhNetwork(nn.Module):
     """
     WRONG: Deep Tanh chain (slightly better than Sigmoid, still problematic).
@@ -90,6 +93,7 @@ class DeepTanhNetwork(nn.Module):
 # ERROR 3: BatchNorm with track_running_stats=False
 # ==============================================================================
 
+
 class UnstableBatchNormNetwork(nn.Module):
     """
     WRONG: BatchNorm with track_running_stats=False.
@@ -119,6 +123,7 @@ class UnstableBatchNormNetwork(nn.Module):
 # CORRECT: Residual Network (Gradient-Preserving)
 # ==============================================================================
 
+
 class CorrectResidualNetwork(nn.Module):
     """
     CORRECT: Deep network with residual connections.
@@ -135,11 +140,13 @@ class CorrectResidualNetwork(nn.Module):
 
         self.blocks = nn.ModuleList()
         for _ in range(num_blocks):
-            self.blocks.append(nn.Sequential(
-                nn.Linear(hidden_dim, hidden_dim),
-                nn.ReLU(),  # Non-saturating activation
-                nn.Linear(hidden_dim, hidden_dim)
-            ))
+            self.blocks.append(
+                nn.Sequential(
+                    nn.Linear(hidden_dim, hidden_dim),
+                    nn.ReLU(),  # Non-saturating activation
+                    nn.Linear(hidden_dim, hidden_dim),
+                )
+            )
 
         self.output = nn.Linear(hidden_dim, 10)
 
@@ -155,6 +162,7 @@ class CorrectResidualNetwork(nn.Module):
 # ==============================================================================
 # CORRECT: Modern Activation Functions
 # ==============================================================================
+
 
 class ModernActivationNetwork(nn.Module):
     """
@@ -206,7 +214,7 @@ def demonstrate_gradient_death():
     print("\nDeepSigmoidNetwork (WRONG):")
     print("Gradient magnitudes by layer:")
     for i, layer in enumerate(bad_model.layers):
-        if hasattr(layer, 'weight') and layer.weight.grad is not None:
+        if hasattr(layer, "weight") and layer.weight.grad is not None:
             grad_norm = layer.weight.grad.norm().item()
             status = "VANISHING!" if grad_norm < 1e-6 else ""
             print(f"  Layer {i}: {grad_norm:.2e} {status}")
@@ -232,7 +240,8 @@ if __name__ == "__main__":
     print("GRADIENT DEATH DEMONSTRATION")
     print("=" * 60)
 
-    print("""
+    print(
+        """
 This example demonstrates patterns that cause 'silent gradient death'
 where neural networks appear to train but early layers learn nothing.
 
@@ -240,7 +249,8 @@ TensorGuard detects:
 1. gradient_death_chain: 3+ Sigmoid or 4+ Tanh without residuals
 2. unstable_batch_stats: BatchNorm with track_running_stats=False
 3. normalization_before_sensitive: BatchNorm before attention layers
-""")
+"""
+    )
 
     if TORCH_AVAILABLE:
         demonstrate_gradient_death()

@@ -44,11 +44,9 @@ for i in range(n_biomarkers):
 
     # Check significance
     if p_value < 0.05:  # 🤔 Hmm...
-        significant_findings.append({
-            'biomarker': f'Biomarker_{i}',
-            'p_value': p_value,
-            't_stat': t_stat
-        })
+        significant_findings.append(
+            {"biomarker": f"Biomarker_{i}", "p_value": p_value, "t_stat": t_stat}
+        )
         print(f"✓ Biomarker_{i}: p={p_value:.4f} - SIGNIFICANT!")
 
 # ========================================

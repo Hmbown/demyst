@@ -10,11 +10,12 @@ Handles loading and merging of configuration from:
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, cast
-import logging # Import logging
+import logging  # Import logging
 
 import yaml
 
-logger = logging.getLogger(__name__) # Initialize logger
+logger = logging.getLogger(__name__)  # Initialize logger
+
 
 class ConfigManager:
     """Manages Demyst configuration."""

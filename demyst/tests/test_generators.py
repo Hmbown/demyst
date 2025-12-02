@@ -3,6 +3,7 @@ import json
 from demyst.generators.report_generator import IntegrityReportGenerator
 from demyst.generators.paper_generator import PaperGenerator
 
+
 def test_integrity_report_generator_empty_report():
     generator = IntegrityReportGenerator("Empty Report")
     html_output = generator.to_html()
@@ -19,15 +20,38 @@ def test_integrity_report_generator_empty_report():
     assert json_data["title"] == "Empty Report"
     assert len(json_data["sections"]) == 0
 
+
 def test_integrity_report_generator_with_issues():
     generator = IntegrityReportGenerator("Report with Issues")
-    
+
     mock_issues = [
-        {"type": "mirage", "line": 10, "description": "Mean operation", "recommendation": "Use VariationTensor"},
-        {"type": "leakage", "line": 25, "description": "Train-test leakage", "recommendation": "Split data first"}
+        {
+            "type": "mirage",
+            "line": 10,
+            "description": "Mean operation",
+            "recommendation": "Use VariationTensor",
+        },
+        {
+            "type": "leakage",
+            "line": 25,
+            "description": "Train-test leakage",
+            "recommendation": "Split data first",
+        },
     ]
-    generator.add_section("Computational Mirages", "fail", "Found mirage issues", [mock_issues[0]], [mock_issues[0]["recommendation"]])
-    generator.add_section("Data Leakage", "fail", "Found leakage issues", [mock_issues[1]], [mock_issues[1]["recommendation"]])
+    generator.add_section(
+        "Computational Mirages",
+        "fail",
+        "Found mirage issues",
+        [mock_issues[0]],
+        [mock_issues[0]["recommendation"]],
+    )
+    generator.add_section(
+        "Data Leakage",
+        "fail",
+        "Found leakage issues",
+        [mock_issues[1]],
+        [mock_issues[1]["recommendation"]],
+    )
 
     html_output = generator.to_html()
     markdown_output = generator.to_markdown()
@@ -56,6 +80,7 @@ def test_integrity_report_generator_with_issues():
     assert json_data["sections"][0]["status"] == "fail"
     assert len(json_data["sections"][0]["issues"]) == 1
 
+
 def test_paper_generator_basic_generation():
     source_code = """
 import numpy as np
@@ -67,8 +92,12 @@ def func(x):
 
     assert "\\section{Test Methodology}" in latex_output
     assert "\\subsection{Reproducibility}" in latex_output
-    assert "All experiments are tracked using the Demyst scientific integrity framework." in latex_output
+    assert (
+        "All experiments are tracked using the Demyst scientific integrity framework."
+        in latex_output
+    )
     assert "The code is available at [REPOSITORY URL] and includes:" in latex_output
+
 
 def test_paper_generator_full_paper_template():
     source_code = """
@@ -83,4 +112,7 @@ def load_data(path):
     assert "\\title{[Paper Title]}" in latex_output
     assert "\\section{Methodology}" in latex_output
     assert "\\subsection{Reproducibility}" in latex_output
-    assert "All experiments are tracked using the Demyst scientific integrity framework." in latex_output
+    assert (
+        "All experiments are tracked using the Demyst scientific integrity framework."
+        in latex_output
+    )

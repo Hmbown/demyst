@@ -43,7 +43,9 @@ class TestMLDataLeakage:
         result = leakage_hunter.analyze(ml_data_leakage_source)
 
         for violation in result["violations"]:
-            assert violation.get("recommendation"), f"Violation at line {violation['line']} missing recommendation"
+            assert violation.get(
+                "recommendation"
+            ), f"Violation at line {violation['line']} missing recommendation"
 
 
 class TestLeakageCLI:

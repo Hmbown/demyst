@@ -24,7 +24,7 @@ n_samples = 1000
 # Features: size, bedrooms, neighborhood (categorical)
 size = np.random.uniform(500, 5000, n_samples)
 bedrooms = np.random.randint(1, 6, n_samples)
-neighborhoods = np.random.choice(['urban', 'suburban', 'rural'], n_samples)
+neighborhoods = np.random.choice(["urban", "suburban", "rural"], n_samples)
 
 # Target: price (correlated with features)
 price = size * 100 + bedrooms * 10000 + np.random.randn(n_samples) * 50000

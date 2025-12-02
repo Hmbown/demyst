@@ -26,6 +26,7 @@ def another_func(x, y):
     file_path.write_text(file_content)
     return file_path
 
+
 @pytest.fixture
 def mock_directory(tmp_path):
     # Create a dummy directory with a file for testing
@@ -57,28 +58,43 @@ if __name__ == '__main__':
     (dir_path / "leakage_example.py").write_text(file_content)
     return dir_path
 
+
 def test_analyze_single_file_markdown_output(capsys, monkeypatch, mock_file, tmp_path):
-    monkeypatch.setattr(sys, 'exit', lambda x: x) # Mock sys.exit
+    monkeypatch.setattr(sys, "exit", lambda x: x)  # Mock sys.exit
 
     # Create an empty .demystrc.yaml in the mock_directory for the global config to pick up
     config_path = tmp_path / ".demystrc.yaml"
     config_content = "ignore_patterns: []"
     config_path.write_text(config_content)
 
-    sys.argv = ["demyst", "--config", str(config_path), "analyze", str(mock_file), "--format", "markdown"]
-    
+    sys.argv = [
+        "demyst",
+        "--config",
+        str(config_path),
+        "analyze",
+        str(mock_file),
+        "--format",
+        "markdown",
+    ]
+
     exit_code = cli.main()
     captured = capsys.readouterr()
-    output = captured.out # Remove strip_ansi_codes
+    output = captured.out  # Remove strip_ansi_codes
 
-    assert exit_code == 1 # Expecting issues due to np.mean mirage
+    assert exit_code == 1  # Expecting issues due to np.mean mirage
     assert "Demyst Analysis Report" in output
     assert f"# Demyst Analysis Report: `{mock_file}`" in output
     assert "## Computational Mirages" in output
     assert "- **Type**: Mirage" in output
     assert "  - **Line**: 6" in output
-    assert "  - **Description**: Computational mirage: mean operation destroys variance information." in output
-    assert "  - **Recommendation**: Use VariationTensor to preserve statistical metadata during aggregations" in output
+    assert (
+        "  - **Description**: Computational mirage: mean operation destroys variance information."
+        in output
+    )
+    assert (
+        "  - **Recommendation**: Use VariationTensor to preserve statistical metadata during aggregations"
+        in output
+    )
     assert "## Summary" in output
     assert "| Check | Issues Found |" in output
     assert "|---|---|" in output
@@ -90,46 +106,69 @@ def test_analyze_single_file_markdown_output(capsys, monkeypatch, mock_file, tmp
     assert "| **Total** | **1** |" in output
     assert "**Demyst Check Failed: Found 1 issue(s).**" in output
 
+
 def test_analyze_single_file_json_output(capsys, monkeypatch, mock_file, tmp_path):
-    monkeypatch.setattr(sys, 'exit', lambda x: x) # Mock sys.exit
+    monkeypatch.setattr(sys, "exit", lambda x: x)  # Mock sys.exit
 
     # Create an empty .demystrc.yaml in the mock_directory for the global config to pick up
     config_path = tmp_path / ".demystrc.yaml"
     config_content = "ignore_patterns: []"
     config_path.write_text(config_content)
 
-    sys.argv = ["demyst", "--config", str(config_path), "analyze", str(mock_file), "--format", "json"]
+    sys.argv = [
+        "demyst",
+        "--config",
+        str(config_path),
+        "analyze",
+        str(mock_file),
+        "--format",
+        "json",
+    ]
 
     exit_code = cli.main()
     captured = capsys.readouterr()
-    output = captured.out # Remove strip_ansi_codes
+    output = captured.out  # Remove strip_ansi_codes
 
     assert exit_code == 1
     data = json.loads(output)
     assert "mirage" in data
     assert len(data["mirage"]["issues"]) == 1
     assert data["mirage"]["issues"][0]["line"] == 6
-    assert "mean operation destroys variance information" in data["mirage"]["issues"][0]["description"]
+    assert (
+        "mean operation destroys variance information" in data["mirage"]["issues"][0]["description"]
+    )
 
-@pytest.mark.skip(reason="Failing due to persistent Rich output capture issues in pytest environment")
+
+@pytest.mark.skip(
+    reason="Failing due to persistent Rich output capture issues in pytest environment"
+)
 def test_report_directory_html_output(capsys, monkeypatch, mock_directory):
-    monkeypatch.setattr(sys, 'exit', lambda x: x) # Mock sys.exit
+    monkeypatch.setattr(sys, "exit", lambda x: x)  # Mock sys.exit
 
     # Create an empty .demystrc.yaml in the mock_directory for the global config to pick up
     (mock_directory / ".demystrc.yaml").write_text("ignore_patterns: []")
-    sys.argv = ["demyst", "--config", str(mock_directory / ".demystrc.yaml"), "report", str(mock_directory), "--format", "html"]
+    sys.argv = [
+        "demyst",
+        "--config",
+        str(mock_directory / ".demystrc.yaml"),
+        "report",
+        str(mock_directory),
+        "--format",
+        "html",
+    ]
 
     exit_code = cli.main()
     captured = capsys.readouterr()
-    output = captured.out + captured.err # Remove strip_ansi_codes
+    output = captured.out + captured.err  # Remove strip_ansi_codes
 
-    assert exit_code == 1 # Expecting issues due to leakage
+    assert exit_code == 1  # Expecting issues due to leakage
     assert "Integrity Report" in output
     assert "Data Leakage" in output
     assert "leakage_example.py" in output
 
+
 def test_report_single_file_html_output(capsys, monkeypatch, mock_file):
-    monkeypatch.setattr(sys, 'exit', lambda x: x) # Mock sys.exit
+    monkeypatch.setattr(sys, "exit", lambda x: x)  # Mock sys.exit
 
     sys.argv = ["demyst", "report", str(mock_file), "--format", "html"]
 
@@ -142,19 +181,26 @@ def test_report_single_file_html_output(capsys, monkeypatch, mock_file):
     assert "Computational Mirages" in output
     assert "Line 6" in output
 
+
 def test_leakage_detection_in_mock_directory(capsys, monkeypatch, mock_directory):
-    monkeypatch.setattr(sys, 'exit', lambda x: x) # Mock sys.exit
+    monkeypatch.setattr(sys, "exit", lambda x: x)  # Mock sys.exit
 
     # Create an empty .demystrc.yaml in the mock_directory for the global config to pick up
     config_path = mock_directory / ".demystrc.yaml"
     config_content = "ignore_patterns: []"
     config_path.write_text(config_content)
-    
-    sys.argv = ["demyst", "leakage", str(mock_directory / "leakage_example.py"), "--config", str(config_path)]
+
+    sys.argv = [
+        "demyst",
+        "leakage",
+        str(mock_directory / "leakage_example.py"),
+        "--config",
+        str(config_path),
+    ]
 
     exit_code = cli.main()
     captured = capsys.readouterr()
-    output = captured.out + captured.err # Capture both stdout and stderr
+    output = captured.out + captured.err  # Capture both stdout and stderr
 
-    assert exit_code == 1 # Expecting leakage to be detected
+    assert exit_code == 1  # Expecting leakage to be detected
     assert "Warning: Verdict: FAIL: Critical data leakage detected. Results are invalid." in output

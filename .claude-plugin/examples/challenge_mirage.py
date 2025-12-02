@@ -31,21 +31,25 @@ robot_scores[rogue_robot_idx] = 0.0  # Catastrophic failure!
 # BUG IS SOMEWHERE IN THIS SECTION
 # ========================================
 
+
 # Management dashboard
 def get_fleet_health():
     """Get overall fleet health score."""
     avg_score = np.mean(robot_scores)  # 🤔 Hmm...
     return avg_score
 
+
 def get_best_robot():
     """Find the best performing robot."""
     best_idx = np.argmax(robot_scores)  # 🤔 Hmm...
     return best_idx, robot_scores[best_idx]
 
+
 def get_total_deliveries():
     """Estimate total successful deliveries."""
     total = np.sum(robot_scores * 100)  # 🤔 Hmm...
     return total
+
 
 # ========================================
 # END OF BUG SECTION

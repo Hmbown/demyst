@@ -80,7 +80,9 @@ class HypothesisResult(BaseModel):
     """Result of hypothesis/p-hacking check."""
 
     has_issues: bool = Field(..., description="Whether any statistical validity issues were found")
-    violations: List[Dict[str, Any]] = Field(..., description="List of p-hacking/statistical violations")
+    violations: List[Dict[str, Any]] = Field(
+        ..., description="List of p-hacking/statistical violations"
+    )
     experiment_count: int = Field(..., description="Number of statistical tests detected")
     recommendations: List[str] = Field(..., description="Recommendations for statistical validity")
 
@@ -88,9 +90,15 @@ class HypothesisResult(BaseModel):
 class TensorResult(BaseModel):
     """Result of deep learning integrity check."""
 
-    has_issues: bool = Field(..., description="Whether any deep learning integrity issues were found")
-    gradient_issues: List[Dict[str, Any]] = Field(..., description="Gradient death/vanishing issues")
-    normalization_issues: List[Dict[str, Any]] = Field(..., description="Normalization blindness issues")
+    has_issues: bool = Field(
+        ..., description="Whether any deep learning integrity issues were found"
+    )
+    gradient_issues: List[Dict[str, Any]] = Field(
+        ..., description="Gradient death/vanishing issues"
+    )
+    normalization_issues: List[Dict[str, Any]] = Field(
+        ..., description="Normalization blindness issues"
+    )
     reward_issues: List[Dict[str, Any]] = Field(..., description="Reward hacking issues (RL)")
     recommendations: List[str] = Field(..., description="Recommendations for DL integrity")
 
@@ -262,7 +270,9 @@ def detect_leakage(code: str) -> str:
     recommendations = []
     if serializable_violations:
         recommendations.append("Split data BEFORE any preprocessing (fit_transform, encoding).")
-        recommendations.append("Fit preprocessing only on training data, then transform both train and test.")
+        recommendations.append(
+            "Fit preprocessing only on training data, then transform both train and test."
+        )
         recommendations.append("Use Pipeline with cross_val_score to ensure proper data handling.")
 
     # Clean taint_map for serialization
@@ -392,7 +402,9 @@ def check_tensor(code: str) -> str:
         recommendations.append("Add residual connections to prevent gradient death.")
         recommendations.append("Use LayerNorm or careful initialization.")
     if normalization_issues:
-        recommendations.append("Ensure BatchNorm track_running_stats=True for distribution shift detection.")
+        recommendations.append(
+            "Ensure BatchNorm track_running_stats=True for distribution shift detection."
+        )
     if reward_issues:
         recommendations.append("Track reward distribution statistics, not just mean.")
 
@@ -433,14 +445,13 @@ def analyze_all(code: str) -> str:
     units_result = json.loads(check_units(code))
 
     # Determine overall status
-    has_critical = (
-        mirage_result.get("has_mirages", False) or
-        leakage_result.get("has_leakage", False)
+    has_critical = mirage_result.get("has_mirages", False) or leakage_result.get(
+        "has_leakage", False
     )
     has_warning = (
-        hypothesis_result.get("has_issues", False) or
-        tensor_result.get("has_issues", False) or
-        not units_result.get("consistent", True)
+        hypothesis_result.get("has_issues", False)
+        or tensor_result.get("has_issues", False)
+        or not units_result.get("consistent", True)
     )
 
     if has_critical:
@@ -452,17 +463,21 @@ def analyze_all(code: str) -> str:
 
     # Build summary
     summary = {
-        "critical_count": sum([
-            len(mirage_result.get("mirages", [])),
-            len(leakage_result.get("violations", [])),
-        ]),
-        "warning_count": sum([
-            len(hypothesis_result.get("violations", [])),
-            len(tensor_result.get("gradient_issues", [])),
-            len(tensor_result.get("normalization_issues", [])),
-            len(tensor_result.get("reward_issues", [])),
-            len(units_result.get("violations", [])),
-        ]),
+        "critical_count": sum(
+            [
+                len(mirage_result.get("mirages", [])),
+                len(leakage_result.get("violations", [])),
+            ]
+        ),
+        "warning_count": sum(
+            [
+                len(hypothesis_result.get("violations", [])),
+                len(tensor_result.get("gradient_issues", [])),
+                len(tensor_result.get("normalization_issues", [])),
+                len(tensor_result.get("reward_issues", [])),
+                len(units_result.get("violations", [])),
+            ]
+        ),
         "checks_run": ["mirage", "leakage", "hypothesis", "tensor", "units"],
         "timestamp": datetime.now().isoformat(),
     }
@@ -513,13 +528,15 @@ def fix_mirages(code: str, dry_run: bool = True) -> str:
     # Convert mirages to violation format expected by fixer
     violations = []
     for m in detector.mirages:
-        violations.append({
-            "type": f"mirage_{m.get('operation', 'unknown')}",
-            "line": m.get("line", 0),
-            "column": m.get("column", 0),
-            "operation": m.get("operation"),
-            "variable": m.get("variable"),
-        })
+        violations.append(
+            {
+                "type": f"mirage_{m.get('operation', 'unknown')}",
+                "line": m.get("line", 0),
+                "column": m.get("column", 0),
+                "operation": m.get("operation"),
+                "variable": m.get("variable"),
+            }
+        )
 
     if not violations:
         return FixResult(
@@ -535,13 +552,15 @@ def fix_mirages(code: str, dry_run: bool = True) -> str:
         return json.dumps({"error": f"Fix failed: {e}", "success": False})
 
     # Generate diff
-    diff = "\n".join(difflib.unified_diff(
-        code.splitlines(),
-        fixed_code.splitlines(),
-        fromfile="original",
-        tofile="fixed",
-        lineterm="",
-    ))
+    diff = "\n".join(
+        difflib.unified_diff(
+            code.splitlines(),
+            fixed_code.splitlines(),
+            fromfile="original",
+            tofile="fixed",
+            lineterm="",
+        )
+    )
 
     # Convert actions to dicts
     serializable_actions = []
@@ -620,9 +639,9 @@ def generate_report(code: str, format: str = "markdown") -> str:
     # Add tensor section
     tensor = analysis.get("tensor", {})
     all_tensor_issues = (
-        tensor.get("gradient_issues", []) +
-        tensor.get("normalization_issues", []) +
-        tensor.get("reward_issues", [])
+        tensor.get("gradient_issues", [])
+        + tensor.get("normalization_issues", [])
+        + tensor.get("reward_issues", [])
     )
     generator.add_section(
         title="Deep Learning Integrity",
@@ -639,7 +658,11 @@ def generate_report(code: str, format: str = "markdown") -> str:
         status="warning" if not units.get("consistent", True) else "pass",
         content="Physical unit compatibility and dimensional analysis.",
         issues=units.get("violations", []),
-        recommendations=["Ensure all operations preserve dimensional consistency."] if units.get("violations") else [],
+        recommendations=(
+            ["Ensure all operations preserve dimensional consistency."]
+            if units.get("violations")
+            else []
+        ),
     )
 
     # Generate output

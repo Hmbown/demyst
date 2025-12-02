@@ -1,8 +1,8 @@
-
 import pytest
 import ast
 from demyst.guards.hypothesis_guard import HypothesisGuard, HypothesisAnalyzer
 from demyst.guards.unit_guard import UnitGuard, UnitInferenceEngine, Dimension
+
 
 class TestBugFixVerification:
 
@@ -22,7 +22,6 @@ class TestBugFixVerification:
             ("significance_level", True),
             ("final_p", True),
             ("p_hat", True),
-
             # True negatives (previously false positives)
             ("shape_size", False),
             ("temp", False),
@@ -30,7 +29,6 @@ class TestBugFixVerification:
             ("epoch", False),
             ("epsilon", False),
             ("kappa", False),
-
             # Edge cases requested
             ("ap", False),
             ("up", False),
@@ -39,7 +37,6 @@ class TestBugFixVerification:
             ("push", False),
             ("keep", False),
             ("loop", False),
-
             # Tricky ones
             ("probability", False),
             ("probs", False),
@@ -51,7 +48,7 @@ class TestBugFixVerification:
             node = ast.Compare(
                 left=ast.Name(id=name, ctx=ast.Load()),
                 ops=[ast.Lt()],
-                comparators=[ast.Constant(value=0.042)]
+                comparators=[ast.Constant(value=0.042)],
             )
 
             result = analyzer._is_p_value_check(node)
@@ -100,6 +97,7 @@ class TestBugFixVerification:
         # Variables that don't match physics patterns should be None
         assert engine.infer_from_name("logits") is None
         assert engine.infer_from_name("dropout") is None
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

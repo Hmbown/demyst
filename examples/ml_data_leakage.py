@@ -29,6 +29,7 @@ def load_medical_data():
 # ERROR 1: Preprocessing Leakage (Most Common)
 # ==============================================================================
 
+
 def train_with_preprocessing_leakage():
     """
     WRONG: fit_transform() is called BEFORE train_test_split.
@@ -45,9 +46,7 @@ def train_with_preprocessing_leakage():
     X_scaled = scaler.fit_transform(X)  # LeakageHunter flags this line
 
     # Split happens AFTER preprocessing - damage already done
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_scaled, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
     model = RandomForestClassifier(n_estimators=10, random_state=42)
     model.fit(X_train, y_train)
@@ -60,6 +59,7 @@ def train_with_preprocessing_leakage():
 # ==============================================================================
 # ERROR 2: Feature Selection Leakage
 # ==============================================================================
+
 
 def train_with_feature_selection_leakage():
     """
@@ -92,6 +92,7 @@ def train_with_feature_selection_leakage():
 # ERROR 3: Test Data in Training (The Obvious One)
 # ==============================================================================
 
+
 def train_on_test_data():
     """
     WRONG: Explicitly training on test data.
@@ -102,9 +103,7 @@ def train_on_test_data():
     LeakageHunter detects: test_in_training (CRITICAL)
     """
     X, y = load_medical_data()
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     model = RandomForestClassifier(n_estimators=10, random_state=42)
 
@@ -119,6 +118,7 @@ def train_on_test_data():
 # CORRECT: Proper Pipeline (For Comparison)
 # ==============================================================================
 
+
 def train_correct_pipeline():
     """
     CORRECT: Split data FIRST, then fit preprocessing only on training set.
@@ -129,9 +129,7 @@ def train_correct_pipeline():
     X, y = load_medical_data()
 
     # CORRECT: Split FIRST - test data is now isolated
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # CORRECT: Fit scaler on training data ONLY
     scaler = StandardScaler()
@@ -160,11 +158,13 @@ def train_with_sklearn_pipeline():
     X, y = load_medical_data()
 
     # Pipeline encapsulates all preprocessing
-    pipe = Pipeline([
-        ('scaler', StandardScaler()),
-        ('selector', SelectKBest(f_classif, k=10)),
-        ('model', RandomForestClassifier(n_estimators=10, random_state=42))
-    ])
+    pipe = Pipeline(
+        [
+            ("scaler", StandardScaler()),
+            ("selector", SelectKBest(f_classif, k=10)),
+            ("model", RandomForestClassifier(n_estimators=10, random_state=42)),
+        ]
+    )
 
     # cross_val_score handles train/test splitting correctly
     scores = cross_val_score(pipe, X, y, cv=5)

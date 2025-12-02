@@ -21,9 +21,7 @@ class TestGradientDeath:
         result = tensor_guard.analyze(deep_learning_gradient_death_source)
         assert "error" not in result or result.get("error") is None
 
-    def test_detects_issues_in_example(
-        self, deep_learning_gradient_death_source, tensor_guard
-    ):
+    def test_detects_issues_in_example(self, deep_learning_gradient_death_source, tensor_guard):
         """Should detect at least some issues in the gradient death example."""
         result = tensor_guard.analyze(deep_learning_gradient_death_source)
 
@@ -42,9 +40,7 @@ class TestGradientDeath:
 class TestBatchNormIssues:
     """Tests for BatchNorm configuration issues."""
 
-    def test_detects_unstable_batch_stats(
-        self, deep_learning_gradient_death_source, tensor_guard
-    ):
+    def test_detects_unstable_batch_stats(self, deep_learning_gradient_death_source, tensor_guard):
         """Should detect track_running_stats=False."""
         result = tensor_guard.analyze(deep_learning_gradient_death_source)
 
@@ -70,7 +66,10 @@ class TestTensorCLI:
         )
 
         # Should run successfully (may return 0 for warnings, 1 for critical)
-        assert result.returncode in [0, 1], f"Tensor command should complete, got code {result.returncode}"
+        assert result.returncode in [
+            0,
+            1,
+        ], f"Tensor command should complete, got code {result.returncode}"
         # Should produce output mentioning the issues
         assert "normalization" in result.stdout.lower() or "batch" in result.stdout.lower()
 

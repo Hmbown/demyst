@@ -19,7 +19,7 @@ from typing import Any, Dict, List, Optional
 
 from demyst.config.manager import ConfigManager
 
-logger = logging.getLogger(__name__) # Add this line
+logger = logging.getLogger(__name__)  # Add this line
 
 
 @dataclass
@@ -242,9 +242,11 @@ class CIEnforcer:
                             "line": m["line"],
                             "function": m.get("function"),
                             "description": f"Computational mirage: {m['type']} operation destroys variance information.",
-                            "recommendation": self._generate_recommendations("Computational Mirages", [m])[0]
-                            if self._generate_recommendations("Computational Mirages", [m])
-                            else None,
+                            "recommendation": (
+                                self._generate_recommendations("Computational Mirages", [m])[0]
+                                if self._generate_recommendations("Computational Mirages", [m])
+                                else None
+                            ),
                         }
                         for m in mirages
                     ]

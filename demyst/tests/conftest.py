@@ -12,7 +12,6 @@ from pathlib import Path
 import pytest
 
 
-
 # Project root detection
 @pytest.fixture(scope="session")
 def project_root() -> Path:
@@ -30,7 +29,6 @@ def examples_dir(project_root: Path) -> Path:
 def swarm_collapse_path(examples_dir: Path) -> Path:
     """Return the path to swarm_collapse.py."""
     return examples_dir / "swarm_collapse.py"
-
 
 
 @pytest.fixture(scope="session")
@@ -115,6 +113,7 @@ def chemistry_stoichiometry_source(chemistry_stoichiometry_path: Path) -> str:
 def mirage_detector():
     """Return a MirageDetector instance."""
     from demyst.engine.mirage_detector import MirageDetector
+
     return MirageDetector()
 
 
@@ -122,6 +121,7 @@ def mirage_detector():
 def unit_guard():
     """Return a UnitGuard instance."""
     from demyst.guards.unit_guard import UnitGuard
+
     return UnitGuard()
 
 
@@ -129,6 +129,7 @@ def unit_guard():
 def hypothesis_guard():
     """Return a HypothesisGuard instance."""
     from demyst.guards.hypothesis_guard import HypothesisGuard
+
     return HypothesisGuard()
 
 
@@ -136,6 +137,7 @@ def hypothesis_guard():
 def tensor_guard():
     """Return a TensorGuard instance."""
     from demyst.guards.tensor_guard import TensorGuard
+
     return TensorGuard()
 
 
@@ -143,5 +145,5 @@ def tensor_guard():
 def leakage_hunter():
     """Return a LeakageHunter instance."""
     from demyst.guards.leakage_hunter import LeakageHunter
-    return LeakageHunter()
 
+    return LeakageHunter()

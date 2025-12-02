@@ -235,9 +235,9 @@ class WandBIntegration:
                 f"{mean_val:.4f} +/- {std_val:.4f}"
             )
         else:
-            report[
-                "verdict"
-            ] = "WARNING: Only 1 experiment. Run multiple seeds for statistical validity."
+            report["verdict"] = (
+                "WARNING: Only 1 experiment. Run multiple seeds for statistical validity."
+            )
 
         return report
 

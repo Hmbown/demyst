@@ -3,6 +3,7 @@ import logging
 
 logger = logging.getLogger("demyst")
 
+
 def safe_read_file(path: str) -> str:
     """Safely read a file with proper error handling."""
     try:

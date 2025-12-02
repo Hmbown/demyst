@@ -42,9 +42,7 @@ def _merge_configs(base: Dict[str, Any], override: Dict[str, Any]) -> Dict[str, 
     return merged
 
 
-def _format_analysis_result_to_markdown(
-    results: Dict[str, Any], file_path: str
-) -> str:
+def _format_analysis_result_to_markdown(results: Dict[str, Any], file_path: str) -> str:
     """Formats a single-file analysis result into a markdown string."""
     markdown_output: List[str] = []
 
@@ -65,8 +63,7 @@ def _format_analysis_result_to_markdown(
         for v in violations:
             line = v.get("line", "N/A")
             description = v.get("description", "No description provided.")
-            recommendation = v.get(
-                "recommendation", "No recommendation provided.")
+            recommendation = v.get("recommendation", "No recommendation provided.")
             formatted.append(f"- **Type**: {check_name}")
             formatted.append(f"  - **Line**: {line}")
             formatted.append(f"  - **Description**: {description}")
@@ -98,8 +95,7 @@ def _format_analysis_result_to_markdown(
         issue_counts["Hypothesis"] = len(violations)
         if violations:
             markdown_output.append("## Statistical Validity Issues\n")
-            markdown_output.extend(
-                _format_violations(violations, "Hypothesis"))
+            markdown_output.extend(_format_violations(violations, "Hypothesis"))
             markdown_output.append("\n")
 
     # Process unit
@@ -114,15 +110,13 @@ def _format_analysis_result_to_markdown(
     # Process tensor
     if "tensor" in results and not results["tensor"].get("error"):
         gradient_issues = results["tensor"].get("gradient_issues", [])
-        normalization_issues = results["tensor"].get(
-            "normalization_issues", [])
+        normalization_issues = results["tensor"].get("normalization_issues", [])
         reward_issues = results["tensor"].get("reward_issues", [])
         all_tensor_issues = gradient_issues + normalization_issues + reward_issues
         issue_counts["Tensor"] = len(all_tensor_issues)
         if all_tensor_issues:
             markdown_output.append("## Deep Learning Integrity Issues\n")
-            markdown_output.extend(
-                _format_violations(all_tensor_issues, "Tensor"))
+            markdown_output.extend(_format_violations(all_tensor_issues, "Tensor"))
             markdown_output.append("\n")
 
     total_issues = sum(issue_counts.values())
@@ -135,11 +129,9 @@ def _format_analysis_result_to_markdown(
     markdown_output.append(f"| **Total** | **{total_issues}** |\n")
 
     if total_issues == 0:
-        markdown_output.append(
-            "\n**Demyst Check Passed! No issues detected.**\n")
+        markdown_output.append("\n**Demyst Check Passed! No issues detected.**\n")
     else:
-        markdown_output.append(
-            f"\n**Demyst Check Failed: Found {total_issues} issue(s).**\n")
+        markdown_output.append(f"\n**Demyst Check Failed: Found {total_issues} issue(s).**\n")
 
     return "\n".join(markdown_output)
 
@@ -186,6 +178,7 @@ def _get_issues_from_result(data: Dict[str, Any], check_name: str) -> List[Dict[
         return list(gradient_issues + normalization_issues + reward_issues)
     return []
 
+
 def analyze_command(args: argparse.Namespace, config_path: Optional[str] = None) -> int:
     """Run comprehensive analysis on a file or directory."""
     from demyst.integrations.ci_enforcer import CIEnforcer
@@ -194,8 +187,7 @@ def analyze_command(args: argparse.Namespace, config_path: Optional[str] = None)
     logger.info(f"Analyzing {args.path}")
 
     # The CIEnforcer's ConfigManager will handle config loading internally.
-    enforcer = CIEnforcer(
-        config_path=args.config if hasattr(args, 'config') else None)
+    enforcer = CIEnforcer(config_path=args.config if hasattr(args, "config") else None)
     has_issues = False
 
     if os.path.isdir(args.path):
@@ -225,8 +217,7 @@ def analyze_command(args: argparse.Namespace, config_path: Optional[str] = None)
                                 "description": issue.get("description"),
                                 "recommendation": issue.get("recommendation"),
                             }
-                            console.print_violations(
-                                [violation], file_path=issue.get("file"))
+                            console.print_violations([violation], file_path=issue.get("file"))
             else:
                 console.print_success("No issues detected!")
         return 0 if report.badge_status == "passing" else 1
@@ -303,8 +294,7 @@ def mirage_command(args: argparse.Namespace, config_path: Optional[str] = None) 
     console.print_warning(f"Total mirages: {len(detector.mirages)}")
 
     if not hasattr(args, "fix"):
-        console.print_info(
-            "\nTip: Use --fix to automatically transform these operations")
+        console.print_info("\nTip: Use --fix to automatically transform these operations")
 
     return 1
 
@@ -496,20 +486,17 @@ def tensor_command(args: argparse.Namespace, config_path: Optional[str] = None) 
     if result.get("gradient_issues"):
         has_issues = True
         console.print_rule("Gradient Flow Issues")
-        console.print_violations(
-            result["gradient_issues"], file_path=args.path, source=source)
+        console.print_violations(result["gradient_issues"], file_path=args.path, source=source)
 
     if result.get("normalization_issues"):
         has_issues = True
         console.print_rule("Normalization Issues")
-        console.print_violations(
-            result["normalization_issues"], file_path=args.path, source=source)
+        console.print_violations(result["normalization_issues"], file_path=args.path, source=source)
 
     if result.get("reward_issues"):
         has_issues = True
         console.print_rule("Reward Hacking Vulnerabilities")
-        console.print_violations(
-            result["reward_issues"], file_path=args.path, source=source)
+        console.print_violations(result["reward_issues"], file_path=args.path, source=source)
 
     if not has_issues:
         console.print_success("No deep learning integrity issues detected.")
@@ -530,8 +517,7 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
     logger.info(f"Generating report for {args.path}")
 
     # The CIEnforcer's ConfigManager will handle config loading internally.
-    enforcer = CIEnforcer(
-        config_path=args.config if hasattr(args, 'config') else None)
+    enforcer = CIEnforcer(config_path=args.config if hasattr(args, "config") else None)
     if os.path.isdir(args.path):
         report = enforcer.analyze_directory(args.path)
         generator = IntegrityReportGenerator(f"Integrity Report: {args.path}")
@@ -543,8 +529,11 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
                 "pass" if check_result.passed else "fail",
                 f"Found {len(check_result.issues)} issues",
                 check_result.issues,
-                [str(issue.get("recommendation"))
-                 for issue in check_result.issues if issue.get("recommendation")],
+                [
+                    str(issue.get("recommendation"))
+                    for issue in check_result.issues
+                    if issue.get("recommendation")
+                ],
             )
             if not check_result.passed:
                 has_issues = True
@@ -577,8 +566,7 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
             "fail" if issues else "pass",
             f"Found {len(issues)} data leakage issues",
             issues,
-            [issue.get("recommendation")
-             for issue in issues if issue.get("recommendation")],
+            [issue.get("recommendation") for issue in issues if issue.get("recommendation")],
         )
         if issues:
             has_issues = True
@@ -590,8 +578,7 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
             "fail" if issues else "pass",
             f"Found {len(issues)} statistical validity issues",
             issues,
-            [issue.get("recommendation")
-             for issue in issues if issue.get("recommendation")],
+            [issue.get("recommendation") for issue in issues if issue.get("recommendation")],
         )
         if issues:
             has_issues = True
@@ -603,8 +590,7 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
             "fail" if issues else "pass",
             f"Found {len(issues)} dimensional analysis issues",
             issues,
-            [issue.get("recommendation")
-             for issue in issues if issue.get("recommendation")],
+            [issue.get("recommendation") for issue in issues if issue.get("recommendation")],
         )
         if issues:
             has_issues = True
@@ -619,8 +605,11 @@ def report_command(args: argparse.Namespace, config_path: Optional[str] = None) 
             "fail" if all_tensor_issues else "pass",
             f"Found {len(all_tensor_issues)} deep learning integrity issues",
             all_tensor_issues,
-            [issue.get("recommendation")
-             for issue in all_tensor_issues if issue.get("recommendation")],
+            [
+                issue.get("recommendation")
+                for issue in all_tensor_issues
+                if issue.get("recommendation")
+            ],
         )
         if all_tensor_issues:
             has_issues = True
@@ -702,15 +691,13 @@ def ci_command(args: argparse.Namespace, config_path: Optional[str] = None) -> i
         except Exception as e:
             logger.warning(f"Failed to load config: {e}")
 
-    enforcer = CIEnforcer(
-        config_path=args.config if hasattr(args, 'config') else None)
+    enforcer = CIEnforcer(config_path=args.config if hasattr(args, "config") else None)
 
     # CI command likely prints its own output, but let's ensure it uses the console if possible
     # or we capture the result. CIEnforcer.enforce returns exit code.
     # It seems CIEnforcer methods print to stdout. Ideally refactor CIEnforcer too,
     # but for now we just run it.
-    exit_code = enforcer.enforce(
-        directory=args.path, fail_on_warning=args.strict)
+    exit_code = enforcer.enforce(directory=args.path, fail_on_warning=args.strict)
 
     return exit_code
 
@@ -725,8 +712,7 @@ def fix_command(args: argparse.Namespace, config_path: Optional[str] = None) -> 
     console.print_info(f"Running auto-fix on {args.path}...")
 
     # First analyze to find issues
-    enforcer = CIEnforcer(
-        config_path=args.config if hasattr(args, 'config') else None)
+    enforcer = CIEnforcer(config_path=args.config if hasattr(args, "config") else None)
 
     if os.path.isdir(args.path):
         # Directory logic
@@ -760,12 +746,9 @@ def red_team_command(args: argparse.Namespace, config_path: Optional[str] = None
 
     console = get_console(force_terminal=args.debug)
     console.print_rule("Demyst Red Team Benchmark")
-    console.print_info(
-        "Stress-testing detectors with 50 adversarial scenarios...")
-    console.print_info(
-        "Categories: Mirage, Leakage, Units, Hypothesis, Tensor,")
-    console.print_info(
-        "            Reproducibility, Numerical, API, Logic, Statistical")
+    console.print_info("Stress-testing detectors with 50 adversarial scenarios...")
+    console.print_info("Categories: Mirage, Leakage, Units, Hypothesis, Tensor,")
+    console.print_info("            Reproducibility, Numerical, API, Logic, Statistical")
     console.print("")
 
     benchmark = RedTeamBenchmark()
@@ -776,8 +759,7 @@ def red_team_command(args: argparse.Namespace, config_path: Optional[str] = None
         console.print_success("\nBenchmark PASSED: All detectors operational.")
         return 0
     else:
-        console.print_error(
-            "\nBenchmark FAILED: Some attacks evaded detection.")
+        console.print_error("\nBenchmark FAILED: Some attacks evaded detection.")
         return 1
 
 
@@ -790,13 +772,10 @@ def version_command(args: argparse.Namespace, config_path: Optional[str] = None)
     console.print_rule(title)
     console.print("Demystify Your Scientific Code")
     console.print("\nComponents:")
-    console.print(
-        "  - [mirage]MirageDetector[/mirage]: Computational mirage detection")
+    console.print("  - [mirage]MirageDetector[/mirage]: Computational mirage detection")
     console.print("  - [tensor]TensorGuard[/tensor]: Deep learning integrity")
-    console.print(
-        "  - [leakage]LeakageHunter[/leakage]: Data leakage detection")
-    console.print(
-        "  - [hypothesis]HypothesisGuard[/hypothesis]: Statistical validity")
+    console.print("  - [leakage]LeakageHunter[/leakage]: Data leakage detection")
+    console.print("  - [hypothesis]HypothesisGuard[/hypothesis]: Statistical validity")
     console.print("  - [unit]UnitGuard[/unit]: Dimensional analysis")
     console.print("  - PaperGenerator: LaTeX methodology")
     return 0
@@ -823,20 +802,18 @@ For more information: https://github.com/demyst/demyst
         """,
     )
 
-    parser.add_argument("--version", "-v", action="store_true",
-                        help="Show version information")
-    parser.add_argument("--verbose", action="store_true",
-                        help="Enable verbose output")
-    parser.add_argument("--debug", action="store_true",
-                        help="Enable debug output (implies --verbose)")
+    parser.add_argument("--version", "-v", action="store_true", help="Show version information")
+    parser.add_argument("--verbose", action="store_true", help="Enable verbose output")
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable debug output (implies --verbose)"
+    )
     # Restore this line
     parser.add_argument("--config", "-c", help="Path to configuration file")
 
     subparsers = parser.add_subparsers(dest="command", help="Commands")
 
     # Analyze command
-    analyze_parser = subparsers.add_parser(
-        "analyze", help="Run all integrity checks")
+    analyze_parser = subparsers.add_parser("analyze", help="Run all integrity checks")
     analyze_parser.add_argument("path", help="File or directory to analyze")
     analyze_parser.add_argument(
         "--format", "-f", choices=["markdown", "json", "text"], default="text", help="Output format"
@@ -845,54 +822,45 @@ For more information: https://github.com/demyst/demyst
     analyze_parser.add_argument(
         "--profile",
         "-p",
-        choices=["physics", "biology", "chemistry",
-                 "neuroscience", "climate", "economics"],
+        choices=["physics", "biology", "chemistry", "neuroscience", "climate", "economics"],
         help="Domain-specific profile (physics enables natural units, 5σ thresholds, etc.)",
     )
     analyze_parser.set_defaults(func=analyze_command)
-    mirage_parser = subparsers.add_parser(
-        "mirage", help="Detect computational mirages")
+    mirage_parser = subparsers.add_parser("mirage", help="Detect computational mirages")
     mirage_parser.add_argument("path", help="File to analyze")
     mirage_parser.add_argument(
         "--fix", action="store_true", help="Auto-fix detected mirages using transpiler"
     )
-    mirage_parser.add_argument(
-        "--output", "-o", help="Output file for fixed code")
-    mirage_parser.add_argument(
-        "--diff", action="store_true", help="Show diff of changes")
+    mirage_parser.add_argument("--output", "-o", help="Output file for fixed code")
+    mirage_parser.add_argument("--diff", action="store_true", help="Show diff of changes")
     mirage_parser.add_argument(
         "--dry-run", action="store_true", help="Show what would be done without making changes"
     )
     mirage_parser.set_defaults(func=mirage_command)
 
     # Leakage command
-    leakage_parser = subparsers.add_parser(
-        "leakage", help="Detect data leakage")
+    leakage_parser = subparsers.add_parser("leakage", help="Detect data leakage")
     leakage_parser.add_argument("path", help="File to analyze")
     # Removed: leakage_parser.add_argument("--config", "-c", help="Path to configuration file")
     leakage_parser.set_defaults(func=leakage_command)
 
     # Hypothesis command
-    hypothesis_parser = subparsers.add_parser(
-        "hypothesis", help="Check statistical validity")
+    hypothesis_parser = subparsers.add_parser("hypothesis", help="Check statistical validity")
     hypothesis_parser.add_argument("path", help="File to analyze")
     hypothesis_parser.set_defaults(func=hypothesis_command)
 
     # Units command
-    units_parser = subparsers.add_parser(
-        "units", help="Check dimensional consistency")
+    units_parser = subparsers.add_parser("units", help="Check dimensional consistency")
     units_parser.add_argument("path", help="File to analyze")
     units_parser.set_defaults(func=units_command)
 
     # Tensor command
-    tensor_parser = subparsers.add_parser(
-        "tensor", help="Check deep learning integrity")
+    tensor_parser = subparsers.add_parser("tensor", help="Check deep learning integrity")
     tensor_parser.add_argument("path", help="File to analyze")
     tensor_parser.set_defaults(func=tensor_command)
 
     # Report command
-    report_parser = subparsers.add_parser(
-        "report", help="Generate integrity report")
+    report_parser = subparsers.add_parser("report", help="Generate integrity report")
     report_parser.add_argument("path", help="File or directory to analyze")
     report_parser.add_argument(
         "--format",
@@ -908,12 +876,10 @@ For more information: https://github.com/demyst/demyst
     report_parser.set_defaults(func=report_command)
 
     # Paper command
-    paper_parser = subparsers.add_parser(
-        "paper", help="Generate LaTeX methodology")
+    paper_parser = subparsers.add_parser("paper", help="Generate LaTeX methodology")
     paper_parser.add_argument("path", help="File to analyze")
     paper_parser.add_argument("--output", "-o", help="Output file")
-    paper_parser.add_argument(
-        "--title", "-t", default="Methodology", help="Section title")
+    paper_parser.add_argument("--title", "-t", default="Methodology", help="Section title")
     paper_parser.add_argument(
         "--style",
         "-s",
@@ -921,14 +887,12 @@ For more information: https://github.com/demyst/demyst
         default="neurips",
         help="Paper style",
     )
-    paper_parser.add_argument(
-        "--full", action="store_true", help="Generate full paper template")
+    paper_parser.add_argument("--full", action="store_true", help="Generate full paper template")
     paper_parser.set_defaults(func=paper_command)
 
     # CI command
     ci_parser = subparsers.add_parser("ci", help="CI/CD enforcement mode")
-    ci_parser.add_argument("path", nargs="?", default=".",
-                           help="Directory to analyze")
+    ci_parser.add_argument("path", nargs="?", default=".", help="Directory to analyze")
     ci_parser.add_argument(
         "--strict", action="store_true", help="Fail on warnings (not just critical issues)"
     )
@@ -939,8 +903,7 @@ For more information: https://github.com/demyst/demyst
     # Fix command
     fix_parser = subparsers.add_parser("fix", help="Auto-fix issues")
     fix_parser.add_argument("path", help="File or directory to fix")
-    fix_parser.add_argument(
-        "--dry-run", action="store_true", help="Show what would be done")
+    fix_parser.add_argument("--dry-run", action="store_true", help="Show what would be done")
     fix_parser.add_argument(
         "--interactive", "-i", action="store_true", help="Ask before applying fix"
     )
@@ -960,8 +923,7 @@ For more information: https://github.com/demyst/demyst
     # Setup logging
     setup_logging(
         verbose=getattr(args, "verbose", False),
-        debug=getattr(args, "debug", False) or bool(
-            os.environ.get("DEMYST_DEBUG")),
+        debug=getattr(args, "debug", False) or bool(os.environ.get("DEMYST_DEBUG")),
     )
 
     if args.version:

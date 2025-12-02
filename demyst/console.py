@@ -407,9 +407,7 @@ class _NullContext:
 _console: Optional["DemystConsole"] = None
 
 
-
 def get_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
-
     """Get the global console instance."""
 
     global _console
@@ -421,11 +419,7 @@ def get_console(force_terminal: bool = False, no_color: bool = False) -> DemystC
     return _console
 
 
-
-
-
 def configure_console(force_terminal: bool = False, no_color: bool = False) -> DemystConsole:
-
     """Configure and return a new console instance."""
 
     global _console

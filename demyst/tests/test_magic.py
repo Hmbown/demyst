@@ -14,15 +14,19 @@ sys.modules["IPython.core.magic"] = MagicMock()
 sys.modules["IPython.display"] = MagicMock()
 sys.modules["IPython.core.interactiveshell"] = MagicMock()
 
+
 # Setup necessary attributes for inheritance and decorators
 class MockMagics:
     def __init__(self, shell):
         self.shell = shell
 
+
 sys.modules["IPython.core.magic"].Magics = MockMagics  # type: ignore
+
 
 def magics_class(cls):
     return cls
+
 
 sys.modules["IPython.core.magic"].magics_class = magics_class  # type: ignore
 sys.modules["IPython.core.magic"].line_magic = lambda f: f  # type: ignore
@@ -35,6 +39,7 @@ sys.modules["IPython.display"].HTML = MagicMock()  # type: ignore
 import demyst.magic
 from demyst.magic import DemystMagics, load_ipython_extension
 import importlib
+
 importlib.reload(demyst.magic)
 
 

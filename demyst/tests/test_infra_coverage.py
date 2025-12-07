@@ -1,7 +1,7 @@
 import pytest
 
-from demyst.exceptions import PluginValidationError
 from demyst.engine.parallel import ParallelAnalyzer
+from demyst.exceptions import PluginValidationError
 from demyst.fixer import DemystFixer, fix_source
 from demyst.lazy import ImportManager, LazyModule, get_import_manager, import_time_report
 from demyst.plugins import GuardPlugin, PluginRegistry

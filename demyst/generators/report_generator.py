@@ -143,7 +143,11 @@ class IntegrityReportGenerator:
                 line = issue.get("line", "?")
                 desc = issue.get("description", str(issue))
                 severity = issue.get("severity", "info")
-                lines.append(f"- **Line {line}**: {desc}")
+                confidence = issue.get("confidence", "unknown")
+                blocking = issue.get("blocking", False)
+                lines.append(
+                    f"- **Line {line}** ({severity}, confidence={confidence}, blocking={blocking}): {desc}"
+                )
             if len(section.issues) > 20:
                 lines.append(f"- *...and {len(section.issues) - 20} more issues*")
             lines.append("")
@@ -275,8 +279,11 @@ class IntegrityReportGenerator:
                 severity = issue.get("severity", "info")
                 desc = issue.get("description", str(issue))
                 line = issue.get("line", "?")
+                confidence = issue.get("confidence", "unknown")
+                blocking = issue.get("blocking", False)
                 issues_html += (
-                    f'<div class="issue {severity}"><strong>Line {line}:</strong> {desc}</div>'
+                    f'<div class="issue {severity}"><strong>Line {line}</strong> '
+                    f'({severity}, confidence={confidence}, blocking={blocking}): {desc}</div>'
                 )
 
         recs_html = ""

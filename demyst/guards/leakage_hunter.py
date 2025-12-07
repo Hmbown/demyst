@@ -637,6 +637,7 @@ class LeakageHunter:
 
     def _violation_to_dict(self, v: LeakageViolation) -> Dict[str, Any]:
         """Convert violation to dictionary."""
+        confidence = "high" if v.severity == "critical" else "medium"
         return {
             "type": v.violation_type,
             "severity": v.severity,
@@ -648,4 +649,6 @@ class LeakageHunter:
             "description": v.description,
             "scientific_impact": v.scientific_impact,
             "recommendation": v.recommendation,
+            "confidence": confidence,
+            "blocking": confidence == "high",
         }

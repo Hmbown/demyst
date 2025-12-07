@@ -153,6 +153,79 @@ demyst ci . --strict
 demyst paper model.py -o methodology.tex
 ```
 
+## Mirage Detector Guide
+
+- **Purpose**: Spots "computational mirages"—reductions (`mean`, `sum`, `argmax`, `argmin`) that erase variance on array-like data.
+- **Coverage**: Tracks inline arrays, unknown variables (conservatively), and chained creators (`np.ones`, `np.cumsum`, `np.random.*`, 80+ numpy array builders). Method calls with extra args and nested reductions are also caught.
+- **Run it**: `demyst mirage your_code.py` or `demyst mirage src/` to scan recursively.
+- **Auto-fix**: `demyst mirage your_code.py --fix` rewrites dangerous reductions to `VariationTensor(...).collapse(...)` so you keep variance metadata.
+- **Signal vs. noise**: If you already compute `std`/`var` within ~10 lines of the same data, Demyst suppresses the warning; otherwise it blocks on high-confidence mirages.
+
+Example:
+
+```python
+import numpy as np
+
+def analyze(scores):
+    # Inline + chained creators are detected
+    avg = np.mean(np.ones(100))
+    # Method calls with args are detected too
+    center = scores.mean(axis=0)
+    return avg + center
+```
+
+Run `demyst mirage analyze.py` to flag both reductions and guide a safe rewrite.
+
+## Real-World Examples: Where Mirages Cause Harm
+
+These are documented cases where `np.mean()` and similar aggregations have hidden critical information. Demyst detects all of them.
+
+### 1. Anscombe's Quartet (1973)
+Four datasets with **identical means (7.5)** but completely different patterns: linear, quadratic, outlier, and leverage point.
+
+```python
+y1 = np.array([8.04, 6.95, 7.58, 8.81, 8.33, 9.96, 7.24, 4.26, 10.84, 4.82, 5.68])
+y3 = np.array([7.46, 6.77, 12.74, 7.11, 7.81, 8.84, 6.08, 5.39, 8.15, 6.42, 5.73])
+np.mean(y1)  # 7.50 - linear relationship
+np.mean(y3)  # 7.50 - but there's an outlier at 12.74!
+```
+
+### 2. Simpson's Paradox (UC Berkeley 1973)
+Aggregated data showed 44% male vs 35% female admission. But stratified by department, **women were MORE likely admitted** in 4/6 departments.
+
+```python
+overall_rate = np.mean(np.concatenate([dept_a, dept_f]))  # Hides confounding
+```
+
+### 3. Fat Tails in Finance
+Average daily S&P return looks benign (~0.04%), but this hides:
+- Black Monday 1987: **-22.6% in one day** (25-sigma event under normal distribution)
+- 2008 crash, 2020 crash, flash crashes
+
+```python
+avg_return = np.mean(all_returns)  # ~0.03% - seems safe, but hides -22.6% crash
+```
+
+### 4. Climate Extremes
+Average temperature rise of +2C hides a **5-10x increase in deadly heat days** (>35C).
+
+```python
+baseline_mean = np.mean(baseline_temps)  # 20C
+future_mean = np.mean(future_temps)      # 22C - only +2C, seems mild
+# But extreme heat days: 2 -> 15 (hidden by the average)
+```
+
+### 5. Outlier Masking
+Multiple outliers **mask each other** by pulling the mean toward them, causing Grubbs' test to fail.
+
+```python
+all_data = np.array([10.2, 10.5, 9.8, 10.1, 25.0, 28.0])  # Two outliers
+mean_val = np.mean(all_data)  # ~15.6 - pulled toward outliers
+# Z-score test now FAILS to detect outliers (they corrupted the statistics)
+```
+
+Run the full example: `demyst mirage examples/real_world_mirages.py`
+
 ## The Swarm Collapse Problem (Nov 2025)
 
 Imagine a swarm of 1,000 AI agents:
@@ -320,6 +393,19 @@ This aligns with the broader movement toward **self-verifiable AI reasoning**—
 - [DeepSeek-Math-V2: Towards Self-Verifiable Mathematical Reasoning](https://github.com/deepseek-ai/DeepSeek-Math-V2) - Self-verification in mathematical proofs
 - [Uncertainty Quantification in ML](https://arxiv.org/abs/2107.03342) - Preserving uncertainty in predictions
 - [Reproducibility Crisis in Science](https://www.nature.com/articles/533452a) - Why methodology verification matters
+
+## Academic References
+
+The mirage detection in Demyst is grounded in documented statistical phenomena:
+
+| Phenomenon | Year | Key Finding | Reference |
+|------------|------|-------------|-----------|
+| **Anscombe's Quartet** | 1973 | Four datasets with identical summary statistics but different distributions | [Anscombe, F.J. (1973)](https://en.wikipedia.org/wiki/Anscombe%27s_quartet) |
+| **Simpson's Paradox** | 1975 | Trends reverse when data is aggregated | [UC Berkeley Study (1975)](https://discovery.cs.illinois.edu/dataset/berkeley/) |
+| **Fat Tails in Finance** | 1963 | Mandelbrot showed returns are not normally distributed | [Mandelbrot (1963)](https://en.wikipedia.org/wiki/Fat-tailed_distribution) |
+| **Outlier Masking** | - | Multiple outliers corrupt mean/std, hiding each other | [GraphPad FAQ](https://www.graphpad.com/support/faq/masking-in-outlier-detection-why-it-can-be-harder-to-detect-two-outliers-than-one/) |
+| **Data Leakage** | 2020+ | Preprocessing before split invalidates ML benchmarks | [scikit-learn #24390](https://github.com/scikit-learn/scikit-learn/issues/24390) |
+| **Retraction Statistics** | 2017 | 18.9% of retractions involved analytical/computational errors | [PMC5395722](https://pmc.ncbi.nlm.nih.gov/articles/PMC5395722/) |
 
 ## License
 

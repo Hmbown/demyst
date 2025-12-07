@@ -208,6 +208,7 @@ def calculate_mean(data):
             commit="abc123",
             files_analyzed=10,
             total_issues=0,
+            blocking_issues=0,
             critical_issues=0,
             warning_issues=0,
             checks=checks,

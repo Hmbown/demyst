@@ -587,6 +587,15 @@ class TensorGuard:
 
     def _issue_to_dict(self, issue: GradientIssue) -> Dict[str, Any]:
         """Convert GradientIssue to dictionary."""
+        if issue.severity in [GradientRisk.FATAL, GradientRisk.CRITICAL]:
+            confidence = "high"
+            blocking = True
+        elif issue.severity == GradientRisk.WARNING:
+            confidence = "medium"
+            blocking = False
+        else:
+            confidence = "low"
+            blocking = False
         return {
             "type": issue.issue_type,
             "severity": issue.severity.value,
@@ -595,6 +604,8 @@ class TensorGuard:
             "description": issue.description,
             "recommendation": issue.recommendation,
             "scientific_impact": issue.scientific_impact,
+            "confidence": confidence,
+            "blocking": blocking,
         }
 
     def _norm_issue_to_dict(self, issue: NormalizationIssue) -> Dict[str, Any]:
@@ -606,6 +617,8 @@ class TensorGuard:
             "description": issue.description,
             "masked_statistics": issue.masked_statistics,
             "recommendation": issue.recommendation,
+            "confidence": "medium",
+            "blocking": False,
         }
 
     def _reward_issue_to_dict(self, issue: RewardIssue) -> Dict[str, Any]:
@@ -617,4 +630,6 @@ class TensorGuard:
             "description": issue.description,
             "exploit_vector": issue.exploit_vector,
             "recommendation": issue.recommendation,
+            "confidence": "high",
+            "blocking": True,
         }

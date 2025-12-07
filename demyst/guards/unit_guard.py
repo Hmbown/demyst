@@ -385,6 +385,9 @@ class DimensionalAnalyzer(ast.NodeVisitor):
         self.violations: List[UnitViolation] = []
         self.current_function: Optional[str] = None
         self.assignments: Dict[str, Dimension] = {}
+        # Track available unit libraries to avoid false alarms when strong typing is used
+        self.imported_units: Set[str] = set()
+        self.annotated_dimensions: Dict[str, Dimension] = {}
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function definitions and infer parameter dimensions."""
@@ -393,7 +396,9 @@ class DimensionalAnalyzer(ast.NodeVisitor):
 
         # Infer dimensions from parameter names
         for arg in node.args.args:
-            dim = self.engine.infer_from_name(arg.arg)
+            dim = self._dimension_from_annotation(arg.annotation) or self.engine.infer_from_name(
+                arg.arg
+            )
             if dim:
                 self.engine.register_type(arg.arg, dim)
 
@@ -402,42 +407,38 @@ class DimensionalAnalyzer(ast.NodeVisitor):
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Track assignments and check dimensional consistency."""
-        # Infer dimension of right side
         right_dim = self._infer_expression_dimension(node.value)
 
-        # Register for all targets
         for target in node.targets:
             if isinstance(target, ast.Name):
                 name = target.id
+                annotated_dim = self.annotated_dimensions.get(name)
+                expected_dim = annotated_dim or self.engine.infer_from_name(name)
 
-                # Check if name suggests a dimension
-                expected_dim = self.engine.infer_from_name(name)
-
-                # If RHS is dimensionless (e.g. literal number), allow it to take the LHS dimension
+                # If RHS is dimensionless (e.g. literal number), allow it to take the LHS annotated dimension
                 if expected_dim and right_dim and right_dim.is_dimensionless():
                     right_dim = expected_dim
 
                 if expected_dim and right_dim and expected_dim != right_dim:
+                    severity = "critical" if annotated_dim else "warning"
                     self.violations.append(
                         UnitViolation(
                             violation_type="dimension_mismatch",
-                            severity="warning",
+                            severity=severity,
                             line=node.lineno,
                             col=node.col_offset,
                             expression=ast.unparse(node) if hasattr(ast, "unparse") else str(node),
                             left_dimension=expected_dim,
                             right_dimension=right_dim,
                             description=(
-                                f"Variable '{name}' suggests dimension {expected_dim} "
+                                f"Variable '{name}' expects dimension {expected_dim} "
                                 f"but is assigned value with dimension {right_dim}."
                             ),
                             physical_meaning=(
-                                "Variable naming implies a physical quantity different from "
-                                "what is being assigned. This may indicate a unit conversion error."
+                                "Assignment violates annotated or inferred dimension; likely missing conversion."
                             ),
                             recommendation=(
-                                f"Verify units. If intentional, rename variable to match actual dimension "
-                                f"or add explicit conversion."
+                                "Ensure RHS has the same dimension or convert explicitly."
                             ),
                         )
                     )
@@ -448,6 +449,36 @@ class DimensionalAnalyzer(ast.NodeVisitor):
                 elif expected_dim:
                     self.engine.register_type(name, expected_dim)
 
+        self.generic_visit(node)
+
+    def visit_AnnAssign(self, node: ast.AnnAssign) -> None:
+        """Handle annotated assignments to get authoritative dimensions."""
+        target = node.target
+        dim = self._dimension_from_annotation(node.annotation)
+        if isinstance(target, ast.Name) and dim:
+            self.annotated_dimensions[target.id] = dim
+            self.engine.register_type(target.id, dim)
+        # Process the value side to detect violations on initialization
+        if node.value:
+            right_dim = self._infer_expression_dimension(node.value)
+            if isinstance(target, ast.Name) and dim and right_dim and dim != right_dim:
+                self.violations.append(
+                    UnitViolation(
+                        violation_type="dimension_mismatch",
+                        severity="critical",
+                        line=node.lineno,
+                        col=node.col_offset,
+                        expression=ast.unparse(node) if hasattr(ast, "unparse") else str(node),
+                        left_dimension=dim,
+                        right_dimension=right_dim,
+                        description=(
+                            f"Annotated dimension {dim} for '{target.id}' "
+                            f"conflicts with assigned value dimension {right_dim}."
+                        ),
+                        physical_meaning="Initialization violates the declared physical dimension.",
+                        recommendation="Convert the assigned value to the annotated units or fix the annotation.",
+                    )
+                )
         self.generic_visit(node)
 
     def visit_BinOp(self, node: ast.BinOp) -> None:
@@ -548,9 +579,94 @@ class DimensionalAnalyzer(ast.NodeVisitor):
 
         elif isinstance(node, ast.Attribute):
             # For now, try to infer from attribute name
+            # If this is a known unit-bearing library object, treat as dimensionless to avoid false positives
+            if self._is_unit_library_object(node):
+                return Dimension.dimensionless()
             return self.engine.infer_from_name(node.attr)
 
         return None
+
+    def _dimension_from_annotation(self, annotation: Optional[ast.AST]) -> Optional[Dimension]:
+        """Interpret type annotations for dimensions."""
+        if annotation is None:
+            return None
+
+        # Annotated[T, "meters"] or Annotated[T, ("meters",)]
+        if isinstance(annotation, ast.Subscript):
+            base = annotation.value
+            if isinstance(base, ast.Name) and base.id == "Annotated":
+                # Expect annotation.slice to contain metadata
+                meta = None
+                if isinstance(annotation.slice, ast.Tuple) and len(annotation.slice.elts) >= 2:
+                    meta = annotation.slice.elts[1]
+                elif hasattr(ast, "Index") and isinstance(annotation.slice, ast.Index):  # py<3.9
+                    idx_val = annotation.slice.value
+                    if isinstance(idx_val, ast.Tuple) and len(idx_val.elts) >= 2:
+                        meta = idx_val.elts[1]
+                if isinstance(meta, ast.Constant) and isinstance(meta.value, str):
+                    return self._dimension_from_string(meta.value)
+
+        # Literal unit names as strings (fallback)
+        if isinstance(annotation, ast.Constant) and isinstance(annotation.value, str):
+            return self._dimension_from_string(annotation.value)
+
+        return None
+
+    def _dimension_from_string(self, unit: str) -> Optional[Dimension]:
+        """Map common unit strings to dimensions."""
+        normalized = unit.lower()
+        if normalized in {"m", "meter", "metre", "meters", "metres"}:
+            return Dimension.length()
+        if normalized in {"cm", "centimeter", "centimetre", "mm", "millimeter", "millimetre", "km", "kilometer", "kilometre"}:
+            return Dimension.length()
+        if normalized in {"ft", "foot", "feet", "mile", "miles", "mi"}:
+            return Dimension.length()
+        if normalized in {"s", "sec", "second", "seconds"}:
+            return Dimension.time()
+        if normalized in {"ms", "millisecond", "milliseconds", "us", "microsecond", "microseconds"}:
+            return Dimension.time()
+        if normalized in {"hr", "hour", "hours", "min", "minute", "minutes"}:
+            return Dimension.time()
+        if normalized in {"kg", "kilogram", "kilograms"}:
+            return Dimension.mass()
+        if normalized in {"g", "gram", "grams"}:
+            return Dimension.mass()
+        if normalized in {"k", "kelvin"}:
+            return Dimension.temperature()
+        if normalized in {"m/s", "mps", "meter_per_second"}:
+            return Dimension.velocity()
+        if normalized in {"km/h", "kph", "kmph"}:
+            return Dimension.velocity()
+        if normalized in {"m/s^2", "meter_per_second_squared"}:
+            return Dimension.acceleration()
+        if normalized in {"n", "newton", "newtons"}:
+            return Dimension.force()
+        if normalized in {"j", "joule", "joules"}:
+            return Dimension.energy()
+        if normalized in {"w", "watt", "watts"}:
+            return Dimension.power()
+        return None
+
+    def visit_Import(self, node: ast.Import) -> None:
+        for alias in node.names:
+            if alias.name.split(".")[0] in {"pint", "astropy"}:
+                self.imported_units.add(alias.name.split(".")[0])
+        self.generic_visit(node)
+
+    def visit_ImportFrom(self, node: ast.ImportFrom) -> None:
+        if node.module:
+            if node.module.split(".")[0] in {"pint", "astropy"}:
+                self.imported_units.add(node.module.split(".")[0])
+        self.generic_visit(node)
+
+    def _is_unit_library_object(self, node: ast.Attribute) -> bool:
+        """If code uses pint/astropy objects, avoid misclassifying by name."""
+        if isinstance(node.value, ast.Name):
+            if node.value.id in {"u", "units"} and "astropy" in self.imported_units:
+                return True
+            if node.value.id in {"ureg", "UnitRegistry"} and "pint" in self.imported_units:
+                return True
+        return False
 
     def _get_func_name(self, node: ast.Call) -> Optional[str]:
         """Extract function name from call node."""
@@ -692,6 +808,7 @@ class UnitGuard:
 
     def _violation_to_dict(self, v: UnitViolation) -> Dict[str, Any]:
         """Convert violation to dictionary."""
+        confidence = "high" if v.severity == "critical" else "low"
         return {
             "type": v.violation_type,
             "severity": v.severity,
@@ -703,4 +820,6 @@ class UnitGuard:
             "description": v.description,
             "physical_meaning": v.physical_meaning,
             "recommendation": v.recommendation,
+            "confidence": confidence,
+            "blocking": confidence == "high",
         }

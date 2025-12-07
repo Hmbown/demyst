@@ -89,7 +89,7 @@ def test_analyze_single_file_markdown_output(capsys, monkeypatch, mock_file, tmp
     assert "- **Type**: Mirage" in output
     assert "  - **Line**: 6" in output
     assert (
-        "  - **Description**: Computational mirage: mean operation destroys variance information."
+        "  - **Description**: Reduction on array-like data without accompanying dispersion check."
         in output
     )
     assert (
@@ -136,7 +136,7 @@ def test_analyze_single_file_json_output(capsys, monkeypatch, mock_file, tmp_pat
     assert len(data["mirage"]["issues"]) == 1
     assert data["mirage"]["issues"][0]["line"] == 6
     assert (
-        "mean operation destroys variance information" in data["mirage"]["issues"][0]["description"]
+        "Reduction on array-like data" in data["mirage"]["issues"][0]["description"]
     )
 
 

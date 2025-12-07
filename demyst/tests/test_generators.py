@@ -69,10 +69,10 @@ def test_integrity_report_generator_with_issues():
 
     assert "Report with Issues" in markdown_output
     assert "## :x: Computational Mirages" in markdown_output
-    assert "**Line 10**: Mean operation" in markdown_output
+    assert "**Line 10**" in markdown_output and "Mean operation" in markdown_output
     assert "Use VariationTensor" in markdown_output
     assert "## :x: Data Leakage" in markdown_output
-    assert "**Line 25**: Train-test leakage" in markdown_output
+    assert "**Line 25**" in markdown_output and "Train-test leakage" in markdown_output
     assert "Split data first" in markdown_output
 
     json_data = json.loads(json_output)

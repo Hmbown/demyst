@@ -55,6 +55,7 @@ class StatisticalViolation:
     statistical_impact: str
     corrected_interpretation: str
     recommendation: str
+    confidence: str = "medium"
 
 
 @dataclass
@@ -67,6 +68,15 @@ class CorrectedResult:
     num_comparisons: int
     is_significant: bool
     explanation: str
+
+
+@dataclass
+class LoopContext:
+    """Tracks behavior inside a single loop for p-hacking analysis."""
+
+    tests: List[Dict[str, Any]] = field(default_factory=list)
+    accumulates_results: bool = False
+    significance_exits: List[int] = field(default_factory=list)
 
 
 class BonferroniCorrector:
@@ -378,6 +388,7 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         self.current_function: Optional[str] = None
         self.in_loop: bool = False
         self.loop_depth: int = 0
+        self.loop_stack: List[LoopContext] = []
 
         # Physics mode settings
         self.physics_mode = self.config.get("physics_mode", False)
@@ -396,7 +407,11 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         old_in_loop = self.in_loop
         self.in_loop = True
         self.loop_depth += 1
+        # Push loop context
+        self.loop_stack.append(LoopContext())
         self.generic_visit(node)
+        ctx = self.loop_stack.pop()
+        self._evaluate_loop_context(ctx, node)
         self.loop_depth -= 1
         self.in_loop = old_in_loop if self.loop_depth == 0 else True
 
@@ -405,7 +420,10 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         old_in_loop = self.in_loop
         self.in_loop = True
         self.loop_depth += 1
+        self.loop_stack.append(LoopContext())
         self.generic_visit(node)
+        ctx = self.loop_stack.pop()
+        self._evaluate_loop_context(ctx, node)
         self.loop_depth -= 1
         self.in_loop = old_in_loop if self.loop_depth == 0 else True
 
@@ -422,32 +440,13 @@ class HypothesisAnalyzer(ast.NodeVisitor):
             }
             self.statistical_tests.append(test_info)
 
-            # Statistical test in a loop without correction
-            if self.in_loop:
-                self.violations.append(
-                    StatisticalViolation(
-                        violation_type="uncorrected_multiple_tests",
-                        severity=StatisticalRisk.INVALID,
-                        line=node.lineno,
-                        description=(
-                            f"Statistical test {func_name}() called inside a loop. "
-                            "Multiple comparisons require p-value correction."
-                        ),
-                        statistical_impact=(
-                            "Running multiple statistical tests inflates the false positive rate. "
-                            f"With 20 tests at alpha=0.05, you have a 64% chance of at least one "
-                            "false positive (1 - 0.95^20)."
-                        ),
-                        corrected_interpretation=(
-                            "Apply Bonferroni correction: divide alpha by number of tests, "
-                            "or use Benjamini-Hochberg for FDR control."
-                        ),
-                        recommendation=(
-                            "from statsmodels.stats.multitest import multipletests\n"
-                            "rejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')"
-                        ),
-                    )
-                )
+            if self.loop_stack:
+                self.loop_stack[-1].tests.append(test_info)
+
+        # Detect accumulation into containers (Monte Carlo style)
+        if isinstance(node.func, ast.Attribute) and node.func.attr in {"append", "extend"}:
+            if isinstance(node.func.value, ast.Name) and self.loop_stack:
+                self.loop_stack[-1].accumulates_results = True
 
         self.generic_visit(node)
 
@@ -455,6 +454,11 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         """Detect conditional logic based on p-values."""
         # Check for p < 0.05 patterns
         if self._is_p_value_check(node.test):
+            if self.loop_stack and self._contains_early_exit_action(node):
+                # Mark that this loop exits early on significance
+                self.loop_stack[-1].significance_exits.append(node.lineno)
+
+            # Keep a general conditional reporting notice (outside loop or non-early-exit)
             self.violations.append(
                 StatisticalViolation(
                     violation_type="conditional_reporting",
@@ -541,6 +545,88 @@ class HypothesisAnalyzer(ast.NodeVisitor):
                 return True
 
         return False
+
+    def _contains_early_exit_action(self, node: ast.If) -> bool:
+        """Detects break/return/continue/raise or immediate reporting within a conditional."""
+        def _is_reporting_call(call: ast.Call) -> bool:
+            if isinstance(call.func, ast.Name) and call.func.id == "print":
+                return True
+            if isinstance(call.func, ast.Attribute):
+                if isinstance(call.func.value, ast.Name) and call.func.value.id in {"logger", "log"}:
+                    return call.func.attr in {
+                        "info",
+                        "warning",
+                        "warn",
+                        "error",
+                        "critical",
+                        "debug",
+                    }
+            return False
+
+        for stmt in ast.walk(ast.Module(body=node.body, type_ignores=[])):
+            if isinstance(stmt, (ast.Break, ast.Continue, ast.Return, ast.Raise)):
+                return True
+            if isinstance(stmt, ast.Expr) and isinstance(stmt.value, ast.Call):
+                if _is_reporting_call(stmt.value):
+                    return True
+        return False
+
+    def _evaluate_loop_context(self, ctx: LoopContext, node: ast.AST) -> None:
+        """Create violations based on loop behavior."""
+        if not ctx.tests:
+            return
+
+        if ctx.significance_exits:
+            self.violations.append(
+                StatisticalViolation(
+                    violation_type="selective_early_exit_on_significance",
+                    severity=StatisticalRisk.INVALID,
+                    line=ctx.significance_exits[0],
+                    description=(
+                        "Loop aborts or reports immediately when a p-value passes the threshold. "
+                        "This is a classic p-hacking pattern."
+                    ),
+                    statistical_impact=(
+                        "Early stopping on significance inflates false positives and biases estimates."
+                    ),
+                    corrected_interpretation="Remove early exits; collect all results and correct p-values after.",
+                    recommendation=(
+                        "Accumulate results, apply multiple-comparison correction after the loop, "
+                        "and pre-register stopping rules."
+                    ),
+                    confidence="high",
+                )
+            )
+            return
+
+        if ctx.accumulates_results:
+            # Monte Carlo / bootstrap style accumulation; do not flag
+            return
+
+        # Tests in loop without accumulation: still risky for multiple comparisons
+        severity = StatisticalRisk.INVALID if len(ctx.tests) > 1 else StatisticalRisk.QUESTIONABLE
+        self.violations.append(
+            StatisticalViolation(
+                violation_type="uncorrected_multiple_tests",
+                severity=severity,
+                line=ctx.tests[0]["line"],
+                description=(
+                    "Statistical tests executed inside a loop without aggregation or correction. "
+                    "Treat repeated tests as multiple comparisons."
+                ),
+                statistical_impact=(
+                    "Repeated testing inflates the false positive rate; alpha must be adjusted."
+                ),
+                corrected_interpretation=(
+                    "Aggregate p-values or metrics and apply Bonferroni/Holm/FDR after the loop."
+                ),
+                recommendation=(
+                    "Collect p-values in a list, then use statsmodels.stats.multitest.multipletests "
+                    "or similar to correct."
+                ),
+                confidence="medium" if severity == StatisticalRisk.INVALID else "low",
+            )
+        )
 
 
 class HypothesisGuard:
@@ -727,4 +813,7 @@ class HypothesisGuard:
             "statistical_impact": v.statistical_impact,
             "corrected_interpretation": v.corrected_interpretation,
             "recommendation": v.recommendation,
+            "confidence": v.confidence,
+            "blocking": v.severity in {StatisticalRisk.INVALID, StatisticalRisk.FRAUDULENT}
+            and v.confidence in {"high", "medium"},
         }

@@ -43,6 +43,7 @@ class ScientificIntegrityReport:
     commit: str
     files_analyzed: int
     total_issues: int
+    blocking_issues: int
     critical_issues: int
     warning_issues: int
     checks: List[IntegrityCheck]
@@ -58,6 +59,7 @@ class ScientificIntegrityReport:
             "commit": self.commit,
             "files_analyzed": self.files_analyzed,
             "total_issues": self.total_issues,
+            "blocking_issues": self.blocking_issues,
             "critical_issues": self.critical_issues,
             "warning_issues": self.warning_issues,
             "checks": [
@@ -92,6 +94,7 @@ class ScientificIntegrityReport:
             f"|--------|-------|",
             f"| Files Analyzed | {self.files_analyzed} |",
             f"| Total Issues | {self.total_issues} |",
+            f"| Blocking Issues | {self.blocking_issues} |",
             f"| Critical Issues | {self.critical_issues} |",
             f"| Warnings | {self.warning_issues} |",
             f"| **Verdict** | **{self.verdict}** |",
@@ -235,22 +238,27 @@ class CIEnforcer:
                 detector = self.MirageDetector(config=self.config_manager.get_rule_config("mirage"))
                 # Use analyze() for variance context-aware detection
                 mirages = detector.analyze(tree)
-                results["mirage"] = {
-                    "issues": [
+                issues = []
+                for m in mirages:
+                    issues.append(
                         {
-                            "type": m["type"],
-                            "line": m["line"],
+                            "type": m.get("type"),
+                            "line": m.get("line"),
                             "function": m.get("function"),
-                            "description": f"Computational mirage: {m['type']} operation destroys variance information.",
+                            "description": m.get(
+                                "reason",
+                                f"Computational mirage: {m.get('type')} operation destroys variance information.",
+                            ),
                             "recommendation": (
                                 self._generate_recommendations("Computational Mirages", [m])[0]
                                 if self._generate_recommendations("Computational Mirages", [m])
                                 else None
                             ),
+                            "confidence": m.get("confidence", "medium"),
+                            "blocking": m.get("blocking", True),
                         }
-                        for m in mirages
-                    ]
-                }
+                    )
+                results["mirage"] = {"issues": issues}
             except Exception as e:
                 results["mirage"] = {"error": str(e)}
         else:
@@ -347,6 +355,7 @@ class CIEnforcer:
         total_issues = 0
         critical_issues = 0
         warning_issues = 0
+        blocking_issues = 0
 
         mirage_issues = []
         tensor_issues = []
@@ -395,13 +404,15 @@ class CIEnforcer:
 
         # Build check results
         def make_check(name: str, issues: List, critical_types: List[str]) -> IntegrityCheck:
+            has_blocking = any(i.get("blocking", True) for i in issues)
             has_critical = any(
                 i.get("severity") == "critical" or i.get("type") in critical_types for i in issues
             )
+            severity = "critical" if has_blocking or has_critical else ("warning" if issues else "info")
             return IntegrityCheck(
                 name=name,
                 passed=len(issues) == 0,
-                severity="critical" if has_critical else ("warning" if issues else "info"),
+                severity=severity,
                 issues=issues,
                 recommendations=self._generate_recommendations(name, issues),
             )
@@ -414,17 +425,19 @@ class CIEnforcer:
             make_check("Dimensional Consistency", unit_issues, ["incompatible_addition"]),
         ]
 
-        # Count issues
+        # Count issues with blocking awareness
         for check in all_checks:
             total_issues += len(check.issues)
+            blocking_in_check = sum(1 for i in check.issues if i.get("blocking", True))
+            nonblocking_in_check = len(check.issues) - blocking_in_check
+            blocking_issues += blocking_in_check
             if check.severity == "critical":
-                critical_issues += len(check.issues)
-            elif check.severity == "warning":
-                warning_issues += len(check.issues)
+                critical_issues += blocking_in_check
+            warning_issues += nonblocking_in_check
 
-        # Determine verdict
-        if critical_issues > 0:
-            verdict = "FAIL: Critical scientific integrity issues detected"
+        # Determine verdict (default: block only on blocking issues)
+        if blocking_issues > 0:
+            verdict = "FAIL: Blocking scientific integrity issues detected"
             badge_status = "failing"
         elif warning_issues > 0:
             verdict = "WARNING: Potential issues detected, review recommended"
@@ -445,6 +458,7 @@ class CIEnforcer:
             commit=commit,
             files_analyzed=len(all_files),
             total_issues=total_issues,
+            blocking_issues=blocking_issues,
             critical_issues=critical_issues,
             warning_issues=warning_issues,
             checks=all_checks,

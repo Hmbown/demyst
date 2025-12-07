@@ -2,7 +2,10 @@
   "mcpServers": {
     "demyst": {
       "command": "python",
-      "args": ["-m", "demyst.mcp"],
+      "args": [
+        "-m",
+        "demyst.mcp"
+      ],
       "env": {},
       "disabled": false
     }
@@ -23,5 +26,12 @@
         ]
       }
     ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)"
+    ],
+    "deny": [],
+    "ask": []
   }
 }

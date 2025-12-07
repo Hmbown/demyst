@@ -78,3 +78,17 @@ dmypy.json
 *.log
 LOG.md
 .genkit/
+
+# Demyst generated files
+.demyst_experiments.json
+.demyst_report.json
+.scilint_report.json
+*.demyst_report.json
+*.scilint_report.json
+**/.demyst_report.json
+**/.scilint_report.json
+**/.report.json
+methodology.tex
+
+# Local settings
+.claude/settings.local.json

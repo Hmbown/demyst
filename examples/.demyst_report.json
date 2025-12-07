@@ -1,12 +1,13 @@
 {
-  "timestamp": "2025-11-30T13:07:15.903408",
+  "timestamp": "2025-12-07T15:23:17.174345",
   "repository": "demyst",
   "branch": "main",
-  "commit": "d406af3703ea28303c3a0a53a250f3beb0f84b7a",
-  "files_analyzed": 7,
-  "total_issues": 13,
-  "critical_issues": 12,
-  "warning_issues": 1,
+  "commit": "993eeeb37899bcacfbe5fc6e4e361c87b6075c0a",
+  "files_analyzed": 8,
+  "total_issues": 25,
+  "blocking_issues": 18,
+  "critical_issues": 18,
+  "warning_issues": 7,
   "checks": [
     {
       "name": "Computational Mirages",
@@ -17,24 +18,130 @@
           "type": "mean",
           "line": 25,
           "function": "analyze_swarm_safety",
-          "description": "Computational mirage: mean operation destroys variance information.",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/swarm_collapse.py"
         },
         {
           "type": "mean",
-          "line": 13,
-          "function": "analyze_random_walk",
-          "description": "Computational mirage: mean operation destroys variance information.",
+          "line": 35,
+          "function": "anscombe_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
-          "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 36,
+          "function": "anscombe_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 37,
+          "function": "anscombe_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 38,
+          "function": "anscombe_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 60,
+          "function": "simpsons_paradox_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "high",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 146,
+          "function": "climate_extremes_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 147,
+          "function": "climate_extremes_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "mean",
+          "line": 172,
+          "function": "swarm_safety_mirage",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "medium",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/real_world_mirages.py"
+        },
+        {
+          "type": "sum",
+          "line": 211,
+          "function": "demonstrate_gradient_death",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "low",
+          "blocking": false,
+          "file": "/Volumes/VIXinSSD/demyst/examples/deep_learning_gradient_death.py"
+        },
+        {
+          "type": "sum",
+          "line": 227,
+          "function": "demonstrate_gradient_death",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "low",
+          "blocking": false,
+          "file": "/Volumes/VIXinSSD/demyst/examples/deep_learning_gradient_death.py"
+        },
+        {
+          "type": "mean",
+          "line": 172,
+          "function": "train_with_sklearn_pipeline",
+          "description": "Reduction on array-like data without accompanying dispersion check.",
+          "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "low",
+          "blocking": false,
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
         },
         {
           "type": "premature_discretization",
           "line": 18,
           "function": "analyze_random_walk",
-          "description": "Computational mirage: premature_discretization operation destroys variance information.",
+          "description": "Rounding/forcing int on data that appears array-like.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
+          "confidence": "low",
+          "blocking": false,
           "file": "/Volumes/VIXinSSD/demyst/examples/random_walk.py"
         }
       ],
@@ -50,7 +157,7 @@
       "issues": [
         {
           "layer": "BatchNorm1d",
-          "line": 110,
+          "line": 114,
           "type": "unstable_batch_stats",
           "description": "BatchNorm1d with track_running_stats=False will use batch statistics during evaluation, causing non-deterministic behavior.",
           "masked_statistics": [
@@ -58,6 +165,8 @@
             "running_var"
           ],
           "recommendation": "Keep track_running_stats=True for production models. Batch statistics during eval hide distribution shifts between training and deployment data.",
+          "confidence": "medium",
+          "blocking": false,
           "file": "/Volumes/VIXinSSD/demyst/examples/deep_learning_gradient_death.py"
         }
       ],
@@ -74,40 +183,76 @@
         {
           "type": "test_in_training",
           "severity": "critical",
-          "line": 112,
+          "line": 111,
           "col": 0,
           "variable": "X_test",
-          "source": "Line 105",
+          "source": "Line 106",
           "context": "train",
           "description": "Test data 'X_test' is being used in training context 'train'. This completely invalidates your benchmark results.",
           "scientific_impact": "Your model has seen the test data during training. Any reported accuracy/performance metrics are meaningless. This is the most common form of scientific fraud in ML (often unintentional).",
           "recommendation": "Ensure complete separation of test data. Use sklearn's train_test_split or similar and verify test indices never appear in training loops.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
         },
         {
           "type": "test_in_training",
           "severity": "critical",
-          "line": 112,
+          "line": 111,
           "col": 0,
           "variable": "y_test",
-          "source": "Line 105",
+          "source": "Line 106",
           "context": "train",
           "description": "Test data 'y_test' is being used in training context 'train'. This completely invalidates your benchmark results.",
           "scientific_impact": "Your model has seen the test data during training. Any reported accuracy/performance metrics are meaningless. This is the most common form of scientific fraud in ML (often unintentional).",
           "recommendation": "Ensure complete separation of test data. Use sklearn's train_test_split or similar and verify test indices never appear in training loops.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
         },
         {
           "type": "preprocessing_leakage",
           "severity": "critical",
-          "line": 45,
+          "line": 46,
           "col": 0,
           "variable": "X",
           "source": "fit_transform",
           "context": "preprocessing",
-          "description": "fit_transform() called on line 45 BEFORE train_test_split on line 48. Preprocessing statistics (mean, std, etc.) are computed using test data.",
+          "description": "fit_transform() called on line 46 BEFORE train_test_split on line 49. Preprocessing statistics (mean, std, etc.) are computed using test data.",
           "scientific_impact": "Preprocessing learns from test data. Features are scaled/normalized using information that should be held out. This is subtle but causes overestimation of model performance.",
-          "recommendation": "Split data FIRST, then fit preprocessing on train only:\n  X_train, X_test = train_test_split(X)\n  scaler.fit(X_train)\n  X_train = scaler.transform(X_train)\n  X_test = scaler.transform(X_test)",
+          "recommendation": "Split data FIRST, then fit preprocessing on train only:\n  X_train, X_test = train_test_split(X)\n  scaler.fit(X_train)  X_train = scaler.transform(X_train)  X_test = scaler.transform(X_test)",
+          "confidence": "high",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
+        },
+        {
+          "type": "preprocessing_leakage",
+          "severity": "critical",
+          "line": 77,
+          "col": 0,
+          "variable": "X",
+          "source": "fit_transform",
+          "context": "preprocessing",
+          "description": "fit_transform() called on line 77 BEFORE train_test_split on line 80. Preprocessing statistics (mean, std, etc.) are computed using test data.",
+          "scientific_impact": "Preprocessing learns from test data. Features are scaled/normalized using information that should be held out. This is subtle but causes overestimation of model performance.",
+          "recommendation": "Split data FIRST, then fit preprocessing on train only:\n  X_train, X_test = train_test_split(X)\n  scaler.fit(X_train)  X_train = scaler.transform(X_train)  X_test = scaler.transform(X_test)",
+          "confidence": "high",
+          "blocking": true,
+          "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
+        },
+        {
+          "type": "preprocessing_leakage",
+          "severity": "critical",
+          "line": 141,
+          "col": 0,
+          "variable": "X_train_scaled",
+          "source": "fit_transform",
+          "context": "cross_validation",
+          "description": "fit_transform() called on line 141 BEFORE cross_val_score on line 170. Feature selection or scaling must happen INSIDE the CV loop.",
+          "scientific_impact": "CV folds are contaminated with global statistics.",
+          "recommendation": "Use sklearn Pipeline for CV.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/ml_data_leakage.py"
         }
       ],
@@ -122,16 +267,6 @@
       "severity": "critical",
       "issues": [
         {
-          "type": "uncorrected_multiple_tests",
-          "severity": "invalid",
-          "line": 22,
-          "description": "Statistical test ttest_ind() called inside a loop. Multiple comparisons require p-value correction.",
-          "statistical_impact": "Running multiple statistical tests inflates the false positive rate. With 20 tests at alpha=0.05, you have a 64% chance of at least one false positive (1 - 0.95^20).",
-          "corrected_interpretation": "Apply Bonferroni correction: divide alpha by number of tests, or use Benjamini-Hochberg for FDR control.",
-          "recommendation": "from statsmodels.stats.multitest import multipletests\nrejected, corrected_p, _, _ = multipletests(p_values, method='fdr_bh')",
-          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
-        },
-        {
           "type": "conditional_reporting",
           "severity": "questionable",
           "line": 25,
@@ -139,6 +274,20 @@
           "statistical_impact": "Conditioning on significance leads to publication bias. Non-significant results are equally important for science.",
           "corrected_interpretation": "Report ALL results regardless of significance. Use pre-registration to prevent outcome-dependent analysis.",
           "recommendation": "Remove conditional branching on p-values. Report effect sizes and confidence intervals instead of just significance.",
+          "confidence": "medium",
+          "blocking": false,
+          "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
+        },
+        {
+          "type": "selective_early_exit_on_significance",
+          "severity": "invalid",
+          "line": 25,
+          "description": "Loop aborts or reports immediately when a p-value passes the threshold. This is a classic p-hacking pattern.",
+          "statistical_impact": "Early stopping on significance inflates false positives and biases estimates.",
+          "corrected_interpretation": "Remove early exits; collect all results and correct p-values after.",
+          "recommendation": "Accumulate results, apply multiple-comparison correction after the loop, and pre-register stopping rules.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/biology_gene_expression.py"
         }
       ],
@@ -163,6 +312,8 @@
           "description": "Cannot add quantities with dimensions [M T] and [1].",
           "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
         },
         {
@@ -176,6 +327,8 @@
           "description": "Cannot add quantities with dimensions [L] and [T].",
           "physical_meaning": "This is like adding meters to seconds. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
         },
         {
@@ -186,9 +339,11 @@
           "expression": "force_impact = 0.5 * mass_kg * velocity_mps ** 2",
           "left_dimension": "[L M T^-2]",
           "right_dimension": "[L M T^-1]",
-          "description": "Variable 'force_impact' suggests dimension [L M T^-2] but is assigned value with dimension [L M T^-1].",
-          "physical_meaning": "Variable naming implies a physical quantity different from what is being assigned. This may indicate a unit conversion error.",
-          "recommendation": "Verify units. If intentional, rename variable to match actual dimension or add explicit conversion.",
+          "description": "Variable 'force_impact' expects dimension [L M T^-2] but is assigned value with dimension [L M T^-1].",
+          "physical_meaning": "Assignment violates annotated or inferred dimension; likely missing conversion.",
+          "recommendation": "Ensure RHS has the same dimension or convert explicitly.",
+          "confidence": "low",
+          "blocking": false,
           "file": "/Volumes/VIXinSSD/demyst/examples/physics_kinematics.py"
         },
         {
@@ -202,6 +357,8 @@
           "description": "Cannot add quantities with dimensions [M] and [1].",
           "physical_meaning": "This is like adding apples to oranges. The result has no physical meaning.",
           "recommendation": "Check for missing unit conversions. Ensure both operands represent the same physical quantity.",
+          "confidence": "high",
+          "blocking": true,
           "file": "/Volumes/VIXinSSD/demyst/examples/chemistry_stoichiometry.py"
         }
       ],
@@ -211,6 +368,6 @@
       ]
     }
   ],
-  "verdict": "FAIL: Critical scientific integrity issues detected",
+  "verdict": "FAIL: Blocking scientific integrity issues detected",
   "badge_status": "failing"
 }

@@ -17,6 +17,7 @@ import numpy as np
 # Aggregating destroys the ability to distinguish linear, quadratic, outlier,
 # and leverage-point relationships.
 
+
 def anscombe_mirage():
     """All four datasets have mean_y = 7.5, but they're fundamentally different."""
     # Dataset I: Linear relationship
@@ -47,14 +48,15 @@ def anscombe_mirage():
 # But when stratified by department, women were MORE likely to be admitted
 # in 4 out of 6 departments. Women applied to more competitive departments.
 
+
 def simpsons_paradox_mirage():
     """Aggregated admission rates hide department-level truth."""
     # Simplified version of the Berkeley data
     # Department A (easy): 62% admit rate, mostly male applicants
-    dept_a_admits = np.array([1]*512 + [0]*313)  # 62% admitted
+    dept_a_admits = np.array([1] * 512 + [0] * 313)  # 62% admitted
 
     # Department F (hard): 6% admit rate, mostly female applicants
-    dept_f_admits = np.array([1]*22 + [0]*351)   # 6% admitted
+    dept_f_admits = np.array([1] * 22 + [0] * 351)  # 6% admitted
 
     # THE MIRAGE: Overall mean hides that success depends on department choice
     overall_rate = np.mean(np.concatenate([dept_a_admits, dept_f_admits]))
@@ -70,6 +72,7 @@ def simpsons_paradox_mirage():
 # Black Monday (-22.6%), 2008 crash, 2020 crash, etc.
 # Normal distribution would predict these are 25-sigma events (impossible).
 
+
 def fat_tails_mirage():
     """Average return hides catastrophic tail events."""
     np.random.seed(42)
@@ -78,18 +81,17 @@ def fat_tails_mirage():
     normal_days = np.random.normal(0.0004, 0.01, 2500)  # ~0.04% mean, 1% std
 
     # But reality has fat tails - these actually happened:
-    black_monday_1987 = -0.226      # -22.6% in ONE DAY
-    flash_crash_2010 = -0.0656      # -6.56% intraday
-    covid_crash_2020 = -0.1198      # -11.98% single day
+    black_monday_1987 = -0.226  # -22.6% in ONE DAY
+    flash_crash_2010 = -0.0656  # -6.56% intraday
+    covid_crash_2020 = -0.1198  # -11.98% single day
 
-    all_returns = np.concatenate([
-        normal_days,
-        [black_monday_1987, flash_crash_2010, covid_crash_2020]
-    ])
+    all_returns = np.concatenate(
+        [normal_days, [black_monday_1987, flash_crash_2010, covid_crash_2020]]
+    )
 
     # THE MIRAGE: Mean looks fine, variance looks reasonable
-    avg_return = np.mean(all_returns)       # ~0.03% - seems safe!
-    volatility = np.std(all_returns)        # Underestimates true risk
+    avg_return = np.mean(all_returns)  # ~0.03% - seems safe!
+    volatility = np.std(all_returns)  # Underestimates true risk
 
     # But the 0.03% average hid the -22.6% Black Monday
     # Using mean for risk assessment would be catastrophically wrong
@@ -103,6 +105,7 @@ def fat_tails_mirage():
 # When you have multiple outliers, they pull the mean toward them,
 # making standard outlier tests (Grubbs, Z-score) fail to detect ANY of them.
 
+
 def outlier_masking_mirage():
     """Two outliers mask each other by distorting mean and std."""
     # Normal measurements
@@ -115,7 +118,7 @@ def outlier_masking_mirage():
 
     # THE MIRAGE: Mean is pulled toward outliers
     mean_val = np.mean(all_data)  # ~12.4 instead of ~10.15
-    std_val = np.std(all_data)    # Inflated by outliers
+    std_val = np.std(all_data)  # Inflated by outliers
 
     # Z-score test now FAILS to detect the outliers because
     # the mean and std are already corrupted by them
@@ -131,6 +134,7 @@ def outlier_masking_mirage():
 # Mean annual temperature might only rise 2C, but this hides
 # dramatic increases in extreme heat days that kill people.
 
+
 def climate_extremes_mirage():
     """Average temperature hides deadly extreme events."""
     np.random.seed(123)
@@ -140,15 +144,15 @@ def climate_extremes_mirage():
 
     # Climate change: mean shifts slightly, but extremes shift MORE
     # (variance increases, not just mean)
-    future_temps = np.random.normal(22, 7, 365)   # mean 22C, std 7C
+    future_temps = np.random.normal(22, 7, 365)  # mean 22C, std 7C
 
     # THE MIRAGE: Mean only increased 2C
     baseline_mean = np.mean(baseline_temps)  # ~20C
-    future_mean = np.mean(future_temps)      # ~22C  (only +2C, seems mild)
+    future_mean = np.mean(future_temps)  # ~22C  (only +2C, seems mild)
 
     # But extreme heat days (>35C) increased dramatically
     baseline_extreme_days = np.sum(baseline_temps > 35)  # ~1-2 days
-    future_extreme_days = np.sum(future_temps > 35)      # ~10-15 days
+    future_extreme_days = np.sum(future_temps > 35)  # ~10-15 days
 
     # The +2C average hides a 5-10x increase in deadly heat days
     return baseline_mean, future_mean
@@ -158,6 +162,7 @@ def climate_extremes_mirage():
 # 6. SWARM SAFETY - One Rogue Agent Hidden by 999 Good Ones
 # =============================================================================
 # (From demyst's original example)
+
 
 def swarm_safety_mirage():
     """Mean alignment score hides the one rogue agent that causes cascade failure."""

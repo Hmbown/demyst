@@ -408,7 +408,9 @@ class CIEnforcer:
             has_critical = any(
                 i.get("severity") == "critical" or i.get("type") in critical_types for i in issues
             )
-            severity = "critical" if has_blocking or has_critical else ("warning" if issues else "info")
+            severity = (
+                "critical" if has_blocking or has_critical else ("warning" if issues else "info")
+            )
             return IntegrityCheck(
                 name=name,
                 passed=len(issues) == 0,

@@ -617,7 +617,17 @@ class DimensionalAnalyzer(ast.NodeVisitor):
         normalized = unit.lower()
         if normalized in {"m", "meter", "metre", "meters", "metres"}:
             return Dimension.length()
-        if normalized in {"cm", "centimeter", "centimetre", "mm", "millimeter", "millimetre", "km", "kilometer", "kilometre"}:
+        if normalized in {
+            "cm",
+            "centimeter",
+            "centimetre",
+            "mm",
+            "millimeter",
+            "millimetre",
+            "km",
+            "kilometer",
+            "kilometre",
+        }:
             return Dimension.length()
         if normalized in {"ft", "foot", "feet", "mile", "miles", "mi"}:
             return Dimension.length()

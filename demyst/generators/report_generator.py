@@ -283,7 +283,7 @@ class IntegrityReportGenerator:
                 blocking = issue.get("blocking", False)
                 issues_html += (
                     f'<div class="issue {severity}"><strong>Line {line}</strong> '
-                    f'({severity}, confidence={confidence}, blocking={blocking}): {desc}</div>'
+                    f"({severity}, confidence={confidence}, blocking={blocking}): {desc}</div>"
                 )
 
         recs_html = ""

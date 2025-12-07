@@ -135,9 +135,7 @@ def test_analyze_single_file_json_output(capsys, monkeypatch, mock_file, tmp_pat
     assert "mirage" in data
     assert len(data["mirage"]["issues"]) == 1
     assert data["mirage"]["issues"][0]["line"] == 6
-    assert (
-        "Reduction on array-like data" in data["mirage"]["issues"][0]["description"]
-    )
+    assert "Reduction on array-like data" in data["mirage"]["issues"][0]["description"]
 
 
 @pytest.mark.skip(

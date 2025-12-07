@@ -75,8 +75,11 @@ class GradientDeathDetector(ast.NodeVisitor):
 
     ACTIVATION_SATURATION_RISK = {
         "Sigmoid": {"depth_threshold": 3, "risk": GradientRisk.CRITICAL},
+        "sigmoid": {"depth_threshold": 3, "risk": GradientRisk.CRITICAL},
         "Tanh": {"depth_threshold": 4, "risk": GradientRisk.WARNING},
+        "tanh": {"depth_threshold": 4, "risk": GradientRisk.WARNING},
         "Softmax": {"depth_threshold": 1, "risk": GradientRisk.WARNING},
+        "softmax": {"depth_threshold": 1, "risk": GradientRisk.WARNING},
     }
 
     GRADIENT_PRESERVING = {"ReLU", "LeakyReLU", "GELU", "SiLU", "Mish"}
@@ -520,7 +523,7 @@ class TensorGuard:
         """
         try:
             # Sanitize source by removing null bytes before parsing
-            sanitized_source = source.replace('\x00', '')
+            sanitized_source = source.replace("\x00", "")
             tree = ast.parse(sanitized_source)
         except SyntaxError as e:
             return {

@@ -206,12 +206,6 @@ class DataFlowTracker:
 class TaintAnalyzer(ast.NodeVisitor):
     """
     AST-based taint analysis for ML data leakage detection.
-
-    Tracks:
-        1. Data loading functions (source identification)
-        2. Data splitting operations (taint assignment)
-        3. Training loops and hyperparameter tuning (sink identification)
-        4. Cross-context data usage (violation detection)
     """
 
     # Functions that load data
@@ -246,6 +240,7 @@ class TaintAnalyzer(ast.NodeVisitor):
         "backward",
         "step",
         "optimize",
+        "Trainer",  # HuggingFace Trainer
     }
 
     # Hyperparameter tuning contexts
@@ -302,6 +297,7 @@ class TaintAnalyzer(ast.NodeVisitor):
                 self._handle_data_split(node, func_name)
 
             # Check for fit/train calls with potentially tainted data
+            # Also check constructors like Trainer()
             if func_name in self.TRAINING_CONTEXTS:
                 self._check_training_call(node, func_name)
 
@@ -457,15 +453,6 @@ class TaintAnalyzer(ast.NodeVisitor):
 class LeakageHunter:
     """
     Main interface for data leakage detection.
-
-    Usage:
-        hunter = LeakageHunter()
-        result = hunter.analyze(source_code)
-
-        if result['violations']:
-            print("DATA LEAKAGE DETECTED!")
-            for v in result['violations']:
-                print(f"  Line {v['line']}: {v['description']}")
     """
 
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -529,8 +516,9 @@ class LeakageHunter:
         lines = source.split("\n")
 
         # Pattern 1: fit_transform on full data, then split
-        fit_transform_pattern = re.compile(r"\.fit_transform\s*\(\s*(\w+)\s*\)")
+        fit_transform_pattern = re.compile(r"\.fit_transform\s*\(\s*(\w+)")
         split_pattern = re.compile(r"train_test_split")
+        cross_val_pattern = re.compile(r"cross_val_score\s*\(")
 
         fit_transform_line = None
         fit_transform_var = None
@@ -541,8 +529,9 @@ class LeakageHunter:
                 fit_transform_line = i
                 fit_transform_var = match.group(1)
 
-            if fit_transform_line and split_pattern.search(line):
-                if i > fit_transform_line:
+            if fit_transform_line:
+                # Check for split AFTER fit_transform
+                if split_pattern.search(line) and i > fit_transform_line:
                     violations.append(
                         LeakageViolation(
                             violation_type="preprocessing_leakage",
@@ -565,10 +554,32 @@ class LeakageHunter:
                             recommendation=(
                                 "Split data FIRST, then fit preprocessing on train only:\n"
                                 "  X_train, X_test = train_test_split(X)\n"
-                                "  scaler.fit(X_train)\n"
-                                "  X_train = scaler.transform(X_train)\n"
+                                "  scaler.fit(X_train)"
+                                "  X_train = scaler.transform(X_train)"
                                 "  X_test = scaler.transform(X_test)"
                             ),
+                        )
+                    )
+                    fit_transform_line = None  # Reset
+
+                # Check for cross_val_score AFTER fit_transform
+                elif cross_val_pattern.search(line) and i > fit_transform_line:
+                    violations.append(
+                        LeakageViolation(
+                            violation_type="preprocessing_leakage",
+                            severity="critical",
+                            line=fit_transform_line,
+                            col=0,
+                            tainted_variable=fit_transform_var or "unknown",
+                            taint_source="fit_transform",
+                            contaminated_context="cross_validation",
+                            description=(
+                                f"fit_transform() called on line {fit_transform_line} BEFORE "
+                                f"cross_val_score on line {i}. Feature selection or scaling "
+                                "must happen INSIDE the CV loop."
+                            ),
+                            scientific_impact="CV folds are contaminated with global statistics.",
+                            recommendation="Use sklearn Pipeline for CV.",
                         )
                     )
                     fit_transform_line = None

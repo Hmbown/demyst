@@ -5,40 +5,124 @@ from typing import Any, Dict, List, Optional, Set, Tuple
 # Comprehensive set of numpy functions that create/return arrays
 NUMPY_ARRAY_CREATORS = {
     # Construction
-    "array", "asarray", "zeros", "ones", "empty", "full",
-    "zeros_like", "ones_like", "empty_like", "full_like",
-    "eye", "identity", "diag", "diagflat", "tri", "tril", "triu",
+    "array",
+    "asarray",
+    "zeros",
+    "ones",
+    "empty",
+    "full",
+    "zeros_like",
+    "ones_like",
+    "empty_like",
+    "full_like",
+    "eye",
+    "identity",
+    "diag",
+    "diagflat",
+    "tri",
+    "tril",
+    "triu",
     # Ranges
-    "arange", "linspace", "logspace", "geomspace",
+    "arange",
+    "linspace",
+    "logspace",
+    "geomspace",
     # Combination
-    "stack", "concatenate", "hstack", "vstack", "dstack",
-    "column_stack", "row_stack", "block", "append", "insert",
+    "stack",
+    "concatenate",
+    "hstack",
+    "vstack",
+    "dstack",
+    "column_stack",
+    "row_stack",
+    "block",
+    "append",
+    "insert",
     # Transforms that return arrays
-    "cumsum", "cumprod", "diff", "gradient", "ediff1d",
-    "sort", "argsort", "copy", "reshape", "flatten", "ravel",
-    "transpose", "swapaxes", "moveaxis", "rollaxis",
-    "squeeze", "expand_dims", "atleast_1d", "atleast_2d", "atleast_3d",
+    "cumsum",
+    "cumprod",
+    "diff",
+    "gradient",
+    "ediff1d",
+    "sort",
+    "argsort",
+    "copy",
+    "reshape",
+    "flatten",
+    "ravel",
+    "transpose",
+    "swapaxes",
+    "moveaxis",
+    "rollaxis",
+    "squeeze",
+    "expand_dims",
+    "atleast_1d",
+    "atleast_2d",
+    "atleast_3d",
     # Math operations that preserve array structure
-    "abs", "absolute", "sqrt", "square", "exp", "log", "log10", "log2",
-    "sin", "cos", "tan", "arcsin", "arccos", "arctan",
+    "abs",
+    "absolute",
+    "sqrt",
+    "square",
+    "exp",
+    "log",
+    "log10",
+    "log2",
+    "sin",
+    "cos",
+    "tan",
+    "arcsin",
+    "arccos",
+    "arctan",
     # Broadcasting/tiling
-    "tile", "repeat", "broadcast_to",
+    "tile",
+    "repeat",
+    "broadcast_to",
     # Masking/filtering (return arrays)
-    "where", "select", "compress", "extract",
-    "unique", "intersect1d", "union1d", "setdiff1d",
+    "where",
+    "select",
+    "compress",
+    "extract",
+    "unique",
+    "intersect1d",
+    "union1d",
+    "setdiff1d",
     # Loading
-    "load", "loadtxt", "genfromtxt", "fromfile", "frombuffer",
+    "load",
+    "loadtxt",
+    "genfromtxt",
+    "fromfile",
+    "frombuffer",
 }
 
 # Numpy random module functions that create arrays
 NUMPY_RANDOM_CREATORS = {
-    "normal", "uniform", "randn", "rand", "randint",
-    "random", "random_sample", "ranf", "sample",
-    "choice", "permutation", "shuffle",
-    "exponential", "poisson", "binomial", "standard_normal",
-    "beta", "gamma", "chisquare", "dirichlet",
-    "laplace", "logistic", "lognormal", "pareto",
-    "multivariate_normal", "multinomial",
+    "normal",
+    "uniform",
+    "randn",
+    "rand",
+    "randint",
+    "random",
+    "random_sample",
+    "ranf",
+    "sample",
+    "choice",
+    "permutation",
+    "shuffle",
+    "exponential",
+    "poisson",
+    "binomial",
+    "standard_normal",
+    "beta",
+    "gamma",
+    "chisquare",
+    "dirichlet",
+    "laplace",
+    "logistic",
+    "lognormal",
+    "pareto",
+    "multivariate_normal",
+    "multinomial",
 }
 
 
@@ -216,16 +300,25 @@ class MirageDetector(ast.NodeVisitor):
 
             # np.random.<func> - check random module functions
             if isinstance(node.func.value, ast.Attribute):
-                if (isinstance(node.func.value.value, ast.Name) and
-                    node.func.value.value.id in {"np", "numpy"} and
-                    node.func.value.attr == "random"):
+                if (
+                    isinstance(node.func.value.value, ast.Name)
+                    and node.func.value.value.id in {"np", "numpy"}
+                    and node.func.value.attr == "random"
+                ):
                     if node.func.attr in NUMPY_RANDOM_CREATORS:
                         return True
 
             # pandas functions
             if isinstance(node.func.value, ast.Name) and node.func.value.id in {"pd", "pandas"}:
-                if node.func.attr.lower() in {"dataframe", "series", "concat", "read_csv",
-                                              "read_excel", "read_json", "read_parquet"}:
+                if node.func.attr.lower() in {
+                    "dataframe",
+                    "series",
+                    "concat",
+                    "read_csv",
+                    "read_excel",
+                    "read_json",
+                    "read_parquet",
+                }:
                     return True
 
         return False
@@ -316,7 +409,10 @@ class MirageDetector(ast.NodeVisitor):
         if isinstance(node.func, ast.Attribute):
             # Detect np.mean/sum/argmax/argmin or array method calls
             # argmax/argmin are variance-destroying: lose all values except position
-            is_numpy = isinstance(node.func.value, ast.Name) and node.func.value.id in ["np", "numpy"]
+            is_numpy = isinstance(node.func.value, ast.Name) and node.func.value.id in [
+                "np",
+                "numpy",
+            ]
             is_method = not is_numpy and isinstance(node.func.value, ast.AST)
             if (is_numpy or is_method) and node.func.attr in ["mean", "sum", "argmax", "argmin"]:
                 var_name: Optional[str] = None
@@ -324,13 +420,19 @@ class MirageDetector(ast.NodeVisitor):
                 confidence = "low"
 
                 if is_numpy and node.args:
-                    should_flag, confidence, var_name = self._evaluate_reduction_target(node.args[0])
+                    should_flag, confidence, var_name = self._evaluate_reduction_target(
+                        node.args[0]
+                    )
                 else:
                     # Method call: evaluate the receiver expression (handles data.mean(), np.ones(...).mean())
-                    should_flag, confidence, var_name = self._evaluate_reduction_target(node.func.value)
+                    should_flag, confidence, var_name = self._evaluate_reduction_target(
+                        node.func.value
+                    )
                     if not should_flag and node.args:
                         # Fallback: sometimes callers pass the data explicitly even on methods
-                        fallback_flag, fallback_conf, fallback_var = self._evaluate_reduction_target(node.args[0])
+                        fallback_flag, fallback_conf, fallback_var = (
+                            self._evaluate_reduction_target(node.args[0])
+                        )
                         if fallback_flag:
                             should_flag = True
                             confidence = fallback_conf

@@ -379,6 +379,9 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         "f_oneway",
         "anova",
         "anova_lm",
+        "ranksums",
+        "sf",  # Survival function (often used for p-value)
+        "cdf",  # CDF (often used for p-value)
     }
 
     def __init__(self, config: Optional[Dict[str, Any]] = None) -> None:
@@ -548,11 +551,15 @@ class HypothesisAnalyzer(ast.NodeVisitor):
 
     def _contains_early_exit_action(self, node: ast.If) -> bool:
         """Detects break/return/continue/raise or immediate reporting within a conditional."""
+
         def _is_reporting_call(call: ast.Call) -> bool:
             if isinstance(call.func, ast.Name) and call.func.id == "print":
                 return True
             if isinstance(call.func, ast.Attribute):
-                if isinstance(call.func.value, ast.Name) and call.func.value.id in {"logger", "log"}:
+                if isinstance(call.func.value, ast.Name) and call.func.value.id in {
+                    "logger",
+                    "log",
+                }:
                     return call.func.attr in {
                         "info",
                         "warning",

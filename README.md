@@ -208,20 +208,16 @@ if result['summary']['critical_count'] > 0:
 
 ## Design Principles
 
-**Why your advisor / manager wants this:**
-
 Silent failures in research code don't crash — they produce *wrong numbers that look right*. A model trains, metrics look good, paper gets submitted... then someone discovers the test set leaked into training. Demyst catches these before they become retractions.
-
-**Our approach:**
 
 | Principle | What It Means |
 |-----------|---------------|
-| **Yell early** | We prefer false positives over silent failures. Use `# demyst: ignore` to suppress. |
+| **Yell early** | Prefers false positives over silent failures. Use `# demyst: ignore` to suppress. |
 | **Static analysis** | AST-based heuristics + light dataflow. No runtime overhead, works on any Python. |
 | **Actionable output** | Every warning includes the *why* and a concrete fix suggestion. |
 | **Escape hatches** | Inline suppression (`# demyst: ignore-mirage`), config files, CI thresholds. |
 
-**What we check:**
+**Detection capabilities:**
 
 - **Mirage**: Detects 80+ NumPy array creators, tracks variable flow, checks for nearby variance operations
 - **Leakage**: Tracks `fit`/`fit_transform` calls relative to `train_test_split`/`cross_val_score`

@@ -66,7 +66,13 @@ def test_parallel_analyzer_threads_basic(tmp_path):
     sample.write_text("x = 1\n", encoding="utf-8")
     analyzer = ParallelAnalyzer(
         use_processes=False,
-        analysis_options={"mirage": False, "leakage": False, "hypothesis": False, "unit": False, "tensor": False},
+        analysis_options={
+            "mirage": False,
+            "leakage": False,
+            "hypothesis": False,
+            "unit": False,
+            "tensor": False,
+        },
         max_workers=1,
     )
     report = analyzer.analyze_files([str(sample)])

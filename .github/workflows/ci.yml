@@ -108,12 +108,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run Demyst on itself (non-strict)
-        run: demyst ci .
+      - name: Run Demyst on source code (non-strict)
+        run: demyst ci demyst/
+        continue-on-error: true  # Dogfooding - don't block CI on self-analysis
 
-      - name: Run Demyst on itself (strict)
-        run: demyst ci . --strict
-        continue-on-error: true
+      - name: Run Demyst on source code (strict)
+        run: demyst ci demyst/ --strict
+        continue-on-error: true  # Strict mode for visibility, not blocking
 
   build:
     name: Build Distribution

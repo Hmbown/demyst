@@ -114,6 +114,37 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: dist/*
-          generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+          body: |
+            ## Demyst ${{ github.ref_name }}
+
+            A scientific linter for research code. Detects computational mirages, data leakage, p-hacking, and more.
+
+            ### Installation
+
+            ```bash
+            pip install demyst==${{ github.ref_name }}
+            ```
+
+            ### What's Included
+
+            - **MirageDetector**: Catches variance-destroying operations (`np.mean()` hiding outliers)
+            - **LeakageHunter**: Detects train/test data contamination
+            - **HypothesisGuard**: Flags p-hacking and uncorrected multiple comparisons
+            - **TensorGuard**: Identifies gradient death and normalization issues
+            - **UnitGuard**: Dimensional analysis for physics/engineering code
+
+            ### Quick Start
+
+            ```bash
+            demyst analyze your_code.py
+            demyst mirage model.py
+            demyst leakage train.py
+            ```
+
+            ### Links
+
+            - [Documentation](https://github.com/Hmbown/demyst#readme)
+            - [PyPI](https://pypi.org/project/demyst/)
+            - [Report Issues](https://github.com/Hmbown/demyst/issues)

@@ -396,7 +396,7 @@ class MirageDetector(ast.NodeVisitor):
 
         return (False, "")
 
-    def _is_known_scalar(self, var_name: str | None) -> bool:
+    def _is_known_scalar(self, var_name: Optional[str]) -> bool:
         """Check if a variable is known to be scalar (not array-like)."""
         if not var_name:
             return False

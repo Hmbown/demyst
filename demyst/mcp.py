@@ -33,7 +33,14 @@ import os
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from mcp.server.fastmcp import FastMCP
+try:
+    from mcp.server.fastmcp import FastMCP
+except ImportError as e:
+    raise ImportError(
+        "Optional dependency 'mcp>=1.0.0' is required for demyst.mcp on Python >=3.10. "
+        "Install with `pip install demyst[mcp]` or skip MCP features."
+    ) from e
+
 from pydantic import BaseModel, Field
 
 from demyst.config.manager import ConfigManager

@@ -11,16 +11,26 @@ import logging
 import sys
 from typing import Any, Dict, Optional, Type
 
-from langchain_core.tools import BaseTool
+try:
+    from langchain_core.tools import BaseTool
+except Exception as e:  # pragma: no cover - import guard
+    raise ImportError(
+        "LangChain integration requires the optional dependency 'langchain-core'. "
+        "Install with `pip install langchain-core` or `pip install demyst[all]`."
+    ) from e
+
 from pydantic import BaseModel, Field
 
 from demyst.integrations.ci_enforcer import CIEnforcer
 
-# MCP features require Python 3.10+
+# MCP features require Python 3.10+ and optional mcp dependency
 if sys.version_info >= (3, 10):
-    from demyst.mcp import sign_verification
+    try:
+        from demyst.mcp import sign_verification
+    except ImportError:
+        sign_verification = None  # type: ignore[assignment]
 else:
-    sign_verification = None  # type: ignore[assignment, misc]
+    sign_verification = None  # type: ignore[assignment]
 
 logger = logging.getLogger("demyst.agents")
 

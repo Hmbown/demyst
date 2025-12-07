@@ -4,11 +4,9 @@ import sys
 
 import pytest
 
-# MCP module requires Python 3.10+
-pytestmark = pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="MCP integration requires Python 3.10+"
-)
+# Skip entire module on Python < 3.10 BEFORE importing demyst.mcp
+if sys.version_info < (3, 10):
+    pytest.skip("MCP integration requires Python 3.10+", allow_module_level=True)
 
 from demyst.mcp import check_units, detect_mirage, sign_verification
 

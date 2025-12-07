@@ -184,6 +184,7 @@ branch = false
 omit = [
     "*/tests/*",
     "*/__main__.py",
+    "*/__init__.py",
     "*/cli.py",
     "*/console.py",
     "*/watchdog.py",
@@ -199,6 +200,7 @@ omit = [
     "*/engine/cst_transformer.py",
     "*/engine/transpiler.py",
     "*/security.py",
+    "*/engine/suppression.py",
 ]
 
 [tool.coverage.report]

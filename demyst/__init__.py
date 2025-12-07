@@ -28,7 +28,15 @@ CLI:
     demyst ci . --strict       # CI/CD mode
 """
 
-__version__ = "1.1.0"
+try:
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        __version__ = version("demyst")
+    except PackageNotFoundError:
+        __version__ = "0.0.0"
+except Exception:
+    __version__ = "0.0.0"
 __author__ = "Demyst Team"
 __description__ = "The Scientific Integrity Platform for AI Research"
 

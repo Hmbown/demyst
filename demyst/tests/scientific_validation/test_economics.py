@@ -6,7 +6,9 @@ Validates detection of issues in economic analysis (time series, causal inferenc
 
 import ast
 import textwrap
+
 import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
 from demyst.guards.leakage_hunter import LeakageHunter
 

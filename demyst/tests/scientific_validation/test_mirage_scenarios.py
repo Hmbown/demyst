@@ -6,7 +6,9 @@ Validates detection of variance-destroying operations (Mirages) in real-world sc
 
 import ast
 import textwrap
+
 import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
 
 

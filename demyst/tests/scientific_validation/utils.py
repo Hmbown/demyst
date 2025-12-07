@@ -4,10 +4,10 @@ Utilities for Scientific Validation Tests.
 Includes generators for synthetic large codebases and stress test patterns.
 """
 
+import os
 import random
 import string
 import tempfile
-import os
 from pathlib import Path
 from typing import List, Optional
 

@@ -5,7 +5,9 @@ Reproducing code snippets from Genomics, Bioinformatics, and Systems Biology.
 """
 
 import textwrap
+
 import pytest
+
 from demyst.guards.hypothesis_guard import HypothesisGuard
 from demyst.guards.leakage_hunter import LeakageHunter
 

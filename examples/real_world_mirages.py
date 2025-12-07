@@ -9,7 +9,6 @@ Run: demyst mirage examples/real_world_mirages.py
 
 import numpy as np
 
-
 # =============================================================================
 # 1. ANSCOMBE'S QUARTET - Same Mean, Wildly Different Distributions
 # =============================================================================

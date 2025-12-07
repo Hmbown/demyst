@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-12-07T15:23:17.174345",
+  "timestamp": "2025-12-07T16:03:52.372353",
   "repository": "demyst",
   "branch": "main",
-  "commit": "993eeeb37899bcacfbe5fc6e4e361c87b6075c0a",
+  "commit": "a4477704d9dea331a87b950ac9c10fcc659010b0",
   "files_analyzed": 8,
   "total_issues": 25,
   "blocking_issues": 18,
@@ -66,7 +66,7 @@
         },
         {
           "type": "mean",
-          "line": 60,
+          "line": 61,
           "function": "simpsons_paradox_mirage",
           "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
@@ -76,7 +76,7 @@
         },
         {
           "type": "mean",
-          "line": 146,
+          "line": 149,
           "function": "climate_extremes_mirage",
           "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
@@ -86,7 +86,7 @@
         },
         {
           "type": "mean",
-          "line": 147,
+          "line": 150,
           "function": "climate_extremes_mirage",
           "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",
@@ -96,7 +96,7 @@
         },
         {
           "type": "mean",
-          "line": 172,
+          "line": 176,
           "function": "swarm_safety_mirage",
           "description": "Reduction on array-like data without accompanying dispersion check.",
           "recommendation": "Use VariationTensor to preserve statistical metadata during aggregations",

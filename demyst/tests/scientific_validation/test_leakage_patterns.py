@@ -5,7 +5,9 @@ Validates detection of common Machine Learning data leakage patterns.
 """
 
 import textwrap
+
 import pytest
+
 from demyst.guards.leakage_hunter import LeakageHunter
 
 

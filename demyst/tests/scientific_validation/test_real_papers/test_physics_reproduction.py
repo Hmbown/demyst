@@ -7,7 +7,9 @@ to verify Demyst detects potential issues.
 
 import ast
 import textwrap
+
 import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
 from demyst.guards.hypothesis_guard import HypothesisGuard
 from demyst.guards.unit_guard import UnitGuard

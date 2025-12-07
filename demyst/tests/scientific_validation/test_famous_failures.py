@@ -5,10 +5,12 @@ Simulating code patterns that led to historical scientific errors/controversies.
 """
 
 import textwrap
+
 import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
-from demyst.guards.unit_guard import UnitGuard
 from demyst.guards.hypothesis_guard import HypothesisGuard
+from demyst.guards.unit_guard import UnitGuard
 
 
 class TestHockeyStickControversy:

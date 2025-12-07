@@ -5,16 +5,18 @@ Validates Demyst's performance on large codebases.
 Target: < 1 second per 1000 lines.
 """
 
-import time
 import ast
-import pytest
 import os
-from demyst.tests.scientific_validation.utils import SyntheticCodeGenerator
+import time
+
+import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
-from demyst.guards.leakage_hunter import LeakageHunter
 from demyst.guards.hypothesis_guard import HypothesisGuard
-from demyst.guards.unit_guard import UnitGuard
+from demyst.guards.leakage_hunter import LeakageHunter
 from demyst.guards.tensor_guard import TensorGuard
+from demyst.guards.unit_guard import UnitGuard
+from demyst.tests.scientific_validation.utils import SyntheticCodeGenerator
 
 
 class TestScalability:

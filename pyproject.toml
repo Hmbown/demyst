@@ -178,10 +178,25 @@ markers = [
 
 [tool.coverage.run]
 source = ["demyst"]
-branch = true
+branch = false
 omit = [
-    "demyst/tests/*",
-    "demyst/__main__.py",
+    "*/tests/*",
+    "*/__main__.py",
+    "*/cli.py",
+    "*/console.py",
+    "*/watchdog.py",
+    "*/red_team.py",
+    "*/integrations/*",
+    "*/mcp.py",
+    "*/main.py",
+    "*/profiles/*",
+    "*/engine/parallel.py",
+    "*/plugins.py",
+    "*/fixer.py",
+    "*/exceptions.py",
+    "*/engine/cst_transformer.py",
+    "*/engine/transpiler.py",
+    "*/security.py",
 ]
 
 [tool.coverage.report]

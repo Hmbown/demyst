@@ -5,7 +5,9 @@ Validates detection of issues specific to quantum circuits and information.
 """
 
 import textwrap
+
 import pytest
+
 from demyst.engine.mirage_detector import MirageDetector
 from demyst.guards.unit_guard import UnitGuard
 

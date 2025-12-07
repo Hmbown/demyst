@@ -9,9 +9,9 @@ import time
 
 import pytest
 
-from demyst.tests.scientific_validation.utils import SyntheticCodeGenerator
 from demyst.engine.mirage_detector import MirageDetector
 from demyst.guards.leakage_hunter import LeakageHunter
+from demyst.tests.scientific_validation.utils import SyntheticCodeGenerator
 
 
 class TestPerformanceSmoke:

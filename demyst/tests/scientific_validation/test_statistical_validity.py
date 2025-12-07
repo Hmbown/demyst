@@ -5,7 +5,9 @@ Validates detection of p-hacking, HARKing, and other statistical malpractices.
 """
 
 import textwrap
+
 import pytest
+
 from demyst.guards.hypothesis_guard import HypothesisGuard
 
 

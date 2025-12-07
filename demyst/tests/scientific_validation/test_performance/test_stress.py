@@ -6,9 +6,11 @@ Robustness under extreme conditions: nested calls, long lines, complexity.
 
 import ast
 import textwrap
+
 import pytest
-from demyst.guards.unit_guard import UnitGuard
+
 from demyst.guards.tensor_guard import TensorGuard
+from demyst.guards.unit_guard import UnitGuard
 
 
 class TestCodeComplexity:

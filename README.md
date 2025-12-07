@@ -4,7 +4,6 @@
 
 [![PyPI version](https://badge.fury.io/py/demyst.svg)](https://badge.fury.io/py/demyst)
 [![Tests](https://github.com/Hmbown/demyst/actions/workflows/ci.yml/badge.svg)](https://github.com/Hmbown/demyst/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-80%25-green)](https://github.com/Hmbown/demyst)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -28,8 +27,8 @@ demyst analyze ./src
 
 | Check | What It Detects | Example |
 |-------|-----------------|---------|
-| `mirage` | Variance-destroying reductions | `np.mean()` hiding a rogue agent in a swarm |
 | `leakage` | Train/test contamination | `fit_transform()` before `train_test_split()` |
+| `mirage` | Variance-destroying reductions | `np.mean()` hiding outliers in your data |
 | `hypothesis` | P-hacking, multiple comparisons | 20 t-tests without Bonferroni correction |
 | `tensor` | Gradient death, normalization issues | Deep sigmoid chains, disabled BatchNorm stats |
 | `units` | Dimensional mismatches | Adding meters to seconds |
@@ -40,45 +39,36 @@ demyst analyze ./src
 git clone https://github.com/Hmbown/demyst.git
 cd demyst
 pip install -e .
-demyst mirage examples/swarm_collapse.py
+demyst leakage examples/ml_data_leakage.py
 ```
 
-You'll see demyst catch the "rogue agent" problem — where `np.mean()` returns 0.999 but one agent scores 0.0.
+You'll see demyst catch the classic ML mistake: preprocessing data before splitting it.
 
 ## Sample Output
 
 ```text
-$ demyst analyze examples/leakage_example.py
+$ demyst leakage examples/ml_data_leakage.py
 
-─ Data Leakage Detected ─
+──────────────────────────── Data Leakage Detected ─────────────────────────────
 
-CRITICAL Line 12 in examples/leakage_example.py
-  fit_transform() called BEFORE train_test_split on line 15.
-  Preprocessing statistics are computed using test data.
-  
-  10   X = load_data()
-  11   scaler = StandardScaler()
-❱ 12   X_scaled = scaler.fit_transform(X)  # LEAKS TEST INFO
-  13   
-  14   # Split happens AFTER fitting — too late!
-  15   X_train, X_test = train_test_split(X_scaled)
+CRITICAL Line 47 in examples/ml_data_leakage.py
+  fit_transform() called BEFORE train_test_split.
+  Preprocessing learns from test data — your benchmark is invalid.
+
+  45   X, y = load_medical_data()
+  46   scaler = StandardScaler()
+❱ 47   X_scaled = scaler.fit_transform(X)  # LEAKS TEST INFO
+  48   X_train, X_test, y_train, y_test = train_test_split(X_scaled, y)
 
   Fix: Split first, then fit on train only:
        X_train, X_test = train_test_split(X)
        X_train = scaler.fit_transform(X_train)
        X_test = scaler.transform(X_test)
 
-Summary: 1 critical, 0 warnings
+Summary: 1 critical issue
 ```
 
 ## Quick Examples
-
-**Mirage** — aggregations that hide critical variance:
-
-```python
-# DANGEROUS: 999 agents score 1.0, one scores 0.0
-np.mean(agent_scores)  # Returns 0.999 — you deploy, rogue agent destroys system
-```
 
 **Leakage** — the #1 ML benchmarking error:
 
@@ -161,7 +151,7 @@ If you're already using `black` + `mypy` + `ruff`, drop this in next to them:
 ```yaml
 repos:
   - repo: https://github.com/Hmbown/demyst
-    rev: v1.2.0
+    rev: v0.1.0a1
     hooks:
       - id: demyst
 ```

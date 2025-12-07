@@ -19,7 +19,7 @@ demyst analyze ./src
 
 | | |
 |---|---|
-| **Stability** | Beta — used internally, API stabilizing |
+| **Stability** | Alpha — actively developed, API may change |
 | **Python** | 3.8, 3.9, 3.10, 3.11, 3.12 |
 | **Ecosystems** | NumPy, pandas, scikit-learn, PyTorch, JAX, SciPy |
 | **Philosophy** | Prefer false positives over silent failures — use `# demyst: ignore` to suppress |

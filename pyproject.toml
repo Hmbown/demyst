@@ -4,13 +4,13 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "demyst"
-version = "1.2.0"
+version = "0.1.0a1"
 description = "Scientific integrity linter for academic code"
 readme = "README.md"
 requires-python = ">=3.8"
 license = {text = "MIT"}
 authors = [
-    {name = "Demyst Team"}
+    {name = "Hunter Brown", email = "hunter@demyst.dev"}
 ]
 keywords = [
     "linting",
@@ -20,10 +20,12 @@ keywords = [
     "integrity",
     "reproducibility",
     "p-hacking",
-    "data-leakage"
+    "data-leakage",
+    "mirage",
+    "computational-mirages"
 ]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",

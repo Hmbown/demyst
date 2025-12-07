@@ -14,7 +14,17 @@ Available Tools:
     - fix_mirages: Auto-fix computational mirages
     - generate_report: Generate integrity report in markdown/JSON
     - sign_verification: Generate cryptographic certificate
+
+Note: This module requires Python 3.10+ (mcp package dependency).
 """
+
+import sys
+
+if sys.version_info < (3, 10):
+    raise ImportError(
+        "demyst.mcp requires Python 3.10 or later. "
+        "The MCP (Model Context Protocol) package is not available on Python 3.9."
+    )
 
 import ast
 import json

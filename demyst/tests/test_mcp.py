@@ -1,7 +1,14 @@
 import json
 import os
+import sys
 
 import pytest
+
+# MCP module requires Python 3.10+
+pytestmark = pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="MCP integration requires Python 3.10+"
+)
 
 from demyst.mcp import check_units, detect_mirage, sign_verification
 

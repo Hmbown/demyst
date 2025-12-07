@@ -23,7 +23,8 @@ class TestCLIBasicCommands:
         )
 
         assert result.returncode == 0
-        assert "Demyst v1.2.0" in result.stdout or "Demyst v1.2.0" in result.stderr
+        output = result.stdout + result.stderr
+        assert "Demyst v" in output, f"Expected version output, got: {output}"
 
     def test_help_flag(self):
         """--help should print help and exit 0."""

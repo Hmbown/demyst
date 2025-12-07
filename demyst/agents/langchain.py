@@ -2,17 +2,25 @@
 Demyst LangChain Integration.
 
 Provides a verification tool for LangChain agents to self-correct scientific code.
+
+Note: Full functionality requires Python 3.10+ for MCP integration.
 """
 
 import json
 import logging
+import sys
 from typing import Any, Dict, Optional, Type
 
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field
 
 from demyst.integrations.ci_enforcer import CIEnforcer
-from demyst.mcp import sign_verification
+
+# MCP features require Python 3.10+
+if sys.version_info >= (3, 10):
+    from demyst.mcp import sign_verification
+else:
+    sign_verification = None  # type: ignore[assignment, misc]
 
 logger = logging.getLogger("demyst.agents")
 
@@ -49,9 +57,12 @@ class DemystVerifier(BaseTool):
         results = self._analyze_code(enforcer, code)
 
         if results["passed"]:
-            # Generate certificate
-            cert_json = sign_verification(code, "PASS")
-            return f"VERIFICATION PASSED.\nCertificate: {cert_json}"
+            # Generate certificate (requires Python 3.10+ for MCP)
+            if sign_verification is not None:
+                cert_json = sign_verification(code, "PASS")
+                return f"VERIFICATION PASSED.\nCertificate: {cert_json}"
+            else:
+                return "VERIFICATION PASSED. (Certificate signing requires Python 3.10+)"
         else:
             # Format feedback
             feedback = ["VERIFICATION FAILED. Please fix the following issues:"]

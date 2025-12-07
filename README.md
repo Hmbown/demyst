@@ -2,12 +2,27 @@
 
 > **de·mys·ti·fy** /dēˈmistəˌfī/ — to make less obscure or confusing
 
+[![PyPI version](https://badge.fury.io/py/demyst.svg)](https://badge.fury.io/py/demyst)
+[![Tests](https://github.com/Hmbown/demyst/actions/workflows/ci.yml/badge.svg)](https://github.com/Hmbown/demyst/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-green)](https://github.com/Hmbown/demyst)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 A scientific linter for research code. Like `black` for formatting and `mypy` for types, `demyst` checks **scientific logic**.
 
 ```bash
 pip install demyst
 demyst analyze ./src
 ```
+
+## Status
+
+| | |
+|---|---|
+| **Stability** | Beta — used internally, API stabilizing |
+| **Python** | 3.8, 3.9, 3.10, 3.11, 3.12 |
+| **Ecosystems** | NumPy, pandas, scikit-learn, PyTorch, JAX, SciPy |
+| **Philosophy** | Prefer false positives over silent failures — use `# demyst: ignore` to suppress |
 
 ## What It Catches
 
@@ -18,6 +33,43 @@ demyst analyze ./src
 | `hypothesis` | P-hacking, multiple comparisons | 20 t-tests without Bonferroni correction |
 | `tensor` | Gradient death, normalization issues | Deep sigmoid chains, disabled BatchNorm stats |
 | `units` | Dimensional mismatches | Adding meters to seconds |
+
+## Try It in 30 Seconds
+
+```bash
+git clone https://github.com/Hmbown/demyst.git
+cd demyst
+pip install -e .
+demyst mirage examples/swarm_collapse.py
+```
+
+You'll see demyst catch the "rogue agent" problem — where `np.mean()` returns 0.999 but one agent scores 0.0.
+
+## Sample Output
+
+```text
+$ demyst analyze examples/leakage_example.py
+
+─ Data Leakage Detected ─
+
+CRITICAL Line 12 in examples/leakage_example.py
+  fit_transform() called BEFORE train_test_split on line 15.
+  Preprocessing statistics are computed using test data.
+  
+  10   X = load_data()
+  11   scaler = StandardScaler()
+❱ 12   X_scaled = scaler.fit_transform(X)  # LEAKS TEST INFO
+  13   
+  14   # Split happens AFTER fitting — too late!
+  15   X_train, X_test = train_test_split(X_scaled)
+
+  Fix: Split first, then fit on train only:
+       X_train, X_test = train_test_split(X)
+       X_train = scaler.fit_transform(X_train)
+       X_test = scaler.transform(X_test)
+
+Summary: 1 critical, 0 warnings
+```
 
 ## Quick Examples
 
@@ -104,9 +156,11 @@ jobs:
 
 **Pre-commit:**
 
+If you're already using `black` + `mypy` + `ruff`, drop this in next to them:
+
 ```yaml
 repos:
-  - repo: https://github.com/demyst/demyst
+  - repo: https://github.com/Hmbown/demyst
     rev: v1.2.0
     hooks:
       - id: demyst
@@ -161,6 +215,29 @@ result = LeakageHunter().analyze(source)
 if result['summary']['critical_count'] > 0:
     print("DATA LEAKAGE DETECTED")
 ```
+
+## Design Principles
+
+**Why your advisor / manager wants this:**
+
+Silent failures in research code don't crash — they produce *wrong numbers that look right*. A model trains, metrics look good, paper gets submitted... then someone discovers the test set leaked into training. Demyst catches these before they become retractions.
+
+**Our approach:**
+
+| Principle | What It Means |
+|-----------|---------------|
+| **Yell early** | We prefer false positives over silent failures. Use `# demyst: ignore` to suppress. |
+| **Static analysis** | AST-based heuristics + light dataflow. No runtime overhead, works on any Python. |
+| **Actionable output** | Every warning includes the *why* and a concrete fix suggestion. |
+| **Escape hatches** | Inline suppression (`# demyst: ignore-mirage`), config files, CI thresholds. |
+
+**What we check:**
+
+- **Mirage**: Detects 80+ NumPy array creators, tracks variable flow, checks for nearby variance operations
+- **Leakage**: Tracks `fit`/`fit_transform` calls relative to `train_test_split`/`cross_val_score`
+- **Hypothesis**: Counts statistical tests, checks for correction methods, detects p-value conditionals
+- **Tensor**: Analyzes layer sequences for gradient death patterns, normalization misuse
+- **Units**: Dimensional analysis via variable naming conventions and explicit annotations
 
 ## References
 

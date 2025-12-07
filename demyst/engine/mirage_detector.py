@@ -1,6 +1,10 @@
 import ast
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
+
+# Inline suppression pattern: # demyst: ignore or # demyst: ignore-mirage
+DEMYST_IGNORE_PATTERN = re.compile(r"#\s*demyst:\s*ignore(?:-(\w+))?", re.IGNORECASE)
 
 # Comprehensive set of numpy functions that create/return arrays
 NUMPY_ARRAY_CREATORS = {
@@ -220,14 +224,27 @@ class MirageDetector(ast.NodeVisitor):
         self.dispersion_contexts: Dict[Tuple[Optional[str], Optional[str]], Set[int]] = {}
         self.var_states: Dict[Tuple[Optional[str], Optional[str]], VarState] = {}
 
-    def analyze(self, tree: ast.AST) -> List[Dict[str, Any]]:
+        # Lines with inline suppression comments
+        self._suppressed_lines: Set[int] = set()
+        self._source_lines: List[str] = []
+
+    def analyze(self, tree: ast.AST, source: Optional[str] = None) -> List[Dict[str, Any]]:
         """
         Analyze an AST tree with optional variance context awareness.
 
         This performs a two-pass analysis when check_variance_context is enabled:
         1. First pass: collect all variance operations (std, var)
         2. Second pass: detect mirages, suppressing those with variance context
+
+        Args:
+            tree: The AST to analyze
+            source: Optional source code string for inline suppression detection
         """
+        # Collect inline suppression comments from source
+        if source:
+            self._source_lines = source.splitlines()
+            self._collect_suppressions()
+
         if self.check_variance_context:
             # First pass: collect variance contexts
             collector = DispersionContextCollector()
@@ -237,6 +254,20 @@ class MirageDetector(ast.NodeVisitor):
         # Second pass: detect mirages
         self.visit(tree)
         return self.mirages
+
+    def _collect_suppressions(self) -> None:
+        """Scan source lines for # demyst: ignore comments."""
+        for i, line in enumerate(self._source_lines, start=1):
+            match = DEMYST_IGNORE_PATTERN.search(line)
+            if match:
+                guard_type = match.group(1)  # e.g., "mirage" from "ignore-mirage"
+                # If no specific guard or matches "mirage", suppress this line
+                if guard_type is None or guard_type.lower() in ("mirage", "all"):
+                    self._suppressed_lines.add(i)
+
+    def _is_suppressed(self, line: int) -> bool:
+        """Check if a line has an inline suppression comment."""
+        return line in self._suppressed_lines
 
     def _has_variance_context(self, var_name: Optional[str], line: int) -> bool:
         """
@@ -438,7 +469,11 @@ class MirageDetector(ast.NodeVisitor):
                             confidence = fallback_conf
                             var_name = var_name or fallback_var
 
-                # Check for dispersion context (suppression)
+                # Check for inline suppression or dispersion context
+                if self._is_suppressed(node.lineno):
+                    self.generic_visit(node)
+                    return
+
                 has_dispersion = self._has_variance_context(var_name, node.lineno)
 
                 if should_flag and not has_dispersion:
@@ -459,7 +494,11 @@ class MirageDetector(ast.NodeVisitor):
 
         # Check for premature discretization on array-like data
         if isinstance(node.func, ast.Name) and node.func.id in ["round", "int"]:
-            if len(node.args) > 0 and self._is_array_like(node.args[0]):
+            if (
+                len(node.args) > 0
+                and self._is_array_like(node.args[0])
+                and not self._is_suppressed(node.lineno)
+            ):
                 self.mirages.append(
                     {
                         "type": "premature_discretization",

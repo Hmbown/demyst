@@ -115,5 +115,69 @@ class TestMirageCLI:
             assert result.returncode == 0, f"{example_file} should pass mirage check"
 
 
+class TestInlineSuppression:
+    """Test inline suppression comments."""
+
+    def test_demyst_ignore_suppresses_mirage(self):
+        """# demyst: ignore should suppress mirage detection."""
+        from demyst.engine.mirage_detector import MirageDetector
+
+        source = """
+import numpy as np
+data = np.array([1, 2, 3, 4, 5])
+mean_val = np.mean(data)  # demyst: ignore
+"""
+        detector = MirageDetector()
+        tree = ast.parse(source)
+        mirages = detector.analyze(tree, source=source)
+
+        assert len(mirages) == 0, "Suppressed line should not be flagged"
+
+    def test_demyst_ignore_mirage_suppresses(self):
+        """# demyst: ignore-mirage should suppress mirage detection."""
+        from demyst.engine.mirage_detector import MirageDetector
+
+        source = """
+import numpy as np
+data = np.array([1, 2, 3, 4, 5])
+mean_val = np.mean(data)  # demyst: ignore-mirage
+"""
+        detector = MirageDetector()
+        tree = ast.parse(source)
+        mirages = detector.analyze(tree, source=source)
+
+        assert len(mirages) == 0, "Suppressed line should not be flagged"
+
+    def test_unsuppressed_line_still_flagged(self):
+        """Lines without suppression should still be flagged."""
+        from demyst.engine.mirage_detector import MirageDetector
+
+        source = """
+import numpy as np
+data = np.array([1, 2, 3, 4, 5])
+mean_val = np.mean(data)
+"""
+        detector = MirageDetector()
+        tree = ast.parse(source)
+        mirages = detector.analyze(tree, source=source)
+
+        assert len(mirages) >= 1, "Unsuppressed line should be flagged"
+
+    def test_wrong_guard_suppression_does_not_apply(self):
+        """# demyst: ignore-leakage should NOT suppress mirage detection."""
+        from demyst.engine.mirage_detector import MirageDetector
+
+        source = """
+import numpy as np
+data = np.array([1, 2, 3, 4, 5])
+mean_val = np.mean(data)  # demyst: ignore-leakage
+"""
+        detector = MirageDetector()
+        tree = ast.parse(source)
+        mirages = detector.analyze(tree, source=source)
+
+        assert len(mirages) >= 1, "Wrong guard suppression should not apply"
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

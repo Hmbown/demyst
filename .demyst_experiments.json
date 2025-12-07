@@ -19199,6 +19199,486 @@
       "metric_value": 0.0,
       "p_value": 0.577352145256762,
       "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "64fc272b0f8ffc81",
+      "timestamp": "2025-12-07T16:20:19.286479",
+      "hyperparameters": {
+        "run": 0
+      },
+      "seed": 0,
+      "metric_name": "accuracy",
+      "metric_value": -0.14409032957792836,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "5205d943ce5298ce",
+      "timestamp": "2025-12-07T16:20:19.372137",
+      "hyperparameters": {
+        "run": 1
+      },
+      "seed": 1,
+      "metric_name": "accuracy",
+      "metric_value": -0.1729036003315193,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "e0975a5b8cca7a0c",
+      "timestamp": "2025-12-07T16:20:19.457918",
+      "hyperparameters": {
+        "run": 2
+      },
+      "seed": 2,
+      "metric_name": "accuracy",
+      "metric_value": -0.11131586156766246,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "cf0e0ad78a398f5a",
+      "timestamp": "2025-12-07T16:20:19.594604",
+      "hyperparameters": {
+        "run": 3
+      },
+      "seed": 3,
+      "metric_name": "accuracy",
+      "metric_value": 0.7019837250988631,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "a6a8dd4047c598d9",
+      "timestamp": "2025-12-07T16:20:19.684053",
+      "hyperparameters": {
+        "run": 4
+      },
+      "seed": 4,
+      "metric_name": "accuracy",
+      "metric_value": -0.12758828378288709,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "fdeea40838e30b92",
+      "timestamp": "2025-12-07T16:20:19.770011",
+      "hyperparameters": {
+        "run": 5
+      },
+      "seed": 5,
+      "metric_name": "accuracy",
+      "metric_value": -1.4973534143409575,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "ce150ec78d7d1235",
+      "timestamp": "2025-12-07T16:20:19.856012",
+      "hyperparameters": {
+        "run": 6
+      },
+      "seed": 6,
+      "metric_name": "accuracy",
+      "metric_value": 0.33231834406771527,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "668ae346da4a6ee5",
+      "timestamp": "2025-12-07T16:20:19.942830",
+      "hyperparameters": {
+        "run": 7
+      },
+      "seed": 7,
+      "metric_name": "accuracy",
+      "metric_value": -0.2673374784971682,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "ae78cea00276a1fb",
+      "timestamp": "2025-12-07T16:20:20.030055",
+      "hyperparameters": {
+        "run": 8
+      },
+      "seed": 8,
+      "metric_name": "accuracy",
+      "metric_value": -0.216958684145195,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "eb941110cbf059f5",
+      "timestamp": "2025-12-07T16:20:20.118835",
+      "hyperparameters": {
+        "run": 9
+      },
+      "seed": 9,
+      "metric_name": "accuracy",
+      "metric_value": 0.11588478670085507,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "981651025b098e8d",
+      "timestamp": "2025-12-07T16:20:20.209405",
+      "hyperparameters": {
+        "run": 10
+      },
+      "seed": 10,
+      "metric_name": "accuracy",
+      "metric_value": 0.23229773690672087,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "2b03fa9d9edfa431",
+      "timestamp": "2025-12-07T16:20:20.298095",
+      "hyperparameters": {
+        "run": 11
+      },
+      "seed": 11,
+      "metric_name": "accuracy",
+      "metric_value": 1.163558686599143,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "6cb47265ca457ec1",
+      "timestamp": "2025-12-07T16:20:20.386808",
+      "hyperparameters": {
+        "run": 12
+      },
+      "seed": 12,
+      "metric_name": "accuracy",
+      "metric_value": 0.6566365067986689,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "89ce59173292bdf8",
+      "timestamp": "2025-12-07T16:20:20.475550",
+      "hyperparameters": {
+        "run": 13
+      },
+      "seed": 13,
+      "metric_name": "accuracy",
+      "metric_value": 0.11050717744383194,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "c1128022b01701cd",
+      "timestamp": "2025-12-07T16:20:20.562102",
+      "hyperparameters": {
+        "run": 14
+      },
+      "seed": 14,
+      "metric_name": "accuracy",
+      "metric_value": -0.7383216023448206,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "638b4ee952be9a47",
+      "timestamp": "2025-12-07T16:20:20.648772",
+      "hyperparameters": {
+        "run": 15
+      },
+      "seed": 15,
+      "metric_name": "accuracy",
+      "metric_value": -1.014662367487717,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "2eff157f0f6b1001",
+      "timestamp": "2025-12-07T16:20:20.738634",
+      "hyperparameters": {
+        "run": 16
+      },
+      "seed": 16,
+      "metric_name": "accuracy",
+      "metric_value": 0.24634219521120196,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "4992e0615bd03d0f",
+      "timestamp": "2025-12-07T16:20:20.826029",
+      "hyperparameters": {
+        "run": 17
+      },
+      "seed": 17,
+      "metric_name": "accuracy",
+      "metric_value": 1.3110808272040482,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "a5fbd9fe27e9169f",
+      "timestamp": "2025-12-07T16:20:20.913515",
+      "hyperparameters": {
+        "run": 18
+      },
+      "seed": 18,
+      "metric_name": "accuracy",
+      "metric_value": 0.04165686390338389,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "931e392226062bb3",
+      "timestamp": "2025-12-07T16:20:21.003260",
+      "hyperparameters": {
+        "run": 19
+      },
+      "seed": 19,
+      "metric_name": "accuracy",
+      "metric_value": -0.10632329377078427,
+      "p_value": null,
+      "code_hash": "c4cde3bb50f4a524"
+    },
+    {
+      "experiment_id": "dd2df77c2f0507a1",
+      "timestamp": "2025-12-07T16:20:21.092822",
+      "hyperparameters": {
+        "run": 0
+      },
+      "seed": 0,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.8058192518328079,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "3e8c40d7b12a04df",
+      "timestamp": "2025-12-07T16:20:21.182072",
+      "hyperparameters": {
+        "run": 1
+      },
+      "seed": 1,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.6981393949882269,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "a65bda6cb992514d",
+      "timestamp": "2025-12-07T16:20:21.269795",
+      "hyperparameters": {
+        "run": 2
+      },
+      "seed": 2,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.3402505165179919,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "c2e4d131bcf58248",
+      "timestamp": "2025-12-07T16:20:21.357883",
+      "hyperparameters": {
+        "run": 3
+      },
+      "seed": 3,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.15547949981178155,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "9f7e94717d03be11",
+      "timestamp": "2025-12-07T16:20:21.446359",
+      "hyperparameters": {
+        "run": 4
+      },
+      "seed": 4,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.9572130722067812,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "cd2d5e5a93ca1b43",
+      "timestamp": "2025-12-07T16:20:21.534895",
+      "hyperparameters": {
+        "run": 5
+      },
+      "seed": 5,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.33659454511262676,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "c286dea7968e9e68",
+      "timestamp": "2025-12-07T16:20:21.623234",
+      "hyperparameters": {
+        "run": 6
+      },
+      "seed": 6,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.09274584338014791,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "96453e72211b827c",
+      "timestamp": "2025-12-07T16:20:21.712233",
+      "hyperparameters": {
+        "run": 7
+      },
+      "seed": 7,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.09671637683346401,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "a96568d191a1e81d",
+      "timestamp": "2025-12-07T16:20:21.801993",
+      "hyperparameters": {
+        "run": 8
+      },
+      "seed": 8,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.8474943663474598,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "28ee65a9c1e44172",
+      "timestamp": "2025-12-07T16:20:21.893128",
+      "hyperparameters": {
+        "run": 9
+      },
+      "seed": 9,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.6037260313668911,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "9c3f700e615cbaac",
+      "timestamp": "2025-12-07T16:20:21.981290",
+      "hyperparameters": {
+        "run": 10
+      },
+      "seed": 10,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.8071282732743802,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "2e2023e8c3fa538c",
+      "timestamp": "2025-12-07T16:20:22.069898",
+      "hyperparameters": {
+        "run": 11
+      },
+      "seed": 11,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.7297317866938179,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "bcee68eaa7f004f4",
+      "timestamp": "2025-12-07T16:20:22.157613",
+      "hyperparameters": {
+        "run": 12
+      },
+      "seed": 12,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.5362280914547007,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "98f2e8d782da32a8",
+      "timestamp": "2025-12-07T16:20:22.246695",
+      "hyperparameters": {
+        "run": 13
+      },
+      "seed": 13,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.9731157639793706,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "9fa4bce558ff040b",
+      "timestamp": "2025-12-07T16:20:22.334321",
+      "hyperparameters": {
+        "run": 14
+      },
+      "seed": 14,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.3785343772083535,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "cf605f169c12cfe3",
+      "timestamp": "2025-12-07T16:20:22.423026",
+      "hyperparameters": {
+        "run": 15
+      },
+      "seed": 15,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.552040631273227,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "e3a5d60567dbc171",
+      "timestamp": "2025-12-07T16:20:22.513764",
+      "hyperparameters": {
+        "run": 16
+      },
+      "seed": 16,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.8294046642529949,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "9087c0fe79f5697b",
+      "timestamp": "2025-12-07T16:20:22.603351",
+      "hyperparameters": {
+        "run": 17
+      },
+      "seed": 17,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.6185197523642461,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "af121420ba5b74e2",
+      "timestamp": "2025-12-07T16:20:22.694510",
+      "hyperparameters": {
+        "run": 18
+      },
+      "seed": 18,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.8617069003107772,
+      "code_hash": "unknown"
+    },
+    {
+      "experiment_id": "12b33e913efa6a2b",
+      "timestamp": "2025-12-07T16:20:22.784904",
+      "hyperparameters": {
+        "run": 19
+      },
+      "seed": 19,
+      "metric_name": "p_value_metric",
+      "metric_value": 0.0,
+      "p_value": 0.577352145256762,
+      "code_hash": "unknown"
     }
   ],
   "code_hashes": [

@@ -114,6 +114,23 @@ repos:
 
 See [`examples/configs/`](examples/configs/) for more templates.
 
+## Suppressing False Positives
+
+Use inline comments to suppress specific warnings:
+
+```python
+# Suppress all demyst warnings on this line
+mean_value = np.mean(data)  # demyst: ignore
+
+# Suppress only mirage warnings
+dashboard_avg = np.mean(daily_views)  # demyst: ignore-mirage
+
+# Suppress only leakage warnings  
+scaler.fit_transform(X)  # demyst: ignore-leakage
+```
+
+Available suppressions: `ignore`, `ignore-mirage`, `ignore-leakage`, `ignore-hypothesis`, `ignore-tensor`, `ignore-unit`, `ignore-all`
+
 ## Configuration
 
 Create `.demystrc.yaml`:

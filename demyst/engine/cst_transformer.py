@@ -227,13 +227,14 @@ class VariationTensorTransformer(cst.CSTTransformer):
 
     def _transform_call(self, node: cst.Call, mirage: MirageInfo) -> Optional[cst.BaseExpression]:
         """Transform a single call based on mirage type."""
-        if mirage.type in ("mean", "argmax", "argmin"):
-            return self._create_collapse_call(node, mirage.type)
-        elif mirage.type == "sum":
+        # Only transform operations that we can faithfully preserve.
+        if mirage.type == "mean":
+            return self._create_collapse_call(node, "mean")
+        if mirage.type == "sum":
             return self._create_ensemble_sum_call(node)
-        elif mirage.type == "premature_discretization":
-            # For now, just wrap in VariationTensor tracking
-            return self._create_discretization_wrapper(node)
+
+        # Skip transformations we cannot safely reproduce yet
+        # (argmax/argmin would raise in VariationTensor, and discretization is a no-op).
         return None
 
     def _create_collapse_call(self, node: cst.Call, operation: str) -> cst.Call:
@@ -250,32 +251,35 @@ class VariationTensorTransformer(cst.CSTTransformer):
             if node.func.value.value in ("np", "numpy", "torch", "jax", "tf", "tensorflow"):
                 is_library_call = True
 
-        # Extract the data argument
-        if is_library_call:
-            # np.mean(array) - first positional arg
-            if not node.args:
-                raise CSTTransformError("No arguments to transform", node_type="Call")
-            data_arg = node.args[0].value
-            keywords = list(node.args[1:]) if len(node.args) > 1 else []
-        elif isinstance(node.func, cst.Attribute):
-            # array.mean() - the array is the value
-            data_arg = node.func.value
-            # Filter out axis keyword for method calls
-            keywords = [
-                kw for kw in node.args if isinstance(kw, cst.Arg) and kw.keyword is not None
-            ]
-        else:
-            # mean(array) - first positional arg
-            if not node.args:
-                raise CSTTransformError("No arguments to transform", node_type="Call")
-            data_arg = node.args[0].value
-            keywords = list(node.args[1:]) if len(node.args) > 1 else []
+        # Extract the data argument plus axis/keepdims
+        axis_arg: Optional[cst.BaseExpression] = None
+        keepdims_arg: Optional[cst.BaseExpression] = None
 
-        # Build VariationTensor(data)
-        variation_call = cst.Call(
-            func=cst.Name("VariationTensor"),
-            args=[cst.Arg(value=data_arg)],
-        )
+        if is_library_call:
+            # np.mean(array, axis=?, keepdims=?)
+            if not node.args:
+                raise CSTTransformError("No arguments to transform", node_type="Call")
+            data_arg = node.args[0].value
+            axis_arg, keepdims_arg = self._extract_axis_keepdims(node.args[1:])
+        elif isinstance(node.func, cst.Attribute):
+            # array.mean(axis=?, keepdims=?)
+            data_arg = node.func.value
+            axis_arg, keepdims_arg = self._extract_axis_keepdims(node.args)
+        else:
+            # mean(array, axis=?, keepdims=?)
+            if not node.args:
+                raise CSTTransformError("No arguments to transform", node_type="Call")
+            data_arg = node.args[0].value
+            axis_arg, keepdims_arg = self._extract_axis_keepdims(node.args[1:])
+
+        # Build VariationTensor(data, axis=?, keepdims=?)
+        vt_args: List[cst.Arg] = [cst.Arg(value=data_arg)]
+        if axis_arg is not None:
+            vt_args.append(cst.Arg(keyword=cst.Name("axis"), value=axis_arg))
+        if keepdims_arg is not None:
+            vt_args.append(cst.Arg(keyword=cst.Name("keepdims"), value=keepdims_arg))
+
+        variation_call = cst.Call(func=cst.Name("VariationTensor"), args=vt_args)
 
         # Build .collapse('mean')
         collapse_call = cst.Call(
@@ -303,15 +307,15 @@ class VariationTensorTransformer(cst.CSTTransformer):
             if not node.args:
                 raise CSTTransformError("No arguments to transform", node_type="Call")
             data_arg = node.args[0].value
-            axis_arg = self._extract_axis_arg(node.args[1:])
+            axis_arg, _ = self._extract_axis_keepdims(node.args[1:])
         elif isinstance(node.func, cst.Attribute):
             data_arg = node.func.value
-            axis_arg = self._extract_axis_arg(node.args)
+            axis_arg, _ = self._extract_axis_keepdims(node.args)
         else:
             if not node.args:
                 raise CSTTransformError("No arguments to transform", node_type="Call")
             data_arg = node.args[0].value
-            axis_arg = self._extract_axis_arg(node.args[1:])
+            axis_arg, _ = self._extract_axis_keepdims(node.args[1:])
 
         # Build VariationTensor(data)
         variation_call = cst.Call(
@@ -331,28 +335,30 @@ class VariationTensorTransformer(cst.CSTTransformer):
 
         return ensemble_call
 
-    def _extract_axis_arg(self, args: Sequence[cst.Arg]) -> Optional[cst.BaseExpression]:
-        """Extract axis argument from function arguments."""
-        for arg in args:
-            # Check keyword argument
-            if arg.keyword is not None and arg.keyword.value == "axis":
-                return arg.value
-        # Check first positional arg (common pattern: np.sum(x, 0))
-        for arg in args:
-            if arg.keyword is None:
-                return arg.value
-        return None
-
-    def _create_discretization_wrapper(self, node: cst.Call) -> cst.Call:
+    def _extract_axis_keepdims(
+        self, args: Sequence[cst.Arg]
+    ) -> Tuple[Optional[cst.BaseExpression], Optional[cst.BaseExpression]]:
         """
-        Wrap discretization in a tracking call.
-
-        For round(x), int(x) etc., we preserve the original but
-        add tracking metadata.
+        Extract axis and keepdims arguments from call arguments.
         """
-        # For now, return the original node - discretization is complex
-        # A full implementation would wrap in VariationTensor.discretize()
-        return node
+        axis_arg: Optional[cst.BaseExpression] = None
+        keepdims_arg: Optional[cst.BaseExpression] = None
+
+        for arg in args:
+            if arg.keyword is not None:
+                if arg.keyword.value == "axis":
+                    axis_arg = arg.value
+                if arg.keyword.value == "keepdims":
+                    keepdims_arg = arg.value
+
+        # Positional fallback for axis (common pattern: np.sum(x, 0))
+        if axis_arg is None:
+            for arg in args:
+                if arg.keyword is None:
+                    axis_arg = arg.value
+                    break
+
+        return axis_arg, keepdims_arg
 
     def _record_transformation(
         self, original: cst.Call, transformed: cst.BaseExpression, mirage: MirageInfo

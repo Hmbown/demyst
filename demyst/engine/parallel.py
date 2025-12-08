@@ -161,9 +161,9 @@ def _analyze_file_worker(args: Tuple[str, Dict[str, bool]]) -> FileAnalysisResul
 
                 tree = ast.parse(source)
                 detector = MirageDetector()
-                detector.visit(tree)
-                mirage_count = len(detector.mirages)
-                results["mirage"] = {"issues": detector.mirages}
+                mirages = detector.analyze(tree, source=source)
+                mirage_count = len(mirages)
+                results["mirage"] = {"issues": mirages}
             except Exception as e:
                 results["mirage"] = {"error": str(e)}
 

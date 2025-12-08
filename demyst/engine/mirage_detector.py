@@ -453,6 +453,16 @@ class MirageDetector(ast.NodeVisitor):
         "nanquantile",
     }
 
+    # Reductions that are lower-risk (treated as low confidence to reduce FPs)
+    LOW_CONFIDENCE_REDUCTIONS = {
+        "median",
+        "nanmedian",
+        "percentile",
+        "nanpercentile",
+        "quantile",
+        "nanquantile",
+    }
+
     def visit_Call(self, node: ast.Call) -> None:
         """Detect variance-destroying reductions on array-like data."""
         if isinstance(node.func, ast.Attribute):
@@ -497,6 +507,10 @@ class MirageDetector(ast.NodeVisitor):
                 has_dispersion = self._has_variance_context(var_name, node.lineno)
 
                 if should_flag and not has_dispersion:
+                    # Lower confidence for percentile/quantile/median style reductions
+                    if node.func.attr in self.LOW_CONFIDENCE_REDUCTIONS:
+                        confidence = "low"
+
                     blocking = confidence in {"high", "medium"}
                     self.mirages.append(
                         {
@@ -585,8 +599,8 @@ class MirageDetector(ast.NodeVisitor):
             # If we've already inferred high-cardinality, it's array-like
             if self._is_high_cardinality(node.id):
                 return True
-            # Default: treat unknown names as array-like to avoid missing core mirages
-            return True
+            # Otherwise, treat as scalar by default to reduce false positives
+            return False
 
         # Attribute access like .values, .data suggests array-like
         if isinstance(node, ast.Attribute):

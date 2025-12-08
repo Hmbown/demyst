@@ -38,13 +38,11 @@ result = np.mean(data)
             # Step 3: Agent "fixes" code based on feedback
             fixed_code = """
 import numpy as np
-from demyst.tensor import VariationTensor
 
 data = np.random.exponential(size=1000)
-# Good: Using VariationTensor (simulated fix)
-# In reality, the agent would rewrite logic.
-# For this test, let's just use code that passes checks.
-result = np.median(data)
+# Good: No variance-destroying operations on the raw data
+# Agent keeps the full distribution for downstream analysis
+result = data.tolist()  # Just convert for output, preserves all information
             """
 
             # Step 4: Agent calls Demyst again

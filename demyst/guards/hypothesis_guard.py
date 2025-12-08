@@ -419,7 +419,36 @@ class HypothesisAnalyzer(ast.NodeVisitor):
         self.in_loop = old_in_loop if self.loop_depth == 0 else True
 
     def visit_While(self, node: ast.While) -> None:
-        """Track while loop context."""
+        """Track while loop context and detect optional stopping patterns."""
+        # Check if loop condition is based on p-value threshold (optional stopping)
+        if self._is_p_value_check(node.test):
+            self.violations.append(
+                StatisticalViolation(
+                    violation_type="optional_stopping_while_loop",
+                    severity=StatisticalRisk.INVALID,
+                    line=node.lineno,
+                    description=(
+                        "While loop condition based on p-value threshold. "
+                        "This implements optional stopping - continuing to collect data "
+                        "until significance is achieved."
+                    ),
+                    statistical_impact=(
+                        "Optional stopping inflates false positive rate and biases estimates. "
+                        "Type I error rate is not controlled when stopping decisions depend on data."
+                    ),
+                    corrected_interpretation=(
+                        "Specify maximum iterations beforehand with pre-registered stopping rules. "
+                        "Do not condition loop termination on statistical significance."
+                    ),
+                    recommendation=(
+                        "Replace p-value-dependent while loops with fixed iteration counts. "
+                        "Use 'for i in range(max_iterations):' and aggregate results with "
+                        "Bonferroni/FDR correction after all iterations complete."
+                    ),
+                    confidence="high",
+                )
+            )
+
         old_in_loop = self.in_loop
         self.in_loop = True
         self.loop_depth += 1

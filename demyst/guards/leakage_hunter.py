@@ -255,12 +255,22 @@ class TaintAnalyzer(ast.NodeVisitor):
         "cross_val_score",
     }
 
+    # Operations that compute statistics from data (potential pre-split leakage)
+    STAT_METHODS = {
+        "mean", "std", "var", "fit", "fit_transform",
+        "min", "max", "sum", "median", "mode",
+    }
+
     def __init__(self) -> None:
         self.tracker = DataFlowTracker()
         self.violations: List[LeakageViolation] = []
         self.current_function: Optional[str] = None
         self.current_context: Optional[str] = None
         self.loop_vars: Set[str] = set()
+        # Track pre-split data for leakage detection
+        self.unsplit_sources: Set[str] = set()  # Variables from raw loaded data
+        self.presplit_derivations: Dict[str, int] = {}  # var -> line where derived
+        self.split_line: Optional[int] = None  # Line where split occurs
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         """Track function context."""
@@ -268,6 +278,24 @@ class TaintAnalyzer(ast.NodeVisitor):
         old_context = self.current_context
 
         self.current_function = node.name
+
+        # Treat function parameters as unsplit data sources until a split is seen.
+        existing_unsplit = set(self.unsplit_sources)
+        new_param_sources: Set[str] = set()
+        for arg_node in (
+            list(node.args.args)
+            + list(getattr(node.args, "posonlyargs", []))
+            + list(node.args.kwonlyargs)
+        ):
+            if arg_node.arg not in existing_unsplit:
+                self.unsplit_sources.add(arg_node.arg)
+                new_param_sources.add(arg_node.arg)
+        if node.args.vararg and node.args.vararg.arg not in existing_unsplit:
+            self.unsplit_sources.add(node.args.vararg.arg)
+            new_param_sources.add(node.args.vararg.arg)
+        if node.args.kwarg and node.args.kwarg.arg not in existing_unsplit:
+            self.unsplit_sources.add(node.args.kwarg.arg)
+            new_param_sources.add(node.args.kwarg.arg)
 
         # Determine context type
         name_lower = node.name.lower()
@@ -280,8 +308,19 @@ class TaintAnalyzer(ast.NodeVisitor):
 
         self.generic_visit(node)
 
+        # Remove temporary parameter sources to avoid leaking across functions
+        for param in new_param_sources:
+            self.unsplit_sources.discard(param)
+
         self.current_function = old_function
         self.current_context = old_context
+
+    # Functions that are safe to receive any data (pure operations)
+    SAFE_FUNCTIONS = {
+        "print", "len", "type", "isinstance", "str", "repr",
+        "shape", "dtype", "size", "ndim",  # Array introspection
+        "save", "savefig", "to_csv", "to_parquet",  # Output operations
+    }
 
     def visit_Call(self, node: ast.Call) -> None:
         """Track data loading and splitting operations."""
@@ -305,12 +344,36 @@ class TaintAnalyzer(ast.NodeVisitor):
             if func_name in self.TUNING_CONTEXTS:
                 self._check_tuning_call(node, func_name)
 
+            # Interprocedural check: warn when test data is passed to unknown functions
+            # This catches helper functions like run_experiment(X_test)
+            if (func_name not in self.DATA_LOADERS
+                and func_name not in self.DATA_SPLITTERS
+                and func_name not in self.SAFE_FUNCTIONS):
+                self._check_interprocedural_leakage(node, func_name)
+
         self.generic_visit(node)
 
     def visit_Assign(self, node: ast.Assign) -> None:
         """Track assignments for taint propagation."""
         # Collect source variables from the right side
         sources = self._extract_variables(node.value)
+
+        # Track derivations from unsplit data (before split occurs)
+        if self.split_line is None:  # Haven't seen split yet
+            for src in sources:
+                if src in self.unsplit_sources:
+                    # This assignment derives from unsplit data
+                    for target in node.targets:
+                        if isinstance(target, ast.Name):
+                            self.presplit_derivations[target.id] = node.lineno
+                            # Also mark as unsplit source for transitive tracking
+                            self.unsplit_sources.add(target.id)
+                        elif isinstance(target, ast.Tuple):
+                            for elt in target.elts:
+                                if isinstance(elt, ast.Name):
+                                    self.presplit_derivations[elt.id] = node.lineno
+                                    self.unsplit_sources.add(elt.id)
+                    break
 
         # Propagate to targets
         for target in node.targets:
@@ -348,6 +411,17 @@ class TaintAnalyzer(ast.NodeVisitor):
 
     def _handle_data_load(self, node: ast.Call, func_name: str) -> None:
         """Handle data loading function calls."""
+        # Register loaded data as unsplit source for pre-split tracking
+        parent = getattr(node, "_parent", None)
+        if parent and isinstance(parent, ast.Assign):
+            for target in parent.targets:
+                if isinstance(target, ast.Name):
+                    self.unsplit_sources.add(target.id)
+                elif isinstance(target, ast.Tuple):
+                    for elt in target.elts:
+                        if isinstance(elt, ast.Name):
+                            self.unsplit_sources.add(elt.id)
+
         # Check if this is a test/train split load
         for keyword in node.keywords:
             if keyword.arg == "split":
@@ -360,6 +434,12 @@ class TaintAnalyzer(ast.NodeVisitor):
 
     def _handle_data_split(self, node: ast.Call, func_name: str) -> None:
         """Handle data splitting function calls."""
+        # Record split line for pre-split tracking
+        if self.split_line is None:
+            self.split_line = node.lineno
+            # Check for pre-split derivations that should be flagged
+            self._check_presplit_contamination(node.lineno)
+
         # train_test_split typically returns (train, test) pairs
         parent = getattr(node, "_parent", None)
         if parent and isinstance(parent, ast.Assign):
@@ -409,6 +489,73 @@ class TaintAnalyzer(ast.NodeVisitor):
                 if violation:
                     self.violations.append(violation)
 
+    def _check_interprocedural_leakage(self, node: ast.Call, func_name: str) -> None:
+        """Check if test data is passed to unknown functions.
+
+        This catches patterns like:
+            def run_experiment(data): model.fit(data, y)
+            run_experiment(X_test)  # Leakage hidden in helper!
+        """
+        for arg in node.args:
+            vars_used = self._extract_variables(arg)
+            for var in vars_used:
+                taint = self.tracker.get_taint(var)
+                if taint and taint.level == TaintLevel.TEST:
+                    self.violations.append(
+                        LeakageViolation(
+                            violation_type="test_data_to_function",
+                            severity="warning",
+                            line=node.lineno,
+                            col=node.col_offset,
+                            tainted_variable=var,
+                            taint_source=f"Line {taint.line}",
+                            contaminated_context=func_name,
+                            description=(
+                                f"Test data '{var}' is passed to function '{func_name}()'. "
+                                f"If this function uses the data for training, your benchmark is invalid."
+                            ),
+                            scientific_impact=(
+                                "Test data passed to helper functions may be used for training "
+                                "without explicit detection. Audit the called function."
+                            ),
+                            recommendation=(
+                                f"Verify that '{func_name}()' does not use '{var}' for training. "
+                                f"If it does, pass only training data to this function."
+                            ),
+                        )
+                    )
+
+        # Also check keyword arguments
+        for keyword in node.keywords:
+            vars_used = self._extract_variables(keyword.value)
+            for var in vars_used:
+                taint = self.tracker.get_taint(var)
+                if taint and taint.level == TaintLevel.TEST:
+                    self.violations.append(
+                        LeakageViolation(
+                            violation_type="test_data_to_function",
+                            severity="warning",
+                            line=node.lineno,
+                            col=node.col_offset,
+                            tainted_variable=var,
+                            taint_source=f"Line {taint.line}",
+                            contaminated_context=func_name,
+                            description=(
+                                f"Test data '{var}' is passed to function '{func_name}()' "
+                                f"via keyword argument '{keyword.arg}'. "
+                                f"If this function uses the data for training, your benchmark is invalid."
+                            ),
+                            scientific_impact=(
+                                "Test data passed to helper functions may be used for training "
+                                "without explicit detection. Audit the called function."
+                            ),
+                            recommendation=(
+                                f"Verify that '{func_name}()' does not use '{var}' for training. "
+                                f"If it does, pass only training data to this function."
+                            ),
+                        )
+                    )
+
     def _register_test_source(self, node: ast.Call, func_name: str) -> None:
         """Register a test data source."""
         parent = getattr(node, "_parent", None)
@@ -448,6 +595,46 @@ class TaintAnalyzer(ast.NodeVisitor):
                 variables.extend(self._extract_variables(elt))
 
         return variables
+
+    def _check_presplit_contamination(self, split_line: int) -> None:
+        """Check for variables derived from unsplit data before the split.
+
+        This catches patterns like:
+            mu = X.mean(0)  # Computed on full dataset
+            X_train, X_test = train_test_split(X)
+            X_train_centered = X_train - mu  # mu contains test info!
+        """
+        for var_name, derivation_line in self.presplit_derivations.items():
+            if derivation_line < split_line:
+                # Mark this variable as potentially contaminated
+                self.tracker.add_source(
+                    var_name, TaintLevel.MIXED, derivation_line, 0, "presplit_derivation"
+                )
+                self.violations.append(
+                    LeakageViolation(
+                        violation_type="presplit_statistics",
+                        severity="warning",
+                        line=derivation_line,
+                        col=0,
+                        tainted_variable=var_name,
+                        taint_source="unsplit_data",
+                        contaminated_context="preprocessing",
+                        description=(
+                            f"Variable '{var_name}' is computed from the full dataset on line "
+                            f"{derivation_line}, before train_test_split on line {split_line}. "
+                            f"This statistic contains information from both train and test data."
+                        ),
+                        scientific_impact=(
+                            "Pre-split statistics leak test information into training. "
+                            "Any model using these statistics has implicitly seen the test set."
+                        ),
+                        recommendation=(
+                            "Compute statistics AFTER splitting, using only training data:\n"
+                            "  X_train, X_test = train_test_split(X)\n"
+                            "  mu = X_train.mean(0)  # Only from training data"
+                        ),
+                    )
+                )
 
 
 class LeakageHunter:
@@ -554,8 +741,8 @@ class LeakageHunter:
                             recommendation=(
                                 "Split data FIRST, then fit preprocessing on train only:\n"
                                 "  X_train, X_test = train_test_split(X)\n"
-                                "  scaler.fit(X_train)"
-                                "  X_train = scaler.transform(X_train)"
+                                "  scaler.fit(X_train)\n"
+                                "  X_train = scaler.transform(X_train)\n"
                                 "  X_test = scaler.transform(X_test)"
                             ),
                         )

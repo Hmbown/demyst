@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import ast
 import re
 from dataclasses import dataclass, field
@@ -435,17 +437,27 @@ class MirageDetector(ast.NodeVisitor):
 
         return False, "", var_name
 
+    # Operations that collapse array data to single values, destroying variance
+    VARIANCE_DESTROYING_OPS = {
+        "mean", "nanmean",
+        "sum", "nansum",
+        "argmax", "argmin",
+        "median", "nanmedian",
+        "percentile", "nanpercentile",
+        "quantile", "nanquantile",
+    }
+
     def visit_Call(self, node: ast.Call) -> None:
         """Detect variance-destroying reductions on array-like data."""
         if isinstance(node.func, ast.Attribute):
-            # Detect np.mean/sum/argmax/argmin or array method calls
-            # argmax/argmin are variance-destroying: lose all values except position
+            # Detect np.mean/sum/argmax/argmin/median/percentile or array method calls
+            # These are variance-destroying: they collapse distributions to single values
             is_numpy = isinstance(node.func.value, ast.Name) and node.func.value.id in [
                 "np",
                 "numpy",
             ]
             is_method = not is_numpy and isinstance(node.func.value, ast.AST)
-            if (is_numpy or is_method) and node.func.attr in ["mean", "sum", "argmax", "argmin"]:
+            if (is_numpy or is_method) and node.func.attr in self.VARIANCE_DESTROYING_OPS:
                 var_name: Optional[str] = None
                 should_flag = False
                 confidence = "low"
@@ -541,8 +553,36 @@ class MirageDetector(ast.NodeVisitor):
         self.generic_visit(node)
 
     def _is_array_like(self, node: ast.AST) -> bool:
-        """Heuristic to determine if a node represents array-like data"""
+        """Conservative heuristic to determine if a node represents array-like data.
+
+        Returns True only for nodes that are clearly array-like to avoid
+        false positives on scalar variables like `round(loss, 2)`.
+        """
+        # Call that builds a collection is definitely array-like
+        if isinstance(node, ast.Call):
+            return self._call_builds_collection(node)
+
+        # Subscript access suggests collection
+        if isinstance(node, ast.Subscript):
+            return True
+
+        # List/tuple literals are array-like
+        if isinstance(node, (ast.List, ast.Tuple)):
+            return True
+
         if isinstance(node, ast.Name):
-            # More general heuristic: any variable that might contain numeric data
-            return True  # Be more permissive for now
+            # Known scalar patterns should not be flagged
+            if self._is_known_scalar(node.id):
+                return False
+            # If we've already inferred high-cardinality, it's array-like
+            if self._is_high_cardinality(node.id):
+                return True
+            # Default: treat unknown names as array-like to avoid missing core mirages
+            return True
+
+        # Attribute access like .values, .data suggests array-like
+        if isinstance(node, ast.Attribute):
+            if node.attr in {"values", "data", "array", "tolist", "to_list"}:
+                return True
+
         return False

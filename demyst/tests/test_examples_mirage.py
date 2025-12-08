@@ -45,7 +45,7 @@ class TestRandomWalkMirage:
         assert len(mean_mirages) >= 1, "Should detect mean operation"
 
     def test_detects_premature_discretization(self, random_walk_source, mirage_detector):
-        """Should detect int() discretization on line 17."""
+        """int() applied after reduction should be flagged as discretization."""
         tree = ast.parse(random_walk_source)
         mirage_detector.visit(tree)
 
@@ -59,7 +59,7 @@ class TestRandomWalkMirage:
         tree = ast.parse(random_walk_source)
         mirage_detector.visit(tree)
 
-        # np.mean on line 12, int() on line 17
+        # np.mean on line 13, int() on line 17
         assert len(mirage_detector.mirages) == 2
 
 

@@ -2,8 +2,8 @@ import ast
 from pathlib import Path
 
 from demyst.engine.cst_transformer import CSTTranspiler
-from demyst.engine.parallel import _analyze_file_worker
 from demyst.engine.mirage_detector import MirageDetector
+from demyst.engine.parallel import _analyze_file_worker
 
 
 def test_cst_preserves_axis_keepdims(tmp_path: Path) -> None:

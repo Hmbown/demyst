@@ -257,8 +257,16 @@ class TaintAnalyzer(ast.NodeVisitor):
 
     # Operations that compute statistics from data (potential pre-split leakage)
     STAT_METHODS = {
-        "mean", "std", "var", "fit", "fit_transform",
-        "min", "max", "sum", "median", "mode",
+        "mean",
+        "std",
+        "var",
+        "fit",
+        "fit_transform",
+        "min",
+        "max",
+        "sum",
+        "median",
+        "mode",
     }
 
     def __init__(self) -> None:
@@ -317,9 +325,20 @@ class TaintAnalyzer(ast.NodeVisitor):
 
     # Functions that are safe to receive any data (pure operations)
     SAFE_FUNCTIONS = {
-        "print", "len", "type", "isinstance", "str", "repr",
-        "shape", "dtype", "size", "ndim",  # Array introspection
-        "save", "savefig", "to_csv", "to_parquet",  # Output operations
+        "print",
+        "len",
+        "type",
+        "isinstance",
+        "str",
+        "repr",
+        "shape",
+        "dtype",
+        "size",
+        "ndim",  # Array introspection
+        "save",
+        "savefig",
+        "to_csv",
+        "to_parquet",  # Output operations
     }
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -346,9 +365,11 @@ class TaintAnalyzer(ast.NodeVisitor):
 
             # Interprocedural check: warn when test data is passed to unknown functions
             # This catches helper functions like run_experiment(X_test)
-            if (func_name not in self.DATA_LOADERS
+            if (
+                func_name not in self.DATA_LOADERS
                 and func_name not in self.DATA_SPLITTERS
-                and func_name not in self.SAFE_FUNCTIONS):
+                and func_name not in self.SAFE_FUNCTIONS
+            ):
                 self._check_interprocedural_leakage(node, func_name)
 
         self.generic_visit(node)

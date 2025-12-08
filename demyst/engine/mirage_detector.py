@@ -439,12 +439,18 @@ class MirageDetector(ast.NodeVisitor):
 
     # Operations that collapse array data to single values, destroying variance
     VARIANCE_DESTROYING_OPS = {
-        "mean", "nanmean",
-        "sum", "nansum",
-        "argmax", "argmin",
-        "median", "nanmedian",
-        "percentile", "nanpercentile",
-        "quantile", "nanquantile",
+        "mean",
+        "nanmean",
+        "sum",
+        "nansum",
+        "argmax",
+        "argmin",
+        "median",
+        "nanmedian",
+        "percentile",
+        "nanpercentile",
+        "quantile",
+        "nanquantile",
     }
 
     def visit_Call(self, node: ast.Call) -> None:
@@ -473,9 +479,11 @@ class MirageDetector(ast.NodeVisitor):
                     )
                     if not should_flag and node.args:
                         # Fallback: sometimes callers pass the data explicitly even on methods
-                        fallback_flag, fallback_conf, fallback_var = (
-                            self._evaluate_reduction_target(node.args[0])
-                        )
+                        (
+                            fallback_flag,
+                            fallback_conf,
+                            fallback_var,
+                        ) = self._evaluate_reduction_target(node.args[0])
                         if fallback_flag:
                             should_flag = True
                             confidence = fallback_conf

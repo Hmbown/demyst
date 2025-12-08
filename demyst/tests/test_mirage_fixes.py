@@ -68,5 +68,3 @@ def analyze(values):
 
     # Variance context should suppress the mean mirage
     assert all(issue["type"] != "mean" for issue in issues)
-
-

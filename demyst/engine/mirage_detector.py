@@ -528,23 +528,20 @@ class MirageDetector(ast.NodeVisitor):
 
         # Check for premature discretization on array-like data
         if isinstance(node.func, ast.Name) and node.func.id in ["round", "int"]:
-            if (
-                len(node.args) > 0
-                and self._is_array_like(node.args[0])
-                and not self._is_suppressed(node.lineno)
-            ):
-                self.mirages.append(
-                    {
-                        "type": "premature_discretization",
-                        "node": node,
-                        "line": node.lineno,
-                        "col": node.col_offset,
-                        "function": self.current_function,
-                        "confidence": "low",
-                        "blocking": False,
-                        "reason": "Rounding/forcing int on data that appears array-like.",
-                    }
-                )
+            if len(node.args) > 0 and not self._is_suppressed(node.lineno):
+                if self._is_discretization_target(node.args[0]):
+                    self.mirages.append(
+                        {
+                            "type": "premature_discretization",
+                            "node": node,
+                            "line": node.lineno,
+                            "col": node.col_offset,
+                            "function": self.current_function,
+                            "confidence": "low",
+                            "blocking": False,
+                            "reason": "Rounding/forcing int on data that appears array-like.",
+                        }
+                    )
 
         self.generic_visit(node)
 
@@ -608,3 +605,13 @@ class MirageDetector(ast.NodeVisitor):
                 return True
 
         return False
+
+    def _is_discretization_target(self, node: ast.AST) -> bool:
+        """
+        For discretization, be slightly less strict: allow unknown names unless known scalar.
+        """
+        if isinstance(node, ast.Name):
+            if self._is_known_scalar(node.id):
+                return False
+            return True
+        return self._is_array_like(node)

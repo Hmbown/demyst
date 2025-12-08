@@ -59,6 +59,20 @@ class VariationTensor:
             # Also track in _variation_history for backwards compatibility
             self._variation_history.append({"operation": "sum"})
             return result
+        elif operation == "argmax":
+            result = np.argmax(self.data, axis=self.axis)
+            self.metadata.setdefault("history", []).append(
+                {"operation": "argmax", "timestamp": "now"}
+            )
+            self._variation_history.append({"operation": "argmax"})
+            return result
+        elif operation == "argmin":
+            result = np.argmin(self.data, axis=self.axis)
+            self.metadata.setdefault("history", []).append(
+                {"operation": "argmin", "timestamp": "now"}
+            )
+            self._variation_history.append({"operation": "argmin"})
+            return result
         raise ValueError(f"Unknown operation: {operation}")
 
     def ensemble_sum(self, axis: Optional[int] = None) -> Any:
@@ -74,4 +88,25 @@ class VariationTensor:
                 ),
             }
         )
+        return result
+
+    def discretize(self, mode: str = "int") -> Any:
+        """
+        Discretize data while recording variation history.
+
+        Supported modes:
+            - "int": cast to int (truncation toward zero)
+            - "round": numpy round-to-nearest
+        """
+        if mode == "int":
+            result = np.asarray(self.data).astype(int)
+        elif mode == "round":
+            result = np.round(self.data)
+        else:
+            raise ValueError(f"Unsupported discretization mode: {mode}")
+
+        self.metadata.setdefault("history", []).append(
+            {"operation": f"discretize_{mode}", "timestamp": "now"}
+        )
+        self._variation_history.append({"operation": f"discretize_{mode}"})
         return result

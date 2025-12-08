@@ -228,13 +228,13 @@ class VariationTensorTransformer(cst.CSTTransformer):
     def _transform_call(self, node: cst.Call, mirage: MirageInfo) -> Optional[cst.BaseExpression]:
         """Transform a single call based on mirage type."""
         # Only transform operations that we can faithfully preserve.
-        if mirage.type == "mean":
-            return self._create_collapse_call(node, "mean")
+        if mirage.type in {"mean", "argmax", "argmin"}:
+            return self._create_collapse_call(node, mirage.type)
         if mirage.type == "sum":
             return self._create_ensemble_sum_call(node)
+        if mirage.type == "premature_discretization":
+            return self._create_discretization_wrapper(node)
 
-        # Skip transformations we cannot safely reproduce yet
-        # (argmax/argmin would raise in VariationTensor, and discretization is a no-op).
         return None
 
     def _create_collapse_call(self, node: cst.Call, operation: str) -> cst.Call:
@@ -359,6 +359,35 @@ class VariationTensorTransformer(cst.CSTTransformer):
                     break
 
         return axis_arg, keepdims_arg
+
+    def _create_discretization_wrapper(self, node: cst.Call) -> cst.Call:
+        """
+        Wrap discretization in VariationTensor.discretize() while preserving semantics.
+        """
+        if not node.args:
+            raise CSTTransformError("No arguments to transform", node_type="Call")
+
+        mode = "round"
+        if isinstance(node.func, cst.Name):
+            if node.func.value == "int":
+                mode = "int"
+            elif node.func.value == "round":
+                mode = "round"
+
+        data_arg = node.args[0].value
+
+        variation_call = cst.Call(
+            func=cst.Name("VariationTensor"),
+            args=[cst.Arg(value=data_arg)],
+        )
+
+        discretize_call = cst.Call(
+            func=cst.Attribute(value=variation_call, attr=cst.Name("discretize")),
+            args=[cst.Arg(value=cst.SimpleString(f"'{mode}'"))],
+        )
+
+        self._needs_import = True
+        return discretize_call
 
     def _record_transformation(
         self, original: cst.Call, transformed: cst.BaseExpression, mirage: MirageInfo

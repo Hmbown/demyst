@@ -16,13 +16,20 @@ def test_cst_preserves_axis_keepdims(tmp_path: Path) -> None:
     assert ".collapse('mean')" in transformed
 
 
-def test_cst_skips_unsupported_argmax() -> None:
+def test_cst_transforms_argmax() -> None:
     source = "import numpy as np\nval = np.argmax(x)\n"
     transformed = CSTTranspiler().transpile_source(source)
 
-    # Unsupported ops should be left unchanged (no VariationTensor injected)
-    assert "VariationTensor" not in transformed
-    assert "np.argmax(x)" in transformed
+    assert "VariationTensor" in transformed
+    assert ".collapse('argmax')" in transformed
+
+
+def test_cst_discretization_wrapper() -> None:
+    source = "val = int(x)\n"
+    transformed = CSTTranspiler().transpile_source(source)
+
+    assert "VariationTensor" in transformed
+    assert ".discretize('int')" in transformed
 
 
 def test_parallel_respects_inline_suppression(tmp_path: Path) -> None:
@@ -33,7 +40,13 @@ def test_parallel_respects_inline_suppression(tmp_path: Path) -> None:
     result = _analyze_file_worker(
         (
             str(file_path),
-            {"mirage": True, "leakage": False, "hypothesis": False, "unit": False, "tensor": False},
+            {
+                "mirage": True,
+                "leakage": False,
+                "hypothesis": False,
+                "unit": False,
+                "tensor": False,
+            },
         )
     )
 

@@ -10,7 +10,7 @@ if os.path.exists("README.md"):
 
 setup(
     name="demyst",
-    version="1.1.0",
+    version="0.1.1a0",
     author="Demyst Team",
     description="The Academic Integrity Platform for Scientific Code",
     long_description=long_description,

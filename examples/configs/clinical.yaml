@@ -1,0 +1,26 @@
+profile: clinical
+thresholds:
+  significance: 0.05          # p-value threshold
+  minimum_effect_size: 0.2    # Cohen's d
+  adverse_event_floor: 0.0
+unit_system: SI
+tensor_conventions: false
+required_statistics:
+  - confidence_interval
+  - number_needed_to_treat
+  - adverse_event_rate
+  - attrition_rate
+allowed_mirages: []
+mirage_weights:
+  mean: 1.0
+  sum: 0.9
+  median: 0.5
+leakage_policies:
+  time_series_lookahead: true
+  benchmark_contamination: false
+  full_data_feature_selection: true
+dl_checks:
+  jacobian_spectral: false
+  attention_entropy: false
+  reward_hacking: false
+  mode_collapse: false

@@ -1,0 +1,26 @@
+profile: physics
+thresholds:
+  significance: 5.0          # sigma threshold
+  systematic_error_ratio: 0.1
+  minimum_effect_size: null
+unit_system: natural         # c = ħ = G = 1
+tensor_conventions: true
+required_statistics:
+  - variance
+  - background_rate
+  - calibration_uncertainty
+allowed_mirages:
+  - ensemble_average          # legitimate in statistical mechanics
+mirage_weights:
+  mean: 0.9
+  sum: 0.7
+  median: 0.4
+leakage_policies:
+  time_series_lookahead: true
+  benchmark_contamination: true
+  full_data_feature_selection: true
+dl_checks:
+  jacobian_spectral: true
+  attention_entropy: true
+  reward_hacking: false
+  mode_collapse: true

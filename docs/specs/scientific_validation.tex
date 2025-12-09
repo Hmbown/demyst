@@ -1,0 +1,139 @@
+% Demyst Scientific Validation Specification
+% Static analyses with formal underpinnings
+\documentclass[11pt]{article}
+\usepackage{amsmath, amssymb, amsthm}
+\usepackage{geometry}
+\geometry{margin=1in}
+\title{Demyst: Scientific Integrity Static Analyses}
+\date{\today}
+\begin{document}
+\maketitle
+\section*{Scope and Structure}
+This specification resides at \texttt{docs/specs/scientific\_validation.tex}. Sections cover: (1) mirage information-theoretic metrics and context-aware severity; (2) leakage taint lattice and implicit patterns with leakage bits estimate; (3) multiple comparison control, HARKing, sequential testing, and MDE; (4) dimensional analysis for tensors, natural units, and physical-law templates; (5) gradient-flow checks; (6) verification properties; (7) domain profiles schema; (8) synthetic benchmarks; (9) performance and false-positive constraints.
+
+\section{Mirage Detection (Information-Theoretic)}
+\subsection{Information Loss Metric}
+Given a random variable $X$ with law $P(X)$ and a reduction $r(X)$ (e.g., mean, sum), define information retained as $I(r(X); X)$ and the normalized loss
+\[
+L(r, X) = 1 - \frac{I(r(X); X)}{H(X)} \in [0,1],
+\]
+where $H$ is (discrete) entropy or differential entropy with common-base normalization. For multidimensional $X$, take $H(X)$ over all components; when statistics $S = \{s_i(X)\}$ are preserved, use $I((r(X), S); X)$.
+\subsection{Context-Specific Sufficient Statistics}
+\paragraph{Financial returns} Preserve tail risk: $\text{VaR}_\alpha$, $\text{CVaR}_\alpha$, max drawdown, realized volatility, tail index. Reductions that drop these induce $L \approx 1$ for small $\alpha$.
+\paragraph{Clinical trials} Preserve quantiles (median, IQR), survival curves / hazard functions, adverse event rates, number needed to treat. Mean-only summaries yield high $L$ when event rates are rare or skewed.
+\paragraph{Physics measurements} Preserve systematic error channels: instrument bias terms, calibration factors, background counts. Loss is high when only central tendency is kept and variance/systematics are discarded.
+\subsection{Severity Scoring}
+For reduction op $r$, context $c$, and preserved stats $S$:
+\[
+\text{severity}(r,c,S)=\max\Big(0,\, w_c(r)\cdot L(r,X) \cdot \big(1 - \frac{|S\cap \text{Req}(c)|}{|\text{Req}(c)|}\big)\Big),
+\]
+where $w_c(r)$ weights high-risk reductions per context and $\text{Req}(c)$ are required statistics (e.g., $\{\text{var}, \text{cvar}\}$). Map to $[0,1]$ and discretize for reporting tiers.
+\subsection{Simpson's Paradox Static Signature}
+Detect aggregations of grouped data where sign flips: for groups $g$, if $\exists$ groups with $\Delta_g = \mathbb{E}[Y|g=1]-\mathbb{E}[Y|g=0]$ all sharing sign $s$, but aggregated $\Delta$ has sign $-s$, flag. Statistically, check monotone sign of per-group regression slopes vs pooled slope using only static features (grouped reductions followed by a higher-level reduction).
+
+\section{Leakage Detection (Taint Dataflow)}
+\subsection{Taint Lattice}
+Levels $T = \{\text{UNKNOWN}, \text{TRAIN}, \text{TEST}, \text{MIXED}\}$ with partial order: $\text{UNKNOWN} \sqsubseteq \text{TRAIN} \sqsubseteq \text{MIXED}$ and $\text{UNKNOWN} \sqsubseteq \text{TEST} \sqsubseteq \text{MIXED}$; TRAIN and TEST incomparable. Join $\sqcup$ follows least upper bound; meet unused. Monotone transfer functions guarantee a fixed point in a finite-height lattice; iterate to convergence.
+\subsection{Loops and Widening}
+Use standard chaotic iteration; for loops, apply widening $\nabla$ where TRAIN $\nabla$ TEST $=$ MIXED, and MIXED is absorbing. After stabilization, perform one narrowing pass to reduce false positives.
+\subsection{Implicit Leakage Patterns}
+\paragraph{Global stats pre-split} Any statistic computed on unsplit data that is later subtracted/divided into TRAIN flows yields TRAIN$\sqcup$TEST$\to$MIXED taint on model inputs.
+\paragraph{Full-data feature selection} Fits on full $(X,y)$ then mask applied to $X_{\text{train}}$ promotes TEST taint into TRAIN path.
+\paragraph{Time-series lookahead} Rolling windows referencing future indices relative to target time carry TEST taint; detect via index arithmetic or window definitions where $t+k$ with $k>0$ flows into features for time $t$.
+\paragraph{Benchmark contamination (LLMs)} If benchmark corpus overlaps with pretraining sources (via known IDs, URLs, hashes, or lexical signature matches), tag benchmark as TEST and propagate into model provenance; evaluation using contaminated artifacts becomes MIXED.
+\subsection{Leakage Quantification}
+Approximate leaked bits via mutual information upper bound: if $\pi$ fraction of TEST-tainted features enter the model and model capacity is $C$ bits, set $\widehat{I}(X_{\text{test}}; \text{model}) \approx \pi \cdot C$. For linear models, $C \approx d \log_2(1+\text{SNR})$ statically approximated from coefficient regularization strength; for trees, $C$ proportional to leaf count.
+
+\section{Multiple Comparisons \& P-Hacking}
+\subsection{Family Detection and Corrections}
+Group tests sharing outcome variable or hypothesis label (string matching or AST symbol). For $m$ tests:
+\begin{itemize}
+  \item Bonferroni: $\alpha_i = \alpha/m$, adjusted $p_i' = \min(1, m p_i)$.
+  \item Holm: order $p_{(i)}$, $\alpha_{(i)} = \alpha/(m-i+1)$.
+  \item Benjamini-Hochberg (FDR): order $p_{(i)}$, find largest $k$ with $p_{(k)} \le k\alpha/m$, reject all $i \le k$; adjusted $p_i' = \min_{j\ge i} \frac{m}{j}p_{(j)}$.
+\end{itemize}
+\subsection{HARKing Signals}
+Track hypothesis strings/comments bindings. If hypothesis assignment or docstring occurs after p-value computation or test execution call, flag HARKing.
+\subsection{Sequential Analysis / Optional Stopping}
+Detect repeated testing inside loops or while conditions with shared hypothesis. Recommend boundary rules:
+\begin{itemize}
+  \item O'Brien-Fleming: $\alpha_t = 2(1-\Phi(z_{\alpha/2}/\sqrt{t/T}))$ for look $t$ of $T$.
+  \item Pocock: constant boundary $\alpha_t = \alpha^*$ solving power equation.
+\end{itemize}
+Optional stopping flagged when the loop exit depends on $p$ or effect estimates.
+\subsection{Minimum Detectable Effect}
+For two-sample $z$-test with variance $\sigma^2$, sample size $n$ per group:
+\[
+\text{MDE} = (z_{1-\alpha/2} + z_{\text{power}})\frac{\sqrt{2\sigma^2}}{\sqrt{n}}.
+\]
+Adapt for proportions with pooled variance; annotate requirement if requested effect size $<$ MDE.
+\subsection{Garden of Forking Paths}
+Flag multiple researcher degrees of freedom when alternative preprocessing branches (outlier filters, covariate subsets, model families) feed the same outcome comparison without correction. Heuristic count of branches $b$ implies effective $m_{\text{eff}} \approx b$ tests for correction.
+
+\section{Dimensional Analysis for Tensors}
+\subsection{Dimension Algebra}
+Represent dimension vectors in basis $[M,L,T,I,\Theta,\text{mol},\text{cd}]$. Operation rules: multiplication adds exponents, division subtracts, power scales exponents. Propagate through tensors elementwise; for matrix multiply $A_{ij}B_{jk}$ ensure dimensions multiply accordingly.
+\subsection{Natural Units}
+Detect assignments setting $c=1$, $\hbar=1$, $G=1$; then redefine basis by substituting relationships (e.g., $[L]=[T]$, $[M]=[L]^{-1}[T]^{-1}$ as appropriate). Require consistency within the chosen system; mixed explicit SI constants with natural-unit assumptions triggers warnings.
+\subsection{Index Consistency}
+Track covariant/contravariant indices: for Einstein summation, repeated index once up and once down contracts; repeated both up (or both down) is a violation. Metric signature ($-,+,+,+$ or $+,-,-,-$) determines raising/lowering; mismatched signature across operations is flagged.
+\subsection{Physical Law Templates}
+Encode templates such as Newton's second law $[F]=[M][L][T]^{-2}$, ideal gas $[P][V]=[N][R][T]$, Schwarzschild radius $[L]=[L^3][M]^{-1}[T]^{-2}$. Static check ensures both sides share dimension vector after substitutions.
+\subsection{Unit Conversion Errors}
+Track declared unit system per scope; if a value tagged as imperial feeds SI expectation without conversion (and vice versa), flag Mars Climate Orbiter pattern. Propagate unit tags through function boundaries via annotations or naming conventions.
+
+\section{Gradient Flow Analysis}
+\subsection{Jacobian Spectral Norms}
+For layer sequence with Jacobians $J_i$, approximate $\log \kappa = \sum_i \log \sigma(J_i)$ where $\sigma$ is spectral norm bound (estimated statically from weight norms and activation Lipschitz constants). Vanishing if $\log \kappa \ll -\tau$, exploding if $\log \kappa \gg \tau$ for threshold $\tau$ (context-dependent).
+\subsection{Attention Collapse}
+For softmax over dimension $d$, approximate entropy $H \approx \log d - \frac{1}{2}\text{Var}(z)$ using logit variance surrogate; flag when $H \to 0$ (peaked) or $H \approx \log 1$ (collapsed). Absence of temperature scaling or normalization on small $d$ raises risk.
+\subsection{Loss Landscape Pathologies}
+Catalog known issues: cross-entropy with label smoothing plus hard labels mismatch; non-convex composite losses without regularization; large margin losses without norm control. Flag when combinations appear without stabilizers (weight decay, normalization).
+\subsection{Reward Hacking (RL)}
+Given symbolic reward $R$, search for proxy features unaligned with true objective; Goodhart risk when $R$ is proxy of latent $U$. Clipping rules that yield zero gradient in important regions or aggregation via mean that hides tail penalties are flagged as exploit vectors.
+\subsection{Mode Collapse (Generative)}
+Track discriminator outputs: if generator update omits diversity metrics (e.g., feature variance, FID-like proxies) and discriminator accuracy stays high while generator variance shrinks, flag. Static heuristic: generator loss depends only on mean discriminator score without diversity regularizer.
+
+\section{Domain Profiles (YAML Schema)}
+\subsection{Schema}
+Top-level keys:
+\begin{itemize}
+  \item \texttt{profile}: short name (e.g., physics, clinical).
+  \item \texttt{thresholds}: context thresholds such as \texttt{significance}, \texttt{minimum\_effect\_size}, \texttt{systematic\_error\_ratio}.
+  \item \texttt{unit\_system}: one of \{SI, natural, imperial\}.
+  \item \texttt{tensor\_conventions}: boolean for enforcing index/metric checks.
+  \item \texttt{required\_statistics}: list of required reported stats (e.g., variance, confidence\_interval).
+  \item \texttt{allowed\_mirages}: reductions exempted as legitimate in this domain.
+  \item \texttt{mirage\_weights}: optional map from reduction op to weight $w_c(r)$.
+  \item \texttt{leakage\_policies}: toggles for time-series lookahead, benchmark contamination, feature selection on full data.
+  \item \texttt{dl\_checks}: toggles for Jacobian spectral checks, attention entropy, reward hacking, mode collapse.
+\end{itemize}
+\subsection{Examples}
+Physics profile: $5\sigma$ significance, natural units, tensor conventions on, allowed ensemble averages. Clinical profile: $\alpha=0.05$, minimum effect size (Cohen's $d$) $0.2$, required adverse event reporting, NNT, and confidence intervals.
+
+\section{Synthetic Benchmark Outlines}
+\begin{itemize}
+  \item \textbf{Mirage cases}: high-cardinality arrays reduced by mean/sum with and without accompanying variance/CVAR; grouped data showing Simpson's flip; financial tail metrics omitted vs preserved.
+  \item \textbf{Leakage cases}: global mean subtraction before train/test split; SelectKBest fit on full data then applied to train; rolling features using future indices; benchmark contamination via overlapping IDs.
+  \item \textbf{Multiple comparisons}: suites of correlated $p$-tests needing Holm/BH; optional stopping loop re-running t-tests until $p<0.05$; HARKing snippets assigning hypothesis strings post-hoc.
+  \item \textbf{Units/tensors}: velocity from distance/time checks; natural-units usage mixing SI constants; Einstein summation with repeated upper indices; Mars orbiter-style imperial vs SI mix.
+  \item \textbf{Gradients}: deep linear stack with weight norms causing vanishing/exploding Jacobian product; attention over small $d$ without temperature; GAN loop lacking diversity metrics; RL reward clipping that zeroes gradients on rare catastrophes.
+  \item \textbf{Historical analogs}: templates mirroring Reinhart-Rogoff excel error (aggregation), OPERA neutrinos timing calibration (unit/systematic), and Kaggle leakage competitions (global-stat leakage) using synthetic but structurally similar code.
+\end{itemize}
+
+\section{Verification Properties (Property-Based)}
+\subsection{Soundness}
+Generate scientific code snippets $c$ via strategy $S$; analyze to obtain verdict $v$. If $v=\text{PASS}$, assert snippets lack known critical issues by checking against oracle $\mathcal{O}$ (curated bad-pattern catalog). Fails indicate false negatives.
+\subsection{Completeness}
+For each known bad pattern $p$ with expected violation $v_p$, generate code $c_p$; require $v_p \in \text{violations}(\text{analyze}(c_p))$.
+\subsection{Monotonicity}
+For code $c$ and extension $c'$ (adding statements or functions), ensure $\text{violations}(c) \subseteq \text{violations}(c \oplus c')$. Construct $c'$ by adding dead code or auxiliary helpers; analysis must not drop prior findings.
+\subsection{Idempotence}
+Run analyzer twice on $c$; results must match bit-for-bit to ensure deterministic passes and stable diagnostics.
+\subsection{Strategies}
+Use Hypothesis strategies to sample: (1) reduction patterns with/without dispersion; (2) taintable dataflows across splits; (3) multiple-test pipelines with optional stopping branches; (4) unit-carrying arithmetic chains and tensor contractions; (5) neural layer stacks with risky activations or rewards. Each strategy yields metadata for oracle checks.
+
+\section{Performance and False Positives}
+Analyses are monotone and finite over AST size; fixed-point taint reaches convergence in $O(E)$ edges. Heuristics tuned to keep false positive rate $<10\%$ on clean code via context weighting ($w_c$) and required-stat sets.
+
+\end{document}
